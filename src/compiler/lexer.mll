@@ -2,6 +2,8 @@
   open Parser
   exception Lexical_error of string
 
+  let string_buff = Buffer.create 256
+
   let keyword_table =
     let tbl = Hashtbl.create 37 in
     begin
@@ -23,6 +25,12 @@
           ("bool", BOOLT);
           ("int", INTT);
           ("float", FLOATT);
+          ("Gaussian", GAUSSIAN);
+          ("Beta", BETA);
+          ("Bernoulli", BERNOULLI);
+          ("Delta", DELTA);
+          ("Prob", PROB);
+          ("var", VAR);
           ("dist", DIST);
           ("unit", UNIT);
           ("arr", ARRAY);
@@ -30,6 +38,8 @@
           ("init", INIT);
           ("unfold", UNFOLD);
           ("reset", RESET);
+          (* ("exact", EXACT);
+          ("approx", APPROX); *)
 	]; tbl
     end
 
@@ -67,8 +77,7 @@ rule token sbuff = parse
 | ('-'? ['0'-'9']+) as i
     { INT (int_of_string i) }
 | '"'
-    { STRING "XXX TODO XXX" }
-    (* { reset_string sbuff; string sbuff lexbuf } *)
+    { Buffer.clear string_buff; string lexbuf; STRING (Buffer.contents string_buff)}
 | letter identchar*
     { let s = Lexing.lexeme lexbuf in
       try Hashtbl.find keyword_table s
@@ -78,13 +87,13 @@ rule token sbuff = parse
 | _
     { raise (Lexical_error (Printf.sprintf "At offset %d: unexpected character.\n" (Lexing.lexeme_start lexbuf))) }
 
-(* and string sbuff = parse *)
-(*   | "\"\"" { add_char_to_string sbuff '"'; string sbuff lexbuf }                         (\* Escaped quote *\) *)
-(*   | "\013\n" { add_char_to_string sbuff '\n'; string sbuff lexbuf } *)
-(*   | "\013" { add_char_to_string sbuff '\n'; string sbuff lexbuf } *)
-(*   | '"'    { let s = get_string sbuff in STRING s }  (\* End of string *\) *)
-(*   | eof    { raise (Lexical_error "String not terminated.\n") } *)
-(*   | _      { add_char_to_string sbuff (Lexing.lexeme_char lexbuf 0); string sbuff lexbuf } *)
+and string = parse
+  | "\"\"" { Buffer.add_char string_buff '"'; string lexbuf } 
+  | "\013\n" { Buffer.add_char string_buff '\n'; string lexbuf }
+  | "\013" { Buffer.add_char string_buff '\n'; string lexbuf }
+  | '"'    { () } 
+  | eof    { raise (Lexical_error "String not terminated.\n") }
+  | _ as c     { Buffer.add_char string_buff c; string lexbuf }
 
 and comment cpt = parse
   | "(*"
