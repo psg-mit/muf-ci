@@ -19,7 +19,8 @@
 %token VAL LET IN FUN STREAM
 %token IF THEN ELSE
 %token FACTOR SAMPLE OBSERVE INFER INIT UNFOLD RESET
-%token BOOLT INTT FLOATT DIST UNIT ARRAY LIST
+%token BOOLT INTT FLOATT GAUSSIAN BETA BERNOULLI DELTA 
+%token PROB VAR DIST UNIT ARRAY LIST
 
 %token DOT
 %token EQUAL ARROW
@@ -107,7 +108,7 @@ expr:
 | e = simple_expr
     { e }
 (* Conditional *)
-| IF e = expr THEN e1 = simple_expr ELSE e2 = simple_expr
+| IF e = expr THEN e1 = expr ELSE e2 = expr
     { mk_expr (Eif (e, e1, e2)) }
 (* Local binding *)
 | LET x = patt EQUAL e1 = expr IN e2 = expr
@@ -124,12 +125,19 @@ patt:
 | UNDERSCORE { mk_patt Pany }
 
 typ:
-| INTT { Tany }
-| FLOATT { Tany }
-| BOOLT { Tany }
-| t = typ DIST { Tconstr ("dist", [t]) }
+| INTT { Tconstr ("det", []) }
+| FLOATT { Tconstr ("det", []) }
+| BOOLT { Tconstr ("det", []) }
+| t = prob_typ DIST { Tconstr ("dist", [t]) }
+| t = prob_typ VAR { Tconstr ("var", [t]) }
 | UNIT { Ttuple [] }
 | LPAREN t = typ STAR tl = separated_nonempty_list(STAR, typ) RPAREN { Ttuple (t::tl) }
 | UNDERSCORE { Tany }
 | t = typ ARRAY { Tconstr ("array", [t]) }
 | t = typ LIST { Tconstr ("list", [t]) }
+
+prob_typ:
+| GAUSSIAN { Tconstr ("gaussian", []) }
+| BETA { Tconstr ("beta", []) }
+| BERNOULLI { Tconstr ("bernoulli", []) }
+| DELTA { Tconstr ("delta", []) }
