@@ -4,12 +4,12 @@ open Probzelus
 let prob = ref (Obj.magic ())
 
 let sample =
-  let (Cnode { alloc; reset; copy; step }) = Infer_ds_streaming.sample in
+  let (Cnode { alloc; reset; copy; step }) = Infer_semi_symbolic.sample in
   let step self (_, x) = step self (!prob, x) in
   Cnode { alloc; reset; copy; step }
 
 let observe =
-  let (Cnode { alloc; reset; copy; step }) = Infer_ds_streaming.observe in
+  let (Cnode { alloc; reset; copy; step }) = Infer_semi_symbolic.observe in
   let step self (_, x) = step self (!prob, x) in
   Cnode { alloc; reset; copy; step }
 
@@ -20,9 +20,9 @@ let infer n f =
     step self (!prob, x)
   in
   let f = Cnode { alloc; reset; copy; step } in
-  Infer_ds_streaming.infer n f
+  Infer_semi_symbolic.infer_marginal n f
 
-let ite (i, t, e) = Infer_ds_streaming.ite i t e
+let ite (i, t, e) = Infer_semi_symbolic.ite i t e
 
 let lt (a, b) = a < b
 
@@ -44,7 +44,7 @@ let random_order len =
 
   let obs_fn _ = assert false in
 
-  Infer_ds_streaming.of_distribution (Types.Dist_sampler(sample_fn, obs_fn))
+  Infer_semi_symbolic.of_distribution (Types.Dist_sampler(sample_fn, obs_fn))
 
 
 module List = struct
