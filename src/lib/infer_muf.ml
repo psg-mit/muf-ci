@@ -30,6 +30,20 @@ let add_int (x, y) = x + y
 
 let sub_int (x, y) = x - y
 
+let sub_float (x, y) = x -. y
+
+let pow (x, y) = x ** y
+
+let exit code = exit(code)
+
+let exact (_) = 
+  Format.print_string "exact ";
+  Format.print_newline ()
+
+let approx (_) =
+  Format.print_string "approx ";
+  Format.print_newline ()
+
 let random_order len =
   let sample_fn _ =
     let arr = Array.init len (fun i -> i) in
