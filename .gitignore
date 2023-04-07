@@ -7,3 +7,4 @@ tests/*.ml
 *.cmo
 
 venv/
+.DS_Store
