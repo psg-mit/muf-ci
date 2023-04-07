@@ -6,7 +6,6 @@ import time
 from math import log
 import re
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 def run_muf(filename, output, p, n, streaming, verbose=False):
@@ -172,8 +171,8 @@ def plot(output, streaming, particles, verbose=False):
   # subplot for each variable
   fig, axes = plt.subplots(3, 2, figsize=(8, 10))
 
-  colors = ['#00bfbf', '#ff4d32', '#ffbf00', '#00b300']
-  markers = ['s', 'v', 'd', 'o']
+  colors = ['#00bfbf', '#ff4d32', '#ffbf00', '#00b300', '#0000b3', '#b300b3', '#bfbfbf', '#4d4d4d', '#ff8080', '#ffff00', '#80ff80', '#8080ff']
+  markers = ['s', 'v', 'd', 'o', 'x', 'p', 'h', 'D', 'H', '8', 'P', 'X']
 
   # runtime
   for j, (filename, data) in enumerate(results.items()):
@@ -230,7 +229,7 @@ def plot(output, streaming, particles, verbose=False):
 
       axes[k][0].scatter(p, median, marker=markers[j], color=colors[j], label=label)
       # axes[k][0].errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[j], capsize=5, label=label)
-      axes[k][0].set_yscale('log')
+      # axes[k][0].set_yscale('log')
       # axes[k][0].set_ylim(1e-4, 1e3)
       # axes[k][0].set_xscale('log')
       axes[k][0].set_title('{} Accuracy'.format(v))
@@ -238,8 +237,8 @@ def plot(output, streaming, particles, verbose=False):
     axes[2][0].set_xlabel('Particles')
     axes[2][1].set_xlabel('Particles')
 
-  axes[1][0].set_ylabel('Mean Squared Error (logscale)')
-  axes[1][1].set_ylabel('Elapsed Time in seconds (logscale)')
+  axes[1][0].set_ylabel('Mean Squared Error')
+  axes[1][1].set_ylabel('Elapsed Time in seconds')
 
   fig.legend(ncols=3, frameon=False, loc='upper center')
   fig.tight_layout()
@@ -270,7 +269,7 @@ if __name__ == '__main__':
   sp = p.add_subparsers(dest='subparser_name')
 
   rp = sp.add_parser('run')
-  rp.add_argument('--file', '-f', type=str, required=False)
+  rp.add_argument('--files', '-f', type=str, required=True, nargs="+")
   rp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
   rp.add_argument('--accuracy', '-a', type=float, required=False, default=0.01)
   rp.add_argument('--n', '-n', type=int, required=False, default=1000)
@@ -289,25 +288,26 @@ if __name__ == '__main__':
     # make output directory
     os.makedirs(args.output, exist_ok=True)
 
-    if not os.path.exists(args.file):
-      raise Exception('File not found: {}'.format(args.file))
+    for file in args.files:
+      if not os.path.exists(file):
+        raise Exception('File not found: {}'.format(file))
 
-    results = {}
-    if os.path.exists(os.path.join(args.output, 'results.json')):
-      with open(os.path.join(args.output, 'results.json')) as f:
-        try:
-          results = json.load(f)
-        except:
-          results = {}
+      results = {}
+      if os.path.exists(os.path.join(args.output, 'results.json')):
+        with open(os.path.join(args.output, 'results.json')) as f:
+          try:
+            results = json.load(f)
+          except:
+            results = {}
 
-    try:
-      results = run(args.file, args.output, args.particles, args.accuracy, args.n, args.streaming, results, args.verbose)
-    except KeyboardInterrupt:
-      pass
+      try:
+        results = run(file, args.output, args.particles, args.accuracy, args.n, args.streaming, results, args.verbose)
+      except KeyboardInterrupt:
+        pass
 
-    # write results
-    with open(os.path.join(args.output, 'results.json'), 'w') as f:
-      json.dump(results, f, indent=2)
+      # write results
+      with open(os.path.join(args.output, 'results.json'), 'w') as f:
+        json.dump(results, f, indent=2)
   
 
   

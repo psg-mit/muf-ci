@@ -8,3 +8,4 @@ tests/*.ml
 
 venv/
 .DS_Store
+muf.log
