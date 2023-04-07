@@ -22,8 +22,8 @@ def run_muf(filename, output, p, n, streaming, verbose=False):
   if verbose:
     print('> Took {} seconds'.format(t2 - t1))
 
-    with open(os.path.join(output, 'muf.log'), 'a') as f:
-      f.write(' '.join([str(x) for x in [p, n, t2 - t1, streaming]]) + '\n' + out + '\n')
+    # with open(os.path.join(output, 'muf.log'), 'a') as f:
+    #   f.write(' '.join([str(x) for x in [p, n, t2 - t1, streaming]]) + '\n' + out + '\n')
   
   # parse output
   lines = out.strip().split('\n')
