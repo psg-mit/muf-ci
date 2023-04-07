@@ -98,6 +98,19 @@ let print_cmd name node =
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
 
+let approx_status muf_list = 
+  (* let typs = Siren.approximation_status muf_list in
+  Siren.pp_map std_formatter typs; *)
+  (* let approx_status, muf_list = Siren.approximation_status muf_list in *)
+  (* Print out approx_status *)
+  (* let print_approx_status (name, approx_status) =
+    Format.printf "  %s: %s@." name (Siren.string_of_approx_status approx_status)
+  in *)
+  (* List.iter print_approx_status approx_status; *)
+
+  (* approx_status, muf_list *)
+  ()
+
 let only_check = ref false
 
 let simulation_node = ref "main"
@@ -108,11 +121,20 @@ let compile file =
   let name = Filename.chop_extension file in
   let node = !simulation_node in
   let muf_list = parse Parser.program (Lexer.token ()) file in
-  Format.printf "-- Analyzing %s@." file;
-  analyze_file !up_bound muf_list;
-  if not !only_check then (
-    Format.printf "-- Generating %s.ml@." name;
-    compile_file muf_list name;
-    Format.printf "-- Generating %s.ml@." node;
-    compile_simulator name node;
-    print_cmd name node)
+
+  (* Format.printf "%s\n" (Muf.show_program
+    (fun ff () -> Format.fprintf ff "()")
+    muf_list); *)
+
+  (* Format.printf "-- Analyzing %s@." file;
+  analyze_file !up_bound muf_list; *)
+  (* if not !only_check then ( *)
+  Format.printf "-- Approximation Status Analysis %sml@." name;
+  let _ = approx_status muf_list in
+  
+  Format.printf "-- Generating %s.ml@." name;
+  compile_file muf_list name;
+  Format.printf "-- Generating %s.ml@." node;
+  compile_simulator name node;
+  print_cmd name node
+  (* ) *)
