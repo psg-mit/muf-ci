@@ -40,28 +40,36 @@ let serosurvey _ =
          let (sens, fpr) =
            if first
            then
-             ((const (eval (Muflib.prob_op sample prob (beta (1., 1.))))),
-               (const (eval (Muflib.prob_op sample prob (beta (1., 1.))))))
+             ((Muflib.prob_op sample prob ("sens", (beta (1., 1.)))),
+               (Muflib.prob_op sample prob ("beta", (beta (1., 1.)))))
            else (sens, fpr) in
-         let p = Muflib.prob_op sample prob (gaussian ((const 0.), 1.)) in
+         let p =
+           Muflib.prob_op sample prob ("p", (gaussian ((const 0.), 1.))) in
          let true_pos =
-           const (eval (Muflib.prob_op sample prob (bernoulli (sigmoid p)))) in
+           const
+             (eval
+                (Muflib.prob_op sample prob
+                   ("true_pos", (bernoulli (sigmoid p))))) in
          let () =
            Muflib.prob_op observe prob
-             ((bernoulli (ite (true_pos, sens, fpr))), survey_result) in
+             ((bernoulli
+                 (ite (true_pos, (const (eval sens)), (const (eval fpr))))),
+               survey_result) in
          let n_pos_control = 181 in
          let n_neg_control = 176 in
          let () =
            if first
            then
              Muflib.prob_op observe prob
-               ((binomial (n_pos_control, sens)), control_tp_result)
+               ((binomial (n_pos_control, (const (eval sens)))),
+                 control_tp_result)
            else () in
          let () =
            if first
            then
              Muflib.prob_op observe prob
-               ((binomial (n_neg_control, fpr)), control_fp_result)
+               ((binomial (n_neg_control, (const (eval fpr)))),
+                 control_fp_result)
            else () in
          let spec = subtract ((const 1.), fpr) in
          ((pair (p, (pair (sens, spec)))), (false, sens, fpr)))
@@ -79,7 +87,7 @@ let survey_result _ =
            else
              if lt (0, n_neg)
              then (false, n_pos, (sub_int (n_neg, 1)))
-             else exit 0 in
+             else (let () = pp_approx_status true in exit 0) in
          (res, (false, n_pos, n_neg)))
   }
 type main = unit
@@ -89,7 +97,7 @@ let main _ =
       ((Muflib.init survey_result),
         (Muflib.init
            (Muflib.muf_node_of_cnode
-              (infer 1000 (Muflib.cnode_of_muf_proba_node serosurvey)))));
+              (infer 1 (Muflib.cnode_of_muf_proba_node serosurvey)))));
     Muflib.step =
       (fun ((survey_result, serosurvey), ()) ->
          let (survey_res, survey_result') = Muflib.step survey_result () in

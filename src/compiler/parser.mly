@@ -90,8 +90,10 @@ simple_expr:
 (* Probabilitic expressions *)
 | FACTOR LPAREN e = expr RPAREN
     { mk_expr (Efactor ("prob", e)) }
+| SAMPLE LPAREN s = STRING COMMA el = separated_nonempty_list(COMMA, expr) RPAREN
+    { mk_expr (Esample ("prob", mk_expr(Etuple (mk_expr (Econst (Cstring s)) :: el)))) }
 | SAMPLE LPAREN e = expr RPAREN
-    { mk_expr (Esample ("prob", e)) }
+    { mk_expr (Esample ("prob", mk_expr(Etuple (mk_expr (Econst (Cstring "")) :: [e])))) }
 | OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
     { mk_expr (Eobserve ("prob", e1, e2)) }
 | INFER LPAREN e = simple_expr COMMA m = IDENT RPAREN
@@ -141,3 +143,4 @@ prob_typ:
 | BETA { Tconstr ("beta", []) }
 | BERNOULLI { Tconstr ("bernoulli", []) }
 | DELTA { Tconstr ("delta", []) }
+| PROB { Tconstr ("prob", []) }

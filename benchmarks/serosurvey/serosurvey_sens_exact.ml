@@ -45,11 +45,15 @@ let serosurvey _ =
            else (sens, fpr) in
          let p =
            Muflib.prob_op sample prob ("p", (gaussian ((const 0.), 1.))) in
-         let p' = sigmoid p in
          let true_pos =
-           add ((mult (p', sens)), (mult ((subtract ((const 1.), p')), fpr))) in
+           const
+             (eval
+                (Muflib.prob_op sample prob
+                   ("true_pos", (bernoulli (sigmoid p))))) in
          let () =
-           Muflib.prob_op observe prob ((bernoulli true_pos), survey_result) in
+           Muflib.prob_op observe prob
+             ((bernoulli (ite (true_pos, sens, (const (eval fpr))))),
+               survey_result) in
          let n_pos_control = 181 in
          let n_neg_control = 176 in
          let () =
@@ -62,7 +66,8 @@ let serosurvey _ =
            if first
            then
              Muflib.prob_op observe prob
-               ((binomial (n_neg_control, fpr)), control_fp_result)
+               ((binomial (n_neg_control, (const (eval fpr)))),
+                 control_fp_result)
            else () in
          let spec = subtract ((const 1.), fpr) in
          ((pair (p, (pair (sens, spec)))), (false, sens, fpr)))
@@ -90,7 +95,7 @@ let main _ =
       ((Muflib.init survey_result),
         (Muflib.init
            (Muflib.muf_node_of_cnode
-              (infer 5000 (Muflib.cnode_of_muf_proba_node serosurvey)))));
+              (infer 1 (Muflib.cnode_of_muf_proba_node serosurvey)))));
     Muflib.step =
       (fun ((survey_result, serosurvey), ()) ->
          let (survey_res, survey_result') = Muflib.step survey_result () in

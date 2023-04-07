@@ -45,16 +45,13 @@ val serosurvey = stream {
   step ((first, sens, fpr), (survey_result, control_tp_result, control_fp_result)) =
     let (sens, fpr) =
       if first then
-        (const(eval(sample (beta (1., 1.)))), const(eval(sample (beta(1., 1.)))))
+        (const(eval(sample ("sens", beta (1., 1.)))), const(eval(sample ("beta", beta(1., 1.)))))
       else
         (sens, fpr)
     in
-    let p = sample(gaussian(const (0.), 1.)) in
-    (* let p' = sigmoid(p) in *)
-    (* let true_pos = add(mult(p', sens), mult(subtract(const(1.), p'), fpr)) in *)
-    let true_pos = const(eval(sample(bernoulli(sigmoid(p))))) in
+    let p = const(eval(sample("p", gaussian(const (0.), 1.)))) in
+    let true_pos = const(eval(sample("true_pos", bernoulli(sigmoid(p))))) in
     let () = observe(bernoulli(ite(true_pos, sens, fpr)), survey_result) in
-    (* let () = observe(bernoulli(true_pos), survey_result) in *)
     let n_pos_control = 181 in
     let n_neg_control = 176 in
     let () = if first then observe(binomial(n_pos_control, sens), control_tp_result) else () in
@@ -74,13 +71,14 @@ val survey_result = stream {
         (false, n_pos, sub_int(n_neg, 1))
       else
         (* let () = print_string ("DONE") in *)
+        (* let () = pp_approx_status (true) in *)
         exit(0)
     in
     (res, (false, n_pos, n_neg))
 }
 
 val main = stream {
-  init = (init (survey_result), infer (1000, serosurvey));
+  init = (init (survey_result), infer (1, serosurvey));
   step ((survey_result, serosurvey), ()) =
     let (survey_res, survey_result') = unfold (survey_result, ()) in
     let control_tp_result = 154 in

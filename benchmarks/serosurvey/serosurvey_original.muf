@@ -45,11 +45,11 @@ val serosurvey = stream {
   step ((first, sens, fpr), (survey_result, control_tp_result, control_fp_result)) =
     let (sens, fpr) =
       if first then
-        (sample (beta (1., 1.)), sample (beta(1., 1.)))
+        (sample ("sens", beta (1., 1.)), sample ("fpr", beta(1., 1.)))
       else
         (sens, fpr)
     in
-    let p = sample(gaussian(const (0.), 1.)) in
+    let p = sample("p", gaussian(const (0.), 1.)) in
     let p' = sigmoid(p) in
     let true_pos = add(mult(p', sens), mult(subtract(const(1.), p'), fpr)) in
     (* let true_pos = sample(bernoulli(sigmoid(p))) in *)

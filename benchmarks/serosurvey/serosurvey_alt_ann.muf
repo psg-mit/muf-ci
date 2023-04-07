@@ -1,12 +1,30 @@
-val main = stream {
+(* val main = stream {
   init = ();
   step ((), ()) =
-    let xt = sample (beta (1., 1.)) in
+    let xt = sample ("xt", (beta (1., 1.))) in
     let () = observe (bernoulli (xt), true) in
     (xt, ())
+} *)
+
+
+val coin = stream {
+  init = (true, const (0.));
+  step ((first, xt), yobs) =
+    let xt = if first then sample ("xt", (beta (1., 1.))) else xt in
+    let () = observe (bernoulli (xt), yobs) in
+    (xt, (false, xt))
 }
 
-
+val main = stream {
+  init = infer (1, coin);
+  step (coin, ()) = 
+    let (d, s) = unfold (coin, true) in
+    let () = print_any_t (d) in
+    let () = print_newline (()) in
+    let () = pp_approx_status (false) in
+    let () = exit(1) in
+    ((), s)
+}
 
 (* val n_pos_control = 181
 val n_neg_control = 176
