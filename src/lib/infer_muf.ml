@@ -24,11 +24,15 @@ let infer n f =
 
 let ite (i, t, e) = Infer_semi_symbolic.ite i t e
 
-let lt (a, b) = a < b
+let lt_det (a, b) = a < b
+
+let eq_det (a, b) = a = b
 
 let add_int (x, y) = x + y
 
 let sub_int (x, y) = x - y
+
+let add_float (x, y) = x +. y
 
 let sub_float (x, y) = x -. y
 
@@ -36,13 +40,40 @@ let pow (x, y) = x ** y
 
 let exit code = exit(code)
 
-let exact (_) = 
-  Format.print_string "exact ";
-  Format.print_newline ()
+let concat(a, b) = a ^ b
 
-let approx (_) =
-  Format.print_string "approx ";
-  Format.print_newline ()
+let exact (x) = 
+  Format.print_string "exact ";
+  Format.print_newline ();
+  x
+
+let approx (x) =
+  Infer_semi_symbolic.const(Infer_semi_symbolic.eval x)
+  (* Format.print_string "approx ";
+  Format.print_newline (); 
+  x *)
+
+let read file = 
+  let data = ref [] in
+  let ic = open_in file in
+  let first = ref true in
+  try
+    while true; do
+      let line = input_line ic in
+      if !first then
+        first := false
+      else begin
+        let line_list = String.split_on_char ',' line in
+        let line_list = List.map int_of_string line_list in
+        data := line_list :: !data
+      end
+    done;
+    !data
+  with 
+  | End_of_file -> close_in ic; !data
+  | e ->
+    close_in_noerr ic;
+    raise e
 
 let random_order len =
   let sample_fn _ =
@@ -68,6 +99,12 @@ module List = struct
 
   let nil2 = []
 
+  let hd = List.hd
+
+  let tl = List.tl
+
+  let cons (x, l) = x :: l
+
   let filter (f, l) = List.filter f l
 
   let init (n, f) = List.init n f
@@ -75,6 +112,12 @@ module List = struct
   let append (a, b) = List.append a b
 
   let map (f, l) = List.map f l
+
+  let iter (f, l) = List.iter f l
+
+  let fold (f, a, b) = List.fold_left (fun a b -> f (a, b)) a b
+
+  let zip (a, b) = List.map2 (fun x y -> (x, y)) a b
 
   let iter2 (f, l1, l2) =
     let f a b = f (a, b) in
