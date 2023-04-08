@@ -90,8 +90,8 @@ simple_expr:
 (* Probabilitic expressions *)
 | FACTOR LPAREN e = expr RPAREN
     { mk_expr (Efactor ("prob", e)) }
-| SAMPLE LPAREN s = STRING COMMA el = separated_nonempty_list(COMMA, expr) RPAREN
-    { mk_expr (Esample ("prob", mk_expr(Etuple (mk_expr (Econst (Cstring s)) :: el)))) }
+| SAMPLE LPAREN s = simple_expr COMMA el = separated_nonempty_list(COMMA, expr) RPAREN
+    { mk_expr (Esample ("prob", mk_expr(Etuple (s :: el)))) }
 | SAMPLE LPAREN e = expr RPAREN
     { mk_expr (Esample ("prob", mk_expr(Etuple (mk_expr (Econst (Cstring "")) :: [e])))) }
 | OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
