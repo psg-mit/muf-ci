@@ -159,13 +159,24 @@ def plot(output, streaming, particles, verbose=False):
 
   types = ['accuracy', 'runtime']
   # subplot for each variable
-  fig, axes = plt.subplots(3, 2, figsize=(8, 10))
+
+  # get n variables
+  n_variables = 0
+  for filename, data in results.items():
+    for p, data_ in data.items():
+      n_variables = max(n_variables, len(data_))
+
+  n_variables -= 1 # runtime
+
+  # create subplots
+  base_y = 3
+  fig, axes = plt.subplots(n_variables, 2, figsize=(8, base_y * n_variables))
 
   colors = ['#00bfbf', '#ff4d32', '#ffbf00', '#00b300', '#0000b3', '#b300b3', '#bfbfbf', '#4d4d4d', '#ff8080', '#ffff00', '#80ff80', '#8080ff']
   markers = ['s', 'v', 'd', 'o', 'x', 'p', 'h', 'D', 'H', '8', 'P', 'X']
 
   # runtime
-  for j, (filename, data) in enumerate(results.items()):
+  for i, (filename, data) in enumerate(results.items()):
 
     p = []
     lower, median, upper = [], [], []
@@ -182,55 +193,63 @@ def plot(output, streaming, particles, verbose=False):
       upper.append(data_[measurement_label]['upper'])
 
     # Only one set of file labels
-    fmt = markers[j]
+    label = os.path.splitext(os.path.basename(filename))[0]
+    label = ' '.join(label.split('_')[1:])
+    fmt = markers[i]
 
-    axes[1][1].scatter(p, median, marker=markers[j], color=colors[j])
-    # axes[1][1].errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[j], capsize=5)
-    # axes[1][1].set_yscale('log')
-    # axes[1][1].set_ylim(1e-4, 1e3)
-    # axes[1][1].set_xlabel('log')
-    axes[0][1].set_visible(False)
-    axes[2][1].set_visible(False)
+    axes[0][1].scatter(p, median, marker=markers[i], color=colors[i], label=label)
+    # axes[0][1].errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[j], capsize=5)
+    # axes[0][1].set_yscale('log')
+    # axes[0][1].set_ylim(1e-4, 1e3)
+    # axes[0][1].set_xlabel('log')
+    # axes[0][1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
+    #       fancybox=True)
+  axes[0][1].set_xlabel('Particles')
+  axes[0][1].set_ylabel('Elapsed Time in seconds')
+
+  for i in range(1, n_variables):
+    axes[i][1].set_visible(False)
   
   # accuracy
-  for j, (filename, data) in enumerate(results.items()):
-    vars = ['p', 'sens', 'spec']
+  for i, (filename, data) in enumerate(results.items()):
+    p = []
+    all_mses = {}
+    for j, (p_, data_) in enumerate(data.items()):
+      if particles is not None and int(p_) not in particles:
+        continue
+      p.append(float(p_))
 
-    for k, v in enumerate(vars):
-      p = []
-      lower, median, upper = [], [], []
-      for p_, data_ in data.items():
-        if particles is not None and int(p_) not in particles:
+      for k, (v, mses) in enumerate(data_.items()):
+        if v == 'runtime':
           continue
-        p.append(float(p_))
+        if v not in all_mses:
+          all_mses[v] = {
+            'lower': [],
+            'median': [],
+            'upper': [],
+          }
+        all_mses[v]['lower'].append(mses['lower'])
+        all_mses[v]['median'].append(mses['median'])
+        all_mses[v]['upper'].append(mses['upper'])
 
-        measurement_label = '{}_mse'.format(v)
+    for k, (v, mses) in enumerate(list(all_mses.items())[::-1]):
+      fmt = markers[i]
 
-        lower.append(data_[measurement_label]['lower'])
-        median.append(data_[measurement_label]['median'])
-        upper.append(data_[measurement_label]['upper'])
-
-      # Only one set of file labels
-      if k == 0:
-        label = os.path.splitext(os.path.basename(filename))[0].split('_')[1]
-      else:
-        label = None
-      fmt = markers[j]
-
-      axes[k][0].scatter(p, median, marker=markers[j], color=colors[j], label=label)
-      # axes[k][0].errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[j], capsize=5, label=label)
-      # axes[k][0].set_yscale('log')
+      axes[k][0].plot(p, mses['median'], marker=markers[i], color=colors[i])
+      # axes[k][0].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[j], capsize=5)
+      axes[k][0].set_yscale('log')
       # axes[k][0].set_ylim(1e-4, 1e3)
-      # axes[k][0].set_xscale('log')
-      axes[k][0].set_title('{} Accuracy'.format(v))
+      # axes[k][0].set_xlabel('log')
+      variable_name = v.split('_')[0]
+      axes[k][0].set_title(variable_name + ' Accuracy')
+      axes[k][0].set_ylabel('MSE')
 
-    axes[2][0].set_xlabel('Particles')
-    axes[2][1].set_xlabel('Particles')
+  axes[n_variables-1][0].set_xlabel('Particles')
 
-  axes[1][0].set_ylabel('Mean Squared Error')
-  axes[1][1].set_ylabel('Elapsed Time in seconds')
 
-  fig.legend(ncols=3, frameon=False, loc='upper center')
+  fig.legend(loc='upper right', bbox_to_anchor=(0.95, 0.92), ncols=2)
+  # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+  #         fancybox=True, shadow=True, ncol=5)
   fig.tight_layout()
       
 
@@ -242,10 +261,9 @@ def plot(output, streaming, particles, verbose=False):
   fig.savefig(os.path.join(output, '{}.pdf'.format(name)))
 
   # print ratio of runtime
-  particles = 2000
   print('runtime: {}'.format(
-    results['serosurvey_default.muf']['2000']['runtime']['median'] / \
-    results['serosurvey_alt.muf']['2000']['runtime']['median']))
+    results['serosurvey_default.muf']['60']['runtime']['median'] / \
+    results['serosurvey_alt.muf']['60']['runtime']['median']))
 
 
 
