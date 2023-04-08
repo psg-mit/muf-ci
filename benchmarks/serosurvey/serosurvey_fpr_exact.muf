@@ -1,94 +1,200 @@
+val hh = fun () -> 728
+val n_survey = fun () -> 1000
+val n_pos_control = fun () -> 181
+val n_neg_control = fun () -> 176
+val control_tp_result = fun () -> 154
+val control_fp_result = fun () -> 0
 
-(* val n_pos_control = 181
-val n_neg_control = 176
-val n_survey = 152
-val true_p = 0.032
-val true_sens = 0.856
-val true_spec = 0.998
-val control_tp_result = 154
-val control_fp_result = 0 *)
+(* sex = 0 is female, 1 is male *)
+(* age_cat[20, 50) is encoded by all 0s; likewise for week2 *)
+val b_names = fun () -> 
+  List.cons ("intercept", 
+  (List.cons ("sex",
+  (List.cons ("age_cat[5,10)",
+  (List.cons ("age_cat[10,20)",
+  (List.cons ("age_cat[50,65)",
+  (List.cons ("age_cat[65,105)",
+  (List.cons ("week1",
+  (List.cons ("week3",
+  (List.cons ("week4",
+  (List.cons ("week5",
+  (List.nil))))))))))))))))))))
+  
+val true_b = fun () ->
+  List.cons (2.162511,
+  (List.cons (0.4638138,
+  (List.cons (0.050155,
+  (List.cons ( -0.0583128,
+  (List.cons (0.6693432,
+  (List.cons (0.1790346,
+  (List.cons (0.2492106,
+  (List.cons (-0.2200088,
+  (List.cons (-0.0593874,
+  (List.cons (0.3817401,
+  (List.nil))))))))))))))))))))
 
-(* n_pos = 4
-n_neg = 148 *)
-
-val sigmoid = fun x -> div(const (1.), add(const (1.), expp(subtract((const (0.)), x))))
+val true_sigma = fun () -> 0.9161439
+val true_sens = fun () -> 0.808969
+val true_spec = fun () -> 0.9941081
 
 val se = fun (x, y) -> pow(sub_float(x, y), 2.)
 
-val mse = fun ((true_p, true_sens, true_spec), distr) ->
-  let (p_d, s) = split (distr) in
-  let (sens_d, spec_d) = split (s) in
-  let p = mean_float (p_d) in
-  let sens = mean_float (sens_d) in
-  let spec = mean_float (spec_d) in
-  let p_mse = se(p, true_p) in
-  let sens_mse = se(sens, true_sens) in
-  let spec_mse = se(spec, true_spec) in
-  let () = print_string ("p: ") in
-  let () = print_float (p) in
-  let () = print_string (" sens: ") in
-  let () = print_float (sens) in
-  let () = print_string (" spec: ") in
-  let () = print_float (spec) in
-  let () = print_string (" p_mse: ") in
-  let () = print_float (p_mse) in
-  let () = print_string (" sens_mse: ") in
+val print_pair = fun (x, y) ->
+  let () = print_string (x) in
+  let () = print_string ("_mse:") in
+  let () = print_float (y) in
+  print_string (" ")
+
+val print_expr = fun x -> 
+  let () = print_float (eval (x)) in
+  print_string (" ")
+
+val print_item = fun x -> 
+  let () = print_float (x) in
+  print_string (" ")
+
+val print_dist = fun d -> 
+  let () = print_float (mean_float (d)) in
+  print_string (" ")
+
+val mse = fun ((true_b, true_sigma, true_sens, true_spec), distr) ->
+  let (b_d', r) = split (distr) in
+  let b_d = split_list(b_d') in
+  let (sigma_d, rr) = split (r) in
+  let (sens_d, spec_d) = split (rr) in
+
+  let b = List.map (mean_float, b_d) in
+  let b_mse = List.map (se, List.zip(b, true_b)) in
+  let total_b_mse = List.fold (add_float, 0., b_mse) in
+
+  let sigma_mse = se(mean_float(sigma_d), true_sigma) in  
+  let sens_mse = se(mean_float(sens_d), true_sens) in
+  let spec_mse = se(mean_float(spec_d), true_spec) in
+
+  let total_mse = add_float(add_float(total_b_mse, sigma_mse), 
+                            add_float(sens_mse, spec_mse)) in
+
+  (* let () = print_string ("b: ") in *)
+  (* let () = List.iter (print_dist, b_d) in *)
+  (* let () = print_string ("sigma: ") in *)
+  (* let () = print_dist (sigma_d) in *)
+  (* let () = print_string ("sens: ") in *)
+  (* let () = print_dist (sens_d) in *)
+  (* let () = print_string (" spec: ") in *)
+  (* let () = print_dist (spec_d) in *)
+
+  (* let () = print_string (" b_mse: ") in *)
+  let () = List.iter (print_pair, List.zip(b_names(()), b_mse)) in
+  let () = print_string ("sigma_mse:") in
+  let () = print_float (sigma_mse) in
+  let () = print_string (" sens_mse:") in
   let () = print_float (sens_mse) in
-  let () = print_string (" spec_mse: ") in
+  let () = print_string (" spec_mse:") in
   let () = print_float (spec_mse) in
 
-  (p_mse, sens_mse, spec_mse) 
+  let () = print_string (" total_mse:") in
+  let () = print_float (total_mse) in
+  ()
 
+val wrap_x = fun x -> const (float_of_int (x))
+
+val extract_data = fun entry ->
+  (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
+  let survey_res = if eq_det(List.hd(entry), 1) then true else false in
+  let h = List.hd(List.tl(entry)) in
+  let x' = List.cons(1, List.tl(List.tl(entry))) in
+  let x = List.map (wrap_x, x') in
+  (x, h, survey_res)
+
+val sigmoid = fun x -> div(const (1.), add(const (1.), expp(subtract((const (0.)), x))))
+  
+val init_b = fun name -> sample (name, gaussian(const(0.), const(1.)))
+val init_eta = fun i -> sample (concat("eta_", (string_of_int (i))), gaussian(const(0.), const(1.)))
+val dot = fun (acc, (x, b)) -> add(acc, mult(x, b))
 
 val serosurvey = stream {
-  init = (true, const(0.), const(0.));
-  step ((first, sens, fpr), (survey_result, control_tp_result, control_fp_result)) =
+  init = (true, List.nil, Array.empty, const(0.), const(0.), const(0.));
+  step ((first, b, eta, sigma, sens, fpr),
+        (x, h, survey_result, control_tp_result, control_fp_result)) =
     let (sens, fpr) =
       if first then
-        (const(eval(sample ("sens", beta (1., 1.)))), sample ("fpr", beta(1., 1.)))
+        (approx(sample ("sens", beta (1., 1.))), sample ("fpr", beta(1., 1.)))
       else
         (sens, fpr)
     in
-    let p = sample("p", gaussian(const (0.), 1.)) in
-    let true_pos = const(eval(sample("true_pos", bernoulli(sigmoid(p))))) in
+
+    let b = if first then List.map(init_b, b_names (())) else b in
+
+    let sigma = 
+      if first then
+        sample ("sigma_h", gaussian(const(0.), const(1.))) 
+      else 
+        sigma 
+    in
+
+    (* Half-gaussian *)
+    let sigma_h =
+      if lt(const(0.), sigma) then sigma else subtract(const(0.), sigma) in
+
+    let eta = if first then Array.init(hh(()), init_eta) else eta in
+    let eta_h = Array.get(eta, h) in
+
+    let p' = add(
+      List.fold (dot, const(0.), List.zip(x, b)),
+      mult(sigma_h, eta_h)
+    ) in
+    let p = sigmoid(p') in
+    
+    let true_pos = approx(sample("true_pos", bernoulli(p))) in
+
     let () = observe(bernoulli(ite(true_pos, sens, fpr)), survey_result) in
-    let n_pos_control = 181 in
-    let n_neg_control = 176 in
-    let () = if first then observe(binomial(n_pos_control, sens), control_tp_result) else () in
-    let () = if first then observe(binomial(n_neg_control, fpr), control_fp_result) else () in
+
+    let () = if first then observe(binomial(n_pos_control(()), sens), control_tp_result) else () in
+    let () = if first then observe(binomial(n_neg_control(()), fpr), control_fp_result) else () in
+
     let spec = subtract(const (1.), fpr) in
-    (pair (p, pair (sens, spec)), (false, sens, fpr))
+
+    (pair (lst (b), pair (sigma_h, pair (sens, spec))), (false, b, eta, sigma, sens, fpr))
 }
 
-val survey_result = stream {
-  init = (true, 0, 0);
-  step ((first, n_pos, n_neg), ()) =
-    let (n_pos, n_neg) = if first then (4, 148) else (n_pos, n_neg) in
-    let (res, n_pos, n_neg) = 
-      if lt(0, n_pos) then
-        (true, sub_int(n_pos, 1), n_neg)
-      else if lt(0, n_neg) then
-        (false, n_pos, sub_int(n_neg, 1))
-      else
-        (* let () = print_string ("DONE") in *)
-        (* let () = pp_approx_status (true) in *)
-        exit(0)
-    in
-    (res, (false, n_pos, n_neg))
+val data = stream {
+  (* (x, h, survey_result, control_tp_result, control_fp_result)) *)
+  init = (true, List.nil);
+  step ((first, data), ()) =
+    let data = if first then read ("data/processed_data.csv") else data in
+    let is_done = eq_det (List.length(data), 1) in
+    let (x, h, survey_res) = extract_data (List.hd(data)) in
+    let data' = List.tl(data) in
+    ((is_done, x, h, survey_res, control_tp_result(()), control_fp_result(())), (false, data'))
 }
 
 val main = stream {
-  init = (init (survey_result), infer (1, serosurvey));
-  step ((survey_result, serosurvey), ()) =
-    let (survey_res, survey_result') = unfold (survey_result, ()) in
-    let control_tp_result = 154 in
-    let control_fp_result = 0 in
-    let (d, serosurvey') = unfold (serosurvey, (survey_res, control_tp_result, control_fp_result)) in
+  init = (init (data), infer (1, serosurvey));
+  step ((data, serosurvey), ()) =
+    let (obs_data, data') = unfold (data, ()) in
+    let (is_done, x, h, survey_result, control_tp_result, control_fp_result) = obs_data in
+
+    (* let () = print_string ("x: ") in
+    let () = List.iter (print_expr, x) in
+    let () = print_string ("h: ") in
+    let () = print_int (h) in
+    let () = print_string (" survey_result: ") in
+    let () = if survey_result then print_string ("true") else print_string ("false") in
+    let () = print_string (" control_tp_result: ") in
+    let () = print_int (control_tp_result) in
+    let () = print_string (" control_fp_result: ") in
+    let () = print_int (control_fp_result) in
+    let () = print_newline (()) in *)
+
+    let (d, serosurvey') = unfold (serosurvey, (x, h, survey_result, control_tp_result, control_fp_result)) in
+
     (* let () = print_any_t (d) in *)
-    let true_p = 0.032 in
-    let true_sens = 0.856 in
-    let true_spec = 0.998 in
-    let _ = mse((true_p, true_sens, true_spec), d) in
-    let () = print_newline (()) in
-    ((), (survey_result', serosurvey'))
+    (* let () = pp_approx_status (true) in *)
+    let () = if is_done then 
+      mse((true_b(()), true_sigma(()), true_sens(()), true_spec(())), d) else () in
+    (* let () = print_newline (()) in *)
+    let () = if is_done then print_newline (()) else () in
+    let () = if is_done then exit(0) else () in
+    (* let () = exit(0) in *)
+    ((), (data', serosurvey'))
 }

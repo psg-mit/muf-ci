@@ -34,11 +34,15 @@ def run_muf(filename, output, p, n, streaming, verbose=False):
   else:
     line = lines[-1]
 
-  # parse line
+  # parse line into dict
+  program_output = {}
   # p: -0.653009934653 sens: 0.316569055538 spec: 0.754852958023 p_mse: 0.469238610573 sens_mse: 0.290985743843 spec_mse: 0.0591204840223
-  p_mean, sens_mean, spec_mean, p_mse, sens_mse, spec_mse = [float(x) for x in line.split(' ')[1::2]]
-
-  return p_mse, sens_mse, spec_mse, (t2 - t1)
+  line = line.strip()
+  for part in line.split(' '):
+    k, v = part.split(':')
+    program_output[k] = float(v)
+  
+  return program_output, (t2 - t1)
 
 def close_to_target(target_accuracy, accuracy):
   return log(accuracy) - log(target_accuracy) < 0.5
@@ -69,34 +73,44 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
     if subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL) != 0:
       raise Exception('Failed to compile muf file')
 
-    mses = []
+    mses = {}
     runtimes = []
     for i in range(n):
       if verbose:
         print('{} particles - Run {}'.format(p, i))
 
-      p_mse, sens_mse, spec_mse, t = run_muf(filename, output, p, n, streaming, verbose)
-      mses.append((p_mse, sens_mse, spec_mse))
+      program_output, t = run_muf(filename, output, p, n, streaming, verbose)
+      for k, v in program_output.items():
+        if k.endswith('_mse'):
+          if k not in mses:
+            mses[k] = []
+          mses[k].append(v)
+      
       runtimes.append(t)
 
     # quantiles of mse for runs
-    p_mse_sorted = sorted([x[0] for x in mses])
-    sens_mse_sorted = sorted([x[1] for x in mses])
-    spec_mse_sorted = sorted([x[2] for x in mses])
+    mses_sorted = {k: sorted(v) for k, v in mses.items()}
+    # p_mse_sorted = sorted([x[0] for x in mses])
+    # sens_mse_sorted = sorted([x[1] for x in mses])
+    # spec_mse_sorted = sorted([x[2] for x in mses])
     runtimes = sorted(runtimes)
 
     # percentiles: 10, 50, 90
-    p_mse_lower = p_mse_sorted[int(0.10 * len(p_mse_sorted))]
-    p_mse_median = p_mse_sorted[int(0.50 * len(p_mse_sorted))]
-    p_mse_upper = p_mse_sorted[int(0.90 * len(p_mse_sorted))]
+    mses_lower = {k: v[int(0.10 * len(v))] for k, v in mses_sorted.items()}
+    mses_median = {k: v[int(0.50 * len(v))] for k, v in mses_sorted.items()}
+    mses_upper = {k: v[int(0.90 * len(v))] for k, v in mses_sorted.items()}
 
-    sens_mse_lower = sens_mse_sorted[int(0.10 * len(sens_mse_sorted))]
-    sens_mse_median = sens_mse_sorted[int(0.50 * len(sens_mse_sorted))]
-    sens_mse_upper = sens_mse_sorted[int(0.90 * len(sens_mse_sorted))]
+    # p_mse_lower = p_mse_sorted[int(0.10 * len(p_mse_sorted))]
+    # p_mse_median = p_mse_sorted[int(0.50 * len(p_mse_sorted))]
+    # p_mse_upper = p_mse_sorted[int(0.90 * len(p_mse_sorted))]
 
-    spec_mse_lower = spec_mse_sorted[int(0.10 * len(spec_mse_sorted))]
-    spec_mse_median = spec_mse_sorted[int(0.50 * len(spec_mse_sorted))]
-    spec_mse_upper = spec_mse_sorted[int(0.90 * len(spec_mse_sorted))]
+    # sens_mse_lower = sens_mse_sorted[int(0.10 * len(sens_mse_sorted))]
+    # sens_mse_median = sens_mse_sorted[int(0.50 * len(sens_mse_sorted))]
+    # sens_mse_upper = sens_mse_sorted[int(0.90 * len(sens_mse_sorted))]
+
+    # spec_mse_lower = spec_mse_sorted[int(0.10 * len(spec_mse_sorted))]
+    # spec_mse_median = spec_mse_sorted[int(0.50 * len(spec_mse_sorted))]
+    # spec_mse_upper = spec_mse_sorted[int(0.90 * len(spec_mse_sorted))]
     
     runtime_lower = runtimes[int(0.10 * len(runtimes))]
     runtime_median = runtimes[int(0.50 * len(runtimes))]
@@ -104,56 +118,32 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
 
     if verbose:
       with open(os.path.join(output, 'muf.log'), 'a') as f:
-        f.write('p_mse: ' + ' '.join(map(str, p_mse_sorted)) + '\n')
-        f.write('sens_mse: ' + ' '.join(map(str, sens_mse_sorted)) + '\n')
-        f.write('spec_mse: ' + ' '.join(map(str, spec_mse_sorted)) + '\n')
+        # for k, v in mses_lower.items():
+        #   f.write('{}: {} '.format(k, v))
+        # f.write('p_mse: ' + ' '.join(map(str, p_mse_sorted)) + '\n')
+        # f.write('sens_mse: ' + ' '.join(map(str, sens_mse_sorted)) + '\n')
+        # f.write('spec_mse: ' + ' '.join(map(str, spec_mse_sorted)) + '\n')
         f.write('runtimes: ' + ' '.join(map(str, runtimes)) + '\n')
 
     # save results
     if filename not in results:
       results[filename] = {}
+    if p not in results[filename]:
+      results[filename][p] = {}
 
-    results[filename][p] = {
-      'p_mse': {
-        'lower': p_mse_lower,
-        'median': p_mse_median,
-        'upper': p_mse_upper
-      },
-      'sens_mse': {
-        'lower': sens_mse_lower,
-        'median': sens_mse_median,
-        'upper': sens_mse_upper
-      },
-      'spec_mse': {
-        'lower': spec_mse_lower,
-        'median': spec_mse_median,
-        'upper': spec_mse_upper
-      },
-      'runtime': {
-        'lower': runtime_lower,
-        'median': runtime_median,
-        'upper': runtime_upper
-      }
-    }
+    variables = mses.keys()
+    for v in variables:
+      if v not in results[filename][p]:
+        results[filename][p][v] = {}
+      results[filename][p][v]['lower'] = mses_lower[v]
+      results[filename][p][v]['median'] = mses_median[v]
+      results[filename][p][v]['upper'] = mses_upper[v]
 
-    # if not found_p:
-    #   if close_to_target(accuracy, p_mse_upper):
-    #     found_p = True
-    #     if verbose:
-    #       print('Found p meeting target accuracy: {}'.format(p))
-    #     results['p_target'] = p
-    # if not found_sens:
-    #   if close_to_target(accuracy, sens_mse_upper):
-    #     found_sens = True
-    #     if verbose:
-    #       print('Found sens meeting target accuracy: {}'.format(p))
-    #     results['sens_target'] = p
-    # if not found_spec:
-    #   if close_to_target(accuracy, spec_mse_upper):
-    #     found_spec = True
-    #     if verbose:
-    #       print('Found spec meeting target accuracy: {}'.format(p))
-    #     results['spec_target'] = p
+    if 'runtime' not in results[filename][p]:
+      results[filename][p]['runtime'] = {}
+    results[filename][p]['runtime']['lower'] = runtime_lower
+    results[filename][p]['runtime']['median'] = runtime_median
+    results[filename][p]['runtime']['upper'] = runtime_upper
 
   return results
 
