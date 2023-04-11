@@ -78,7 +78,7 @@ val data = stream {
 }
 
 val main = stream {
-  init = (init(data), infer(70, sms_behavior));
+  init = (init(data), infer(100, sms_behavior));
   step ((data, sms_behavior), ()) = 
     let (obs_data, data') = unfold (data, ()) in
     let (is_done, i, count) = obs_data in
