@@ -5,7 +5,7 @@
   is_outlier - approx
 *)
 
-val debug = fun () -> true
+val debug = fun () -> false
 val true_outlier_prob = fun () -> 0.0922259583958
 
 val se = fun (x, y) -> pow(sub_float(x, y), 2.)
