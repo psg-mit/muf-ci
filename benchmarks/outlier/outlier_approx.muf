@@ -69,7 +69,7 @@ val data = stream {
 }
 
 val main = stream {
-  init = (init(data), init(mse), infer(1, outlier));
+  init = (init(data), init(mse), infer(100, outlier));
   step ((data, mse, outlier), ()) = 
     let (obs_data, data') = unfold (data, ()) in
     let (is_done, true_x, obs) = obs_data in
