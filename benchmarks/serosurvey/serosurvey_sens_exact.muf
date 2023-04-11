@@ -1,3 +1,13 @@
+(* 
+  inference strategy
+  betas - approx
+  sigma - approx
+  sens - exact
+  fpr/spec - approx
+  true_pos - approx
+  eta - approx
+*)
+
 val hh = fun () -> 728
 val n_survey = fun () -> 1000
 val n_pos_control = fun () -> 181
