@@ -57,6 +57,8 @@ val print_dist = fun d ->
   let () = print_float (mean_float (d)) in
   print_string (" ")
 
+val mean = fun (acc, x) -> div_float(add_float(acc, x), 2.)
+
 val mse = fun ((true_b, true_sigma, true_sens, true_spec), distr) ->
   let (b_d', r) = split (distr) in
   let b_d = split_list(b_d') in
@@ -65,14 +67,14 @@ val mse = fun ((true_b, true_sigma, true_sens, true_spec), distr) ->
 
   let b = List.map (mean_float, b_d) in
   let b_mse = List.map (se, List.zip(b, true_b)) in
-  let total_b_mse = List.fold (add_float, 0., b_mse) in
+  let total_b_mse = List.fold (mean, 0., b_mse) in
 
   let sigma_mse = se(mean_float(sigma_d), true_sigma) in  
   let sens_mse = se(mean_float(sens_d), true_sens) in
   let spec_mse = se(mean_float(spec_d), true_spec) in
 
-  let total_mse = add_float(add_float(total_b_mse, sigma_mse), 
-                            add_float(sens_mse, spec_mse)) in
+  let total_mse = div_float(add_float(add_float(total_b_mse, sigma_mse), 
+                            add_float(sens_mse, spec_mse)), 4.) in
 
   (* let () = print_string ("b: ") in *)
   (* let () = List.iter (print_dist, b_d) in *)
