@@ -47,12 +47,12 @@ val done_ = fun (total_mse, xt_mse, outlier_prob_mse) ->
 val outlier = stream {
   init = (true, const (0.), const (0.));
   step ((first, xt, outlier_prob), yobs) =
-    let xt = sample ("xt", gaussian (if first then (const (0.), const(100.)) else (xt, const(1.)))) in
+    let xt = sample ("xt", gaussian (if first then (const (0.), const(2500.)) else (xt, const(1.)))) in
     let outlier_prob = if first then sample ("outlier_prob", beta (100., 1000.)) else outlier_prob in
     let is_outlier = sample ("is_outlier", bernoulli (outlier_prob)) in
     let () = observe (gaussian (
         ite(is_outlier, const (0.), xt), 
-        ite(is_outlier, const(100.), const(1.))
+        ite(is_outlier, const(10000.), const(1.))
       ), yobs) in
     (pair(xt, outlier_prob), (false, xt, outlier_prob))
 }
@@ -69,7 +69,7 @@ val data = stream {
 }
 
 val main = stream {
-  init = (init(data), init(mse), infer(100, outlier));
+  init = (init(data), init(mse), infer(10, outlier));
   step ((data, mse, outlier), ()) = 
     let (obs_data, data') = unfold (data, ()) in
     let (is_done, true_x, obs) = obs_data in
