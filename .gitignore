@@ -9,3 +9,6 @@ tests/*.ml
 venv/
 .DS_Store
 muf.log
+benchmarks/*/*.ml
+benchmarks/*/output/*.png
+benchmarks/*/output/*.pdf
