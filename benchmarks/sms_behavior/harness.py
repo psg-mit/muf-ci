@@ -193,7 +193,7 @@ def plot(output, streaming, files, particles, verbose=False):
     fmt = markers[i]
 
     ax.scatter(p, median, marker=markers[i], color=colors[i], label=label)
-    ax.set_xticks(p)
+    # ax.set_xticks(p)
 
     # ax.errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[i], capsize=5, label=label)
     # ax.set_yscale('log')
@@ -204,7 +204,7 @@ def plot(output, streaming, files, particles, verbose=False):
   ax.set_ylabel('Elapsed Time in seconds')
 
   fig.suptitle('Elapsed Time')
-  ax.legend(ncols=3, loc='upper center', bbox_to_anchor=(0.5, -0.2))
+  ax.legend(ncols=2, loc='upper center', bbox_to_anchor=(0.5, -0.2))
   fig.tight_layout()
 
   name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
@@ -264,11 +264,11 @@ def plot(output, streaming, files, particles, verbose=False):
       axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], capsize=5, label=label)
       axes5[plot_j][plot_i].plot(p, mses['range'], marker=markers[i], color=colors[i], label=label)
 
-      axes1[plot_j][plot_i].set_xticks(p)
-      axes2[plot_j][plot_i].set_xticks(p)
-      axes3[plot_j][plot_i].set_xticks(p)
-      axes4[plot_j][plot_i].set_xticks(p)
-      axes5[plot_j][plot_i].set_xticks(p)
+      # axes1[plot_j][plot_i].set_xticks(p)
+      # axes2[plot_j][plot_i].set_xticks(p)
+      # axes3[plot_j][plot_i].set_xticks(p)
+      # axes4[plot_j][plot_i].set_xticks(p)
+      # axes5[plot_j][plot_i].set_xticks(p)
 
       # axes1[plot_j][plot_i].set_yscale('log')
       # axes1[k][0].set_ylim(1e-4, 1e3)
