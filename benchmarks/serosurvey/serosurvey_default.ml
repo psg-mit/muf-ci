@@ -84,11 +84,11 @@ let mse ((true_b, true_sigma, true_sens, true_spec), distr) =
   let () = print_string " spec_mse:" in
   let () = print_float spec_mse in
   let () = print_string " total_mse:" in let () = print_float total_mse in ()
-let wrap_x x = const (float_of_int x)
+let wrap_x x = const x
 let extract_data entry =
-  let survey_res = if eq_det ((List.hd entry), 1) then true else false in
+  let survey_res = if eq_det ((List.hd entry), 1.) then true else false in
   let h = List.hd (List.tl entry) in
-  let x' = List.cons (1, (List.tl (List.tl entry))) in
+  let x' = List.cons (1., (List.tl (List.tl entry))) in
   let x = List.map (wrap_x, x') in (x, h, survey_res)
 let sigmoid x =
   div ((const 1.), (add ((const 1.), (expp (subtract ((const 0.), x))))))
@@ -123,11 +123,11 @@ let serosurvey _ =
                ("sigma_h", (gaussian ((const 0.), (const 1.))))
            else sigma in
          let sigma_h =
-           if lt ((const 0.), sigma)
-           then sigma
-           else subtract ((const 0.), sigma) in
+           ite
+             ((lt ((const 0.), sigma)), sigma,
+               (subtract ((const 0.), sigma))) in
          let eta = if first then Array.init ((hh ()), init_eta) else eta in
-         let eta_h = Array.get (eta, h) in
+         let eta_h = Array.get (eta, (int_of_float h)) in
          let p' =
            add
              ((List.fold (dot, (const 0.), (List.zip (x, b)))),
@@ -151,7 +151,8 @@ let serosurvey _ =
                ((binomial ((n_neg_control ()), fpr)), control_fp_result)
            else () in
          let spec = subtract ((const 1.), fpr) in
-         ((pair ((lst b), (pair (sigma_h, (pair (sens, spec)))))),
+         ((pair
+             ((lst b), (pair ((const (eval sigma_h)), (pair (sens, spec)))))),
            (false, b, eta, sigma, sens, fpr)))
   }
 type data = unit

@@ -7,6 +7,7 @@ from math import log
 import re
 import matplotlib.pyplot as plt
 
+BENCHMARK = 'serosurvey'
 
 def run_muf(filename, output, p, n, streaming, verbose=False):
   # run muf file
@@ -52,7 +53,6 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
   if len(particles) == 0:
     particles = [x for x in range(1, 5001)]
   
-  found_p, found_sens, found_spec = False, False, False
 
   for p in particles:
     if verbose:
@@ -62,8 +62,8 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
     # This is a hack. Edit the file to change the number of particles
     with open(filename, 'r') as f:
       content = f.read()
-    pattern = re.compile(r'infer \((\d+), serosurvey\)')
-    content = pattern.sub('infer ({}, serosurvey)'.format(p), content)
+    pattern = re.compile(r'infer\(\d+, \w+\)')
+    content = pattern.sub('infer({}, {})'.format(p, BENCHMARK), content)
     with open(filename, 'w') as f:
       f.write(content)
 
@@ -90,9 +90,6 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
 
     # quantiles of mse for runs
     mses_sorted = {k: sorted(v) for k, v in mses.items()}
-    # p_mse_sorted = sorted([x[0] for x in mses])
-    # sens_mse_sorted = sorted([x[1] for x in mses])
-    # spec_mse_sorted = sorted([x[2] for x in mses])
     runtimes = sorted(runtimes)
 
     # percentiles: 10, 50, 90
@@ -100,18 +97,6 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
     mses_median = {k: v[int(0.50 * len(v))] for k, v in mses_sorted.items()}
     mses_upper = {k: v[int(0.90 * len(v))] for k, v in mses_sorted.items()}
 
-    # p_mse_lower = p_mse_sorted[int(0.10 * len(p_mse_sorted))]
-    # p_mse_median = p_mse_sorted[int(0.50 * len(p_mse_sorted))]
-    # p_mse_upper = p_mse_sorted[int(0.90 * len(p_mse_sorted))]
-
-    # sens_mse_lower = sens_mse_sorted[int(0.10 * len(sens_mse_sorted))]
-    # sens_mse_median = sens_mse_sorted[int(0.50 * len(sens_mse_sorted))]
-    # sens_mse_upper = sens_mse_sorted[int(0.90 * len(sens_mse_sorted))]
-
-    # spec_mse_lower = spec_mse_sorted[int(0.10 * len(spec_mse_sorted))]
-    # spec_mse_median = spec_mse_sorted[int(0.50 * len(spec_mse_sorted))]
-    # spec_mse_upper = spec_mse_sorted[int(0.90 * len(spec_mse_sorted))]
-    
     runtime_lower = runtimes[int(0.10 * len(runtimes))]
     runtime_median = runtimes[int(0.50 * len(runtimes))]
     runtime_upper = runtimes[int(0.90 * len(runtimes))]
@@ -147,7 +132,7 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
 
   return results
 
-def plot(output, streaming, particles, verbose=False):
+def plot(output, streaming, files, particles, verbose=False):
   if streaming:
     raise NotImplementedError('Plotting not implemented for streaming')
 
@@ -167,16 +152,17 @@ def plot(output, streaming, particles, verbose=False):
       n_variables = max(n_variables, len(data_))
 
   n_variables -= 1 # runtime
-
-  # create subplots
-  base_y = 3
-  fig, axes = plt.subplots(n_variables, 2, figsize=(8, base_y * n_variables))
+  n_files = len(results)
 
   colors = ['#00bfbf', '#ff4d32', '#ffbf00', '#00b300', '#0000b3', '#b300b3', '#bfbfbf', '#4d4d4d', '#ff8080', '#ffff00', '#80ff80', '#8080ff']
   markers = ['s', 'v', 'd', 'o', 'x', 'p', 'h', 'D', 'H', '8', 'P', 'X']
 
   # runtime
+  all_labels = []
+  fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4))
   for i, (filename, data) in enumerate(results.items()):
+    if files is not None and filename not in files:
+      continue
 
     p = []
     lower, median, upper = [], [], []
@@ -195,26 +181,49 @@ def plot(output, streaming, particles, verbose=False):
     # Only one set of file labels
     label = os.path.splitext(os.path.basename(filename))[0]
     label = ' '.join(label.split('_')[1:])
+    all_labels.append(label)
     fmt = markers[i]
 
-    axes[0][1].scatter(p, median, marker=markers[i], color=colors[i], label=label)
-    # axes[0][1].errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[j], capsize=5)
-    # axes[0][1].set_yscale('log')
-    # axes[0][1].set_ylim(1e-4, 1e3)
-    # axes[0][1].set_xlabel('log')
-    # axes[0][1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
-    #       fancybox=True)
-  axes[0][1].set_xlabel('Particles')
-  axes[0][1].set_ylabel('Elapsed Time in seconds')
+    ax.scatter(p, median, marker=markers[i], color=colors[i], label=label)
+    ax.set_xticks(p)
 
-  for i in range(1, n_variables):
-    axes[i][1].set_visible(False)
-  
+    # ax.errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[i], capsize=5, label=label)
+    # ax.set_yscale('log')
+    # ax.set_ylim(1e-4, 1e3)
+    # ax.set_xlabel('log')
+    # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True)
+  ax.set_xlabel('Particles')
+  ax.set_ylabel('Elapsed Time in seconds')
+
+  fig.suptitle('Elapsed Time')
+  ax.legend(ncols=3, loc='upper center', bbox_to_anchor=(0.5, -0.2))
+  fig.tight_layout()
+
+  name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
+  fig.savefig(os.path.join(output, '{}_runtime.pdf'.format(name)), bbox_inches='tight')
+  fig.savefig(os.path.join(output, '{}_runtime.png'.format(name)), bbox_inches='tight')
+  plt.close(fig)  
+
+
   # accuracy
+
+  base_y = 2
+  base_x = 4
+  n_y = 5
+  n_x = 3
+
+  fig1, axes1 = plt.subplots(n_y, n_x, figsize=(base_y * n_y, base_x * n_x))
+  fig2, axes2 = plt.subplots(n_y, n_x, figsize=(base_y * n_y, base_x * n_x))
+  fig3, axes3 = plt.subplots(n_y, n_x, figsize=(base_y * n_y, base_x * n_x))
+  fig4, axes4 = plt.subplots(n_y, n_x, figsize=(base_y * n_y, base_x * n_x))
+  fig5, axes5 = plt.subplots(n_y, n_x, figsize=(base_y * n_y, base_x * n_x))
+
   for i, (filename, data) in enumerate(results.items()):
+    if files is not None and filename not in files:
+      continue
     p = []
     all_mses = {}
-    for j, (p_, data_) in enumerate(data.items()):
+    for j, (p_, data_) in enumerate(sorted(data.items(), key=lambda x: int(x[0]))):
       if particles is not None and int(p_) not in particles:
         continue
       p.append(float(p_))
@@ -227,38 +236,114 @@ def plot(output, streaming, particles, verbose=False):
             'lower': [],
             'median': [],
             'upper': [],
+            'range': [],
           }
         all_mses[v]['lower'].append(mses['lower'])
         all_mses[v]['median'].append(mses['median'])
         all_mses[v]['upper'].append(mses['upper'])
+        all_mses[v]['range'].append(mses['upper'] - mses['lower'])
 
-    for k, (v, mses) in enumerate(list(all_mses.items())[::-1]):
+    for k, (v, mses) in enumerate(list(all_mses.items())):
+      plot_i = k % n_x
+      plot_j = k // n_x
       fmt = markers[i]
 
-      axes[k][0].plot(p, mses['median'], marker=markers[i], color=colors[i])
-      # axes[k][0].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[j], capsize=5)
-      axes[k][0].set_yscale('log')
-      # axes[k][0].set_ylim(1e-4, 1e3)
-      # axes[k][0].set_xlabel('log')
-      variable_name = v.split('_')[0]
-      axes[k][0].set_title(variable_name + ' Accuracy')
-      axes[k][0].set_ylabel('MSE')
+      if k == 0:
+        # Only one set of file labels
+        label = os.path.splitext(os.path.basename(filename))[0]
+        label = ' '.join(label.split('_')[1:])
+      else:
+        label = None
 
-  axes[n_variables-1][0].set_xlabel('Particles')
+      axes1[plot_j][plot_i].plot(p, mses['median'], marker=markers[i], color=colors[i], label=label)
+      axes2[plot_j][plot_i].plot(p, mses['lower'], marker=markers[i], color=colors[i], label=label)
+      axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label)
+      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], capsize=5, label=label)
+      axes5[plot_j][plot_i].plot(p, mses['range'], marker=markers[i], color=colors[i], label=label)
 
+      axes1[plot_j][plot_i].set_xticks(p)
+      axes2[plot_j][plot_i].set_xticks(p)
+      axes3[plot_j][plot_i].set_xticks(p)
+      axes4[plot_j][plot_i].set_xticks(p)
+      axes5[plot_j][plot_i].set_xticks(p)
 
-  fig.legend(loc='upper right', bbox_to_anchor=(0.95, 0.92), ncols=2)
-  # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-  #         fancybox=True, shadow=True, ncol=5)
-  fig.tight_layout()
-      
+      # axes1[plot_j][plot_i].set_yscale('log')
+      # axes1[k][0].set_ylim(1e-4, 1e3)
+      # axes1[k][0].set_xlabel('log')
+      variable_name = '_'.join(v.split('_')[:-1])
+      axes1[plot_j][plot_i].set_title(variable_name)
+      axes2[plot_j][plot_i].set_title(variable_name)
+      axes3[plot_j][plot_i].set_title(variable_name)
+      axes4[plot_j][plot_i].set_title(variable_name)
+      axes5[plot_j][plot_i].set_title(variable_name)
+      # axes1[plot_j][plot_i].set_ylabel('MSE')
 
+  for j in range(n_y):
+    axes1[j][0].set_ylabel('MSE')
+    axes2[j][0].set_ylabel('MSE')
+    axes3[j][0].set_ylabel('MSE')
+    axes4[j][0].set_ylabel('MSE')
+    axes5[j][0].set_ylabel('MSE')
+
+  for i in range(n_x):
+    axes1[n_y - 1][i].set_xlabel('Particles')
+    axes2[n_y - 1][i].set_xlabel('Particles')
+    axes3[n_y - 1][i].set_xlabel('Particles')
+    axes4[n_y - 1][i].set_xlabel('Particles')
+    axes5[n_y - 1][i].set_xlabel('Particles')
+
+  axes1[n_y - 1, n_x - 1].axis('off')
+  axes2[n_y - 1, n_x - 1].axis('off')
+  axes3[n_y - 1, n_x - 1].axis('off')
+  axes4[n_y - 1, n_x - 1].axis('off')
+  axes5[n_y - 1, n_x - 1].axis('off')
+
+  fig1.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+  fig2.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+  fig3.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+  fig4.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+  fig5.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+  
   if verbose:
     print('Saving plots')
 
+  fig1.suptitle('Accuracy - Median')
+  fig2.suptitle('Accuracy - 10 Percentile')
+  fig3.suptitle('Accuracy - 90 Percentile')
+  fig4.suptitle('Accuracy')
+  fig5.suptitle('Accuracy - Range')
+  fig1.tight_layout()
+  fig2.tight_layout()
+  fig3.tight_layout()
+  fig4.tight_layout()
+  fig5.tight_layout()
   name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
-  fig.savefig(os.path.join(output, '{}.png'.format(name)))
-  fig.savefig(os.path.join(output, '{}.pdf'.format(name)))
+  fig1.savefig(os.path.join(output, '{}_accuracy_median.png'.format(name)), bbox_inches='tight')
+  fig2.savefig(os.path.join(output, '{}_accuracy_lower.png'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(output, '{}_accuracy_upper.png'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(output, '{}_accuracy.png'.format(name)), bbox_inches='tight')
+  fig5.savefig(os.path.join(output, '{}_accuracy_range.png'.format(name)), bbox_inches='tight')
+
+  fig1.savefig(os.path.join(output, '{}_accuracy_median.pdf'.format(name)), bbox_inches='tight')
+  fig2.savefig(os.path.join(output, '{}_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(output, '{}_accuracy_upper.pdf'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(output, '{}_accuracy.pdf'.format(name)), bbox_inches='tight')
+  fig5.savefig(os.path.join(output, '{}_accuracy_range.pdf'.format(name)), bbox_inches='tight')
+
+  plt.close(fig1)
+  plt.close(fig2)
+  plt.close(fig3)
+  plt.close(fig4)
+  plt.close(fig5)
+
+  # save legend as separate figure
+  # figlegend = plt.figure(figsize=(8, 1))
+  # ax = figlegend.add_subplot(111)
+  # ax.axis('off')
+  # ax.legend(*ax.get_legend_handles_labels(), loc='center', ncol=5)
+  # figlegend.savefig(os.path.join(output, 'legend.png'), bbox_inches='tight')
+  # figlegend.savefig(os.path.join(output, 'legend.pdf'), bbox_inches='tight')
+
 
   # print ratio of runtime
   print('runtime: {}'.format(
@@ -283,13 +368,14 @@ if __name__ == '__main__':
   rp.add_argument('--n', '-n', type=int, required=False, default=1000)
   
   pp = sp.add_parser('plot')
+  pp.add_argument('--files', '-f', type=str, required=False, nargs="+")
   pp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
 
   args = p.parse_args()
 
   # If plotting, just plot and exit. Assumes output is in args.output
   if args.subparser_name == 'plot':
-    plot(args.output, args.streaming, args.particles, args.verbose)
+    plot(args.output, args.streaming, args.files, args.particles, args.verbose)
     exit()
 
   elif args.subparser_name == 'run':

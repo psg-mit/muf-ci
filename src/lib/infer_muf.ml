@@ -36,6 +36,8 @@ let add_float (x, y) = x +. y
 
 let sub_float (x, y) = x -. y
 
+let div_float (x, y) = x /. y
+
 let pow (x, y) = x ** y
 
 let exit code = exit(code)
@@ -64,7 +66,7 @@ let read file =
         first := false
       else begin
         let line_list = String.split_on_char ',' line in
-        let line_list = List.map int_of_string line_list in
+        let line_list = List.map float_of_string line_list in
         data := line_list :: !data
       end
     done;

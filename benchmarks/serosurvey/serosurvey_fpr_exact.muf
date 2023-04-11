@@ -85,24 +85,23 @@ val mse = fun ((true_b, true_sigma, true_sens, true_spec), distr) ->
 
   (* let () = print_string (" b_mse: ") in *)
   let () = List.iter (print_pair, List.zip(b_names(()), b_mse)) in
-  let () = print_string ("sigma_mse:") in
+  let () = print_string ("total_mse:") in
+  let () = print_float (total_mse) in
+  let () = print_string (" sigma_mse:") in
   let () = print_float (sigma_mse) in
   let () = print_string (" sens_mse:") in
   let () = print_float (sens_mse) in
   let () = print_string (" spec_mse:") in
   let () = print_float (spec_mse) in
-
-  let () = print_string (" total_mse:") in
-  let () = print_float (total_mse) in
   ()
 
-val wrap_x = fun x -> const (float_of_int (x))
+val wrap_x = fun x -> const (x)
 
 val extract_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
-  let survey_res = if eq_det(List.hd(entry), 1) then true else false in
+  let survey_res = if eq_det(List.hd(entry), 1.) then true else false in
   let h = List.hd(List.tl(entry)) in
-  let x' = List.cons(1, List.tl(List.tl(entry))) in
+  let x' = List.cons(1., List.tl(List.tl(entry))) in
   let x = List.map (wrap_x, x') in
   (x, h, survey_res)
 
@@ -133,11 +132,10 @@ val serosurvey = stream {
     in
 
     (* Half-gaussian *)
-    let sigma_h =
-      if lt(const(0.), sigma) then sigma else subtract(const(0.), sigma) in
+    let sigma_h = ite(lt(const(0.), sigma), sigma, subtract(const(0.), sigma)) in
 
     let eta = if first then Array.init(hh(()), init_eta) else eta in
-    let eta_h = Array.get(eta, h) in
+    let eta_h = Array.get(eta, int_of_float(h)) in
 
     let p' = add(
       List.fold (dot, const(0.), List.zip(x, b)),
@@ -154,7 +152,7 @@ val serosurvey = stream {
 
     let spec = subtract(const (1.), fpr) in
 
-    (pair (lst (b), pair (sigma_h, pair (sens, spec))), (false, b, eta, sigma, sens, fpr))
+    (pair (lst (b), pair (const(eval(sigma_h)), pair (sens, spec))), (false, b, eta, sigma, sens, fpr))
 }
 
 val data = stream {
