@@ -50,10 +50,11 @@ val true_spec = fun () -> 0.9941081
 val se = fun (x, y) -> pow(sub_float(x, y), 2.)
 
 val print_pair = fun (x, y) ->
+  let () = print_string (" ") in
   let () = print_string (x) in
   let () = print_string ("_mse:") in
   let () = print_float (y) in
-  print_string (" ")
+  () 
 
 val print_expr = fun x -> 
   let () = print_float (eval (x)) in
@@ -96,9 +97,9 @@ val mse = fun ((true_b, true_sigma, true_sens, true_spec), distr) ->
   (* let () = print_dist (spec_d) in *)
 
   (* let () = print_string (" b_mse: ") in *)
-  let () = List.iter (print_pair, List.zip(b_names(()), b_mse)) in
-  let () = print_string ("total_mse:") in
+	let () = print_string ("total_mse:") in
   let () = print_float (total_mse) in
+  let () = List.iter (print_pair, List.zip(b_names(()), b_mse)) in
   let () = print_string (" sigma_mse:") in
   let () = print_float (sigma_mse) in
   let () = print_string (" sens_mse:") in
