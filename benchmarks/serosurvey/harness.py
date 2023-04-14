@@ -62,7 +62,7 @@ def run(filename, output, particles, accuracy, n, streaming, results, verbose=Fa
     # This is a hack. Edit the file to change the number of particles
     with open(filename, 'r') as f:
       content = f.read()
-    pattern = re.compile(r'infer\(\d+, \w+\)')
+    pattern = re.compile(r'infer\s?\(\d+, \w+\)')
     content = pattern.sub('infer({}, {})'.format(p, BENCHMARK), content)
     with open(filename, 'w') as f:
       f.write(content)
@@ -267,7 +267,7 @@ def plot(output, streaming, files, particles, verbose=False):
       # axes4[plot_j][plot_i].set_xticks(p)
       # axes5[plot_j][plot_i].set_xticks(p)
 
-      # axes1[plot_j][plot_i].set_yscale('log')
+      axes4[plot_j][plot_i].set_yscale('log')
       # axes1[k][0].set_ylim(1e-4, 1e3)
       # axes1[k][0].set_xlabel('log')
       variable_name = '_'.join(v.split('_')[:-1])
@@ -348,7 +348,7 @@ def plot(output, streaming, files, particles, verbose=False):
   # print ratio of runtime
   print('runtime: {}'.format(
     results['serosurvey_default.muf']['60']['runtime']['median'] / \
-    results['serosurvey_alt.muf']['60']['runtime']['median']))
+    results['serosurvey_sens_fpr_exact.muf']['60']['runtime']['median']))
 
 
 
