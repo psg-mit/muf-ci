@@ -1,11 +1,15 @@
 open Mufcompilerlibs
 open Compiler
 
-let set_only_check () = only_check := true
+let only_check = ref false
 
-let set_simulation_node (n : string) = simulation_node := n
+let simulation_node = ref "main"
 
-let set_up_bound (b : int) = up_bound := b
+let particles = ref 1
+
+let verbose = ref false
+
+let filename = ref ""
 
 let () =
   try
@@ -13,16 +17,20 @@ let () =
       (Arg.align
          [
            ( "--only-check",
-             Arg.Unit set_only_check,
+             Arg.Set only_check,
              "\t Only run the static analysis (default false)" );
            ( "--simulate",
-             Arg.String set_simulation_node,
+             Arg.Set_string simulation_node,
              "<node> \t Simulates the node <node> and generates a file \
               <node>.ml (default main)" );
-           ( "--up-bound",
-             Arg.Int set_up_bound,
-             "<int> \t iteration bound for the unseparated paths analysis \
-              (default 10)" );
+           ( "--particles",
+             Arg.Set_int particles,
+             "<int> \t number of particles \
+              (default 1)" );
+            ( "--verbose", 
+              Arg.Set verbose, 
+              "\t verbose mode (default false)" );
          ])
-      compile "The muF Compiler. Options are:"
-  with Error -> exit 2
+      (fun f -> filename := f) "The muF Compiler. Options are:"
+  with Error -> exit 2;;
+  compile !verbose !only_check !particles !simulation_node !filename

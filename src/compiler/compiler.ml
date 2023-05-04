@@ -74,6 +74,8 @@ let compile_file muf_list name =
     raise Error
 
 let compile_simulator name node =
+  (* let dir = Sys.getcwd () in *)
+  (* let mainc = open_out (dir ^ "/" ^ node ^ ".ml") in *)
   let mainc = open_out (node ^ ".ml") in
   let mainff = Format.formatter_of_out_channel mainc in
   Format.fprintf mainff
@@ -84,8 +86,8 @@ let compile_simulator name node =
      @[let mem = ref (Muflib.init %s.%s) in@]@;\
      @[(fun x -> let _, s = Muflib.step !mem x in mem := s)@]@]@];;@.@[<v>(* \
      (discrete) simulation loop *)@;\
-     while true do main () done;@;\
-     exit(1);;@]@."
+     main ();@;\
+     exit(0);;@]@."
     (String.capitalize_ascii name)
     node;
   close_out mainc
@@ -109,32 +111,34 @@ let approx_status muf_list =
   (* List.iter print_approx_status approx_status; *)
 
   (* approx_status, muf_list *)
-  ()
+  muf_list
 
-let only_check = ref false
-
-let simulation_node = ref "main"
-
-let up_bound = ref 10
-
-let compile file =
+let compile verbose only_check particles node file =
+  (* let name = Filename.basename file in *)
   let name = Filename.chop_extension file in
-  let node = !simulation_node in
   let muf_list = parse Parser.program (Lexer.token ()) file in
 
-  (* Format.printf "%s\n" (Muf.show_program
-    (fun ff () -> Format.fprintf ff "()")
-    muf_list); *)
+  
+  if verbose then (
+    Format.printf "particles: %d@." particles;
+    Format.printf "%s\n" (Mufextern.show_program
+      (fun ff () -> Format.fprintf ff "()")
+      muf_list));
 
-  (* Format.printf "-- Analyzing %s@." file;
-  analyze_file !up_bound muf_list; *)
-  (* if not !only_check then ( *)
-  Format.printf "-- Approximation Status Analysis %sml@." name;
+  Format.printf "-- Approximation Status Analysis %s.ml@." name;
   let _ = approx_status muf_list in
   
-  Format.printf "-- Generating %s.ml@." name;
-  compile_file muf_list name;
-  Format.printf "-- Generating %s.ml@." node;
-  compile_simulator name node;
-  print_cmd name node
-  (* ) *)
+  if not only_check then (
+    Format.printf "-- Generating %s.ml@." name;
+
+    let muf_intern : unit Muf.program = Mufextern.convert_to_intern particles verbose muf_list in
+  
+    if verbose then (
+      Format.printf "%s\n" (Muf.show_program
+        (fun ff () -> Format.fprintf ff "()")
+        muf_intern));
+
+    compile_file muf_intern name;
+    Format.printf "-- Generating %s.ml@." node;
+    compile_simulator name node;
+    print_cmd name node)

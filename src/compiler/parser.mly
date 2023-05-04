@@ -1,12 +1,5 @@
 %{
-  open Muf
-
-  let mk_expr e =
-    { expr = e; emeta = (); }
-
-  let mk_patt e =
-    { patt = e; pmeta = (); }
-
+  open Mufextern
 %}
 
 %token <bool> BOOL
@@ -16,45 +9,51 @@
 %token <string> IDENT
 
 %token OPEN
-%token VAL LET IN FUN STREAM
+%token LET IN FUN VAL
 %token IF THEN ELSE
-%token FACTOR SAMPLE OBSERVE INFER INIT UNFOLD RESET
-%token BOOLT INTT FLOATT GAUSSIAN BETA BERNOULLI DELTA 
-%token PROB VAR DIST UNIT ARRAY LIST
+%token OBSERVE
+// %token BOOLT INTT FLOATT
+// %token DIST UNIT ARRAY LIST
+%token EXACT APPROX
 
 %token DOT
-%token EQUAL ARROW
-%token LPAREN RPAREN LCURLY RCURLY
+%token EQUAL RARROW LARROW
+%token LPAREN RPAREN LSQUARE RSQUARE
 %token COMMA SEMI
 %token EOF
 %token COLON
 %token STAR
 %token UNDERSCORE
 
-%start <unit Muf.program> program
+// %token NIL CONS
+
+%start <unit Mufextern.program> program
 
 %%
 
 program:
-| p = list(decl) EOF
-    { p }
+| e = expr EOF
+    { [], e }
+| p = list(decl) e = expr EOF
+    { p, e }
+
 
 decl:
 | OPEN m = IDENT
-    { { decl = Dopen m } }
-| VAL x = patt EQUAL e = expr
-    { { decl = Ddecl (x, e) } }
+    { Dopen m }
 (* Function *)
-| VAL x = IDENT EQUAL FUN p = patt ARROW e = expr
-    { { decl = Dfun (x, p, e) } }
-| VAL x = IDENT EQUAL STREAM LCURLY INIT EQUAL e_init = expr SEMI step = IDENT p = patt EQUAL e_step = expr RCURLY
-    { begin match step with "step" -> () | _ -> failwith "step expected" end;
-      let n =
-        { n_type = ([], TKrecord []); (* XXX TODO XXX *)
-          n_init = e_init;
-          n_step = (p, e_step); }
-      in
-      { decl = Dnode (x, [], n) } }
+| VAL x = IDENT EQUAL FUN p = patt RARROW e = expr
+    { Dfun (x, p, e) }
+// | VAL x = patt EQUAL e = expr
+//     { Ddecl (x, e) }
+// | LET x = IDENT EQUAL STREAM LCURLY INIT EQUAL e_init = expr SEMI step = IDENT p = patt EQUAL e_step = expr RCURLY
+//     { begin match step with "step" -> () | _ -> failwith "step expected" end;
+//       let n =
+//         { n_type = ([], TKrecord []); (* XXX TODO XXX *)
+//           n_init = e_init;
+//           n_step = (p, e_step); }
+//       in
+//       { decl = Dnode (x, [], n) } }
 
 simple_expr:
 (* Parenthesized expression *)
@@ -62,85 +61,78 @@ simple_expr:
     { e }
 (* Constants *)
 | b = BOOL
-    { mk_expr (Econst (Cbool b)) }
+    { Econst (Cbool b) }
 | i = INT
-    { mk_expr (Econst (Cint i)) }
+    { Econst (Cint i) }
 | f = FLOAT
-    { mk_expr (Econst (Cfloat f)) }
+    { Econst (Cfloat f) }
 | s = STRING
-    { mk_expr (Econst (Cstring s)) }
+    { Econst (Cstring s) }
 (* Variable *)
 | x = IDENT
-    { mk_expr (Evar { modul = None; name = x }) }
+    { Evar { modul = None; name = x } }
 | m = IDENT DOT x = IDENT
-    { mk_expr (Evar { modul = Some m; name = x }) }
-| m = IDENT DOT INIT
-    { mk_expr (Evar { modul = Some m; name = "init" }) }
+    { Evar { modul = Some m; name = x } }
 (* Unit *)
-| LPAREN RPAREN { mk_expr (Etuple []) }
+| LPAREN RPAREN { Etuple [] }
 (* Tuple *)
 | LPAREN e1 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
-    { mk_expr (Etuple (e1 :: el)) }
+    { Etuple (e1 :: el) }
+(* Call unit *)
+| e1 = simple_expr LPAREN RPAREN
+    { Eapp (e1, Etuple []) }
 (* Call *)
 | e1 = simple_expr LPAREN e2 = expr RPAREN
-    { mk_expr (Eapp (e1, e2)) }
+    { Eapp (e1, e2) }
 (* Call Tuple *)
 | e1 = simple_expr LPAREN e2 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
-    { mk_expr (Eapp (e1, mk_expr (Etuple (e2 :: el)))) }
-(* Probabilitic expressions *)
-| FACTOR LPAREN e = expr RPAREN
-    { mk_expr (Efactor ("prob", e)) }
-| SAMPLE LPAREN s = simple_expr COMMA el = separated_nonempty_list(COMMA, expr) RPAREN
-    { mk_expr (Esample ("prob", mk_expr(Etuple (s :: el)))) }
-| SAMPLE LPAREN e = expr RPAREN
-    { mk_expr (Esample ("prob", mk_expr(Etuple (mk_expr (Econst (Cstring "")) :: [e])))) }
-| OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
-    { mk_expr (Eobserve ("prob", e1, e2)) }
-| INFER LPAREN e = simple_expr COMMA m = IDENT RPAREN
-    { mk_expr (Einfer (e, { modul = None; name = m })) }
-(* Streams *)
-| INIT LPAREN m = IDENT RPAREN
-    { mk_expr (Ecall_init (mk_expr (Evar { modul = None; name = m }))) }
-| UNFOLD LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
-    { mk_expr (Ecall_step (e1, e2)) }
-| RESET LPAREN e = simple_expr RPAREN
-    { mk_expr (Ecall_reset e) }
+    { Eapp (e1, Etuple (e2 :: el)) }
+(* Array *)
+// | LSQUARE el = separated_nonempty_list(SEMI, simple_expr) RSQUARE
+//     { mk_expr (Earray el) }
+// | LSQUARE RSQUARE
+//     { mk_expr (Earray []) }
+(* List *)
+// | NIL
+//     { Evar { modul = Some "List"; name = "nil"} }
+// | CONS LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+//     { Eapp (Evar { modul = Some "List"; name = "cons"}, Etuple [e1; e2]) }
 
 expr:
 | e = simple_expr
     { e }
 (* Conditional *)
-| IF e = expr THEN e1 = expr ELSE e2 = expr
-    { mk_expr (Eif (e, e1, e2)) }
+| IF v = simple_expr THEN e1 = expr ELSE e2 = expr
+    { Eif (v, e1, e2) }
 (* Local binding *)
 | LET x = patt EQUAL e1 = expr IN e2 = expr
-    { mk_expr (Elet (x, e1, e2)) }
+    { Elet (x, e1, e2) }
+| LET EXACT x = patt LARROW v = simple_expr IN e = expr
+    { Elet (x, Esample (x, Aexact, v), e) }
+| LET APPROX x = patt LARROW v = simple_expr IN e = expr
+    { Elet (x, Esample (x, Aapprox, v), e) }
+| LET x = patt LARROW v = simple_expr IN e = expr
+  { Elet (x, Esample (x, Adynamic, v), e) }
+| OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Eobserve (e1, e2) }
+
+// typ:
+// | INTT { Tany }
+// | FLOATT { Tany }
+// | BOOLT { Tany }
+// | t = typ DIST { Tconstr ("dist", [t]) }
+// | UNIT { Ttuple [] }
+// | LPAREN t = typ STAR tl = separated_nonempty_list(STAR, typ) RPAREN { Ttuple (t::tl) }
+// | UNDERSCORE { Tany }
+// | t = typ ARRAY { Tconstr ("array", [t]) }
+// | t = typ LIST { Tconstr ("list", [t]) }
 
 patt:
 | x = IDENT
-    { mk_patt (Pid { modul = None; name = x }) }
+    { Pid { modul = None; name = x } }
 | LPAREN p1 = patt COMMA pl = separated_nonempty_list(COMMA, patt) RPAREN
-    { mk_patt (Ptuple (p1::pl)) }
-| LPAREN RPAREN { mk_patt (Ptuple []) }
-| x = IDENT COLON t = typ
-    { mk_patt (Ptype (mk_patt (Pid { modul = None; name = x }), t))}
-| UNDERSCORE { mk_patt Pany }
-
-typ:
-| INTT { Tconstr ("det", []) }
-| FLOATT { Tconstr ("det", []) }
-| BOOLT { Tconstr ("det", []) }
-| t = prob_typ DIST { Tconstr ("dist", [t]) }
-| t = prob_typ VAR { Tconstr ("var", [t]) }
-| UNIT { Ttuple [] }
-| LPAREN t = typ STAR tl = separated_nonempty_list(STAR, typ) RPAREN { Ttuple (t::tl) }
-| UNDERSCORE { Tany }
-| t = typ ARRAY { Tconstr ("array", [t]) }
-| t = typ LIST { Tconstr ("list", [t]) }
-
-prob_typ:
-| GAUSSIAN { Tconstr ("gaussian", []) }
-| BETA { Tconstr ("beta", []) }
-| BERNOULLI { Tconstr ("bernoulli", []) }
-| DELTA { Tconstr ("delta", []) }
-| PROB { Tconstr ("prob", []) }
+    { Ptuple (p1::pl) }
+| LPAREN RPAREN { Ptuple [] }
+// | x = IDENT COLON t = typ
+//     { mk_patt (Ptype (mk_patt (Pid { modul = None; name = x }), t))}
+| UNDERSCORE { Pany }

@@ -44,16 +44,11 @@ let exit code = exit(code)
 
 let concat(a, b) = a ^ b
 
-let exact (x) = 
-  Format.print_string "exact ";
-  Format.print_newline ();
-  x
-
-let approx (x) =
-  Infer_semi_symbolic.const(Infer_semi_symbolic.eval x)
-  (* Format.print_string "approx ";
-  Format.print_newline (); 
-  x *)
+let abs x = 
+  Infer_semi_symbolic.ite 
+    (Infer_semi_symbolic.lt(x, Infer_semi_symbolic.const(0.)))
+    (Infer_semi_symbolic.subtract(Infer_semi_symbolic.const(0.), x))
+    x
 
 let read file = 
   let data = ref [] in
@@ -129,6 +124,15 @@ module List = struct
     let l_arr = Array.of_list l in
     let new_arr = Array.init (Array.length l_arr) (fun i -> Array.get l_arr (Array.get order i)) in
     Array.to_list new_arr
+
+  let print_float_list l =
+    let rec aux l =
+      match l with
+      | [] -> ()
+      | [x] -> Format.printf "%f" x
+      | x :: xs -> Format.printf "%f, " x; aux xs
+    in
+    Format.printf "[@["; aux l; Format.printf "@]]"
 end
 
 module Array = struct

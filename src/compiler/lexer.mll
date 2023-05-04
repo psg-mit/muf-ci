@@ -8,36 +8,35 @@
     let tbl = Hashtbl.create 37 in
     begin
       List.iter (fun (key, data) -> Hashtbl.add tbl key data)
-	[     ("val", VAL);
+	[     
+          ("val", VAL);
           ("let", LET);
 	      ("in", IN);
-          ("stream", STREAM);
+          (* ("stream", STREAM); *)
           ("fun", FUN);
           ("if", IF);
           ("then", THEN);
           ("else", ELSE);
-          ("factor", FACTOR);
-          ("sample", SAMPLE);
+          (* ("factor", FACTOR); *)
+          (* ("sample", SAMPLE); *)
           ("observe", OBSERVE);
-          ("infer", INFER);
+          (* ("infer", INFER); *)
           ("true", BOOL true);
           ("false", BOOL false);
-          ("bool", BOOLT);
-          ("int", INTT);
-          ("float", FLOATT);
-          ("Gaussian", GAUSSIAN);
-          ("Beta", BETA);
-          ("Bernoulli", BERNOULLI);
-          ("Delta", DELTA);
-          ("Prob", PROB);
-          ("var", VAR);
-          ("dist", DIST);
-          ("unit", UNIT);
-          ("arr", ARRAY);
-          ("list", LIST);
-          ("init", INIT);
-          ("unfold", UNFOLD);
-          ("reset", RESET);
+          (* ("bool", BOOLT); *)
+          (* ("int", INTT); *)
+          (* ("float", FLOATT); *)
+          (* ("dist", DIST); *)
+          (* ("unit", UNIT); *)
+          (* ("arr", ARRAY); *)
+          (* ("list", LIST); *)
+          ("open", OPEN);
+          ("exact", EXACT);
+          ("approx", APPROX);
+          (* ("nil", NIL); *)
+          (* ("cons", CONS); *)
+          (* ("unfold", UNFOLD); *)
+          (* ("reset", RESET); *)
           (* ("exact", EXACT);
           ("approx", APPROX); *)
 	]; tbl
@@ -57,17 +56,18 @@ let float = '-'? digit* (frac exp? | exp)
 rule token sbuff = parse
 | eof { EOF }
 | "=" { EQUAL }
-| "->" { ARROW }
+| "<-" { LARROW }
+| "->" { RARROW }
 | "(" { LPAREN }
 | ")" { RPAREN }
-| "{" { LCURLY }
-| "}" { RCURLY }
 | "," { COMMA }
 | ";" { SEMI }
 | ":" { COLON }
 | "*" { STAR }
 | "_" { UNDERSCORE }
 | "." { DOT }
+(* | "[|" { LSQUARE }
+| "|]" { RSQUARE } *)
 | [' ' '\t']
     { token sbuff lexbuf }
 | newline
