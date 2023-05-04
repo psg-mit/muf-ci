@@ -12,3 +12,4 @@ muf.log
 benchmarks/*/*.ml
 benchmarks/*/output/*.png
 benchmarks/*/output/*.pdf
+.vscode/
