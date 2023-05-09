@@ -133,6 +133,7 @@ module List = struct
   let hd = List.hd
   let tl = List.tl
   let cons (x, l) = x :: l
+  let rev l = List.rev_append l []
   let filter (f, l) = List.filter f l
   let init (n, f) = List.init n f
   let append (a, b) = List.append a b
