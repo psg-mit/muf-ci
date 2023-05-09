@@ -66,7 +66,7 @@ let compile_file muf_list name =
   try
     let ml_list = List.map Muf_gencode.compile_program [ muf_list ] in
     Format.fprintf mlff "%s@.%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
-      "open Distribution" "open Muf" "open Infer_semi_symbolic" "open Infer_muf"
+      "open Distribution" "open Muf" "open Infer_muf" "open Infer_semi_symbolic"
       (pp_print_list ~pp_sep:pp_force_newline Pprintast.structure)
       ml_list
   with Zmisc.Error ->
