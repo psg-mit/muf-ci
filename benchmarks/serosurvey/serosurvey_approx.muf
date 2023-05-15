@@ -27,7 +27,8 @@ val init_eta = fun i ->
   let eta <- gaussian(const(0.), const(1.)) in
   eta 
 
-val make_observations = fun ((b, eta, sigma_h, sens, fpr), (x, h, survey_result)) ->
+val make_observations = fun (params, (x, h, survey_result)) ->
+  let (b, eta, sigma_h, sens, fpr) = params in
   let eta_h = Array.get(eta, h) in
   let p' = add(
     List.fold (dot, const(0.), List.zip(x, b)),
@@ -77,7 +78,10 @@ let week5 <- gaussian (const (0.), const (1.)) in
 let b = List.cons(intercept, List.cons(sex, List.cons(age_cat_5_10, List.cons(age_cat_10_20, 
             List.cons(age_cat_50_65, List.cons(age_cat_65_105, List.cons(week1, List.cons(week3, List.cons(week4, List.cons(week5, List.nil)))))))))) in
 
-let _ = List.fold(make_observations, (b, eta, sigma_h, sens, fpr), data) in
+let params = (b, eta, sigma_h, sens, fpr) in
+let _ = List.fold_resample(make_observations, params, data) in
+
+(* anything after fold is done after the particle filter is done *)
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
 let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 

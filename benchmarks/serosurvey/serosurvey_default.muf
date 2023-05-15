@@ -1,4 +1,5 @@
 (* 
+  default inference strategy is the truepos_exact strategy
   inference strategy
   betas - approx
   sigma - approx
@@ -81,6 +82,7 @@ let _ = List.fold(make_observations, (b, eta, sigma_h, sens, fpr), data) in
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
 let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 
+(* anything after fold is done after the particle filter is done *)
 let spec = subtract(const (1.), fpr) in
 
 lst(

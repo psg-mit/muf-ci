@@ -2,9 +2,9 @@
   inference strategy
   betas - approx
   sigma - approx
-  sens - exact
+  sens - approx
   fpr/spec - approx
-  true_pos - approx
+  true_pos - exact
   eta - approx
 *)
 
@@ -19,7 +19,7 @@ val preprocess_data = fun entry ->
   let x = List.map (wrap_x, x') in
   (x, h, survey_res)
 
-val dot = fun (acc, (x, b)) -> Infer_semi_symbolic.add(acc, mult(x, b))
+val dot = fun (acc, (x, b)) -> add(acc, mult(x, b))
 val sigmoid = fun x -> div(const (1.), add(const (1.), expp(subtract((const (0.)), x))))
 
 (* model *)
@@ -35,7 +35,7 @@ val make_observations = fun ((b, eta, sigma_h, sens, fpr), (x, h, survey_result)
     ) in
   let p = sigmoid(p') in
   
-  let approx true_pos <- bernoulli(p) in
+  let exact true_pos <- bernoulli(p) in
   let pos_prob = if true_pos then sens else fpr in
   
   let () = observe(bernoulli(pos_prob), eval(survey_result)) in
@@ -53,7 +53,7 @@ let control_fp_result = 0 in
 
 let data = List.map(preprocess_data, read ("data/processed_data.csv")) in
 
-let exact sens <- beta (1., 1.) in
+let approx sens <- beta (1., 1.) in
 let approx fpr <- beta (1., 1.) in
 let sigma <- gaussian(const (0.), const (1.)) in
 (* Half-gaussian *)
