@@ -8,38 +8,44 @@ module type InferSig = sig
 
   val const : 'a -> 'a expr
 
-  (* val add : float expr -> float expr -> float expr *)
+  val add : float expr * float expr -> float expr
+  val subtract : float expr * float expr -> float expr
   (* TODO sig conflict ds_streaming and semi_symb *)
-  val ( +~ ) : float expr -> float expr -> float expr
+  (* val ( +~ ) : float expr -> float expr -> float expr *)
   val mult : float expr * float expr -> float expr
-  val ( *~ ) : float expr -> float expr -> float expr
+  val div : float expr * float expr -> float expr
+  val expp : float expr -> float expr
+  (* val ( *~ ) : float expr -> float expr -> float expr *)
   val pair : 'a expr * 'b expr -> ('a * 'b) expr
   val array : 'a expr array -> 'a array expr
   val matrix : 'a expr array array -> 'a array array expr
   val lst : 'a expr list -> 'a list expr
   val ite : bool expr -> 'a expr -> 'a expr -> 'a expr
+  val lt : 'a expr * 'a expr -> bool expr
   val mat_add : Owl.Mat.mat expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  val ( +@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr
+  (* val ( +@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
   val mat_scalar_mult : float expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  val ( $*~ ) : float expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr
+  (* val ( $*~ ) : float expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
   val mat_dot : Owl.Mat.mat expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  val ( *@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr
+  (* val ( *@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
   val vec_get : Owl.Mat.mat expr * int -> float expr
   val eval : 'a expr -> 'a
   val of_distribution : 'a Distribution.t -> 'a ds_distribution
-  val gaussian : float expr * float -> float ds_distribution
+  val gaussian : float expr * float expr -> float ds_distribution
   val beta : float * float -> float ds_distribution
   val bernoulli : float expr -> bool ds_distribution
+  val binomial : int * float expr -> int ds_distribution
 
   val mv_gaussian :
     Owl.Mat.mat expr * Owl.Mat.mat -> Owl.Mat.mat ds_distribution
 
-  val sample : (pstate * 'a ds_distribution, 'a expr) cnode
+  val sample : (pstate * (string * 'a ds_distribution), 'a expr) cnode
   val observe : (pstate * ('a ds_distribution * 'a), unit) cnode
   val factor : (pstate * float, unit) cnode
 
   val infer_marginal :
     int -> (pstate * 'a, 'b expr) cnode -> ('a, 'b Distribution.t) cnode
+  val pp_approx_status : bool -> unit
 end
 
 module Make (Infer : InferSig) = struct
@@ -91,7 +97,8 @@ module Make (Infer : InferSig) = struct
 end
 
 module Infer_semi_symbolic = Make (Infer_semi_symbolic)
-module Infer_ds_streaming = Make (Infer_ds_streaming)
+(* TODO: add var name to sample for ds *)
+(* module Infer_ds_streaming = Make (Infer_ds_streaming) *)
 
 let lt_det (a, b) = a < b
 let eq_det (a, b) = a = b
@@ -133,6 +140,7 @@ module List = struct
   let hd = List.hd
   let tl = List.tl
   let cons (x, l) = x :: l
+  let empty l = if List.length l = 0 then true else false
   let rev l = List.rev_append l []
   let filter (f, l) = List.filter f l
   let init (n, f) = List.init n f
