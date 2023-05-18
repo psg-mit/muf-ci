@@ -11,7 +11,7 @@
 %token OPEN
 %token LET IN FUN VAL
 %token IF THEN ELSE
-%token OBSERVE
+%token OBSERVE VALUE
 // %token BOOLT INTT FLOATT
 // %token DIST UNIT ARRAY LIST
 %token EXACT APPROX
@@ -25,9 +25,7 @@
 %token STAR
 %token UNDERSCORE
 
-// %token NIL CONS
-
-%start <unit Mufextern.program> program
+%start <Mufextern.program> program
 
 %%
 
@@ -77,7 +75,7 @@ simple_expr:
 | LPAREN RPAREN { Etuple [] }
 (* Tuple *)
 | LPAREN e1 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
-    { Etuple (e1 :: el) }
+    { Epair (e1 :: el) }
 (* Call unit *)
 | e1 = simple_expr LPAREN RPAREN
     { Eapp (e1, Etuple []) }
@@ -94,9 +92,13 @@ simple_expr:
 //     { mk_expr (Earray []) }
 (* List *)
 // | NIL
-//     { Evar { modul = Some "List"; name = "nil"} }
+//     { Enil }
 // | CONS LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
-//     { Eapp (Evar { modul = Some "List"; name = "cons"}, Etuple [e1; e2]) }
+//     { Econs (e1, e2) }
+| LSQUARE e1 = simple_expr RSQUARE
+    { Elist ([e1]) }
+| LSQUARE e1 = simple_expr SEMI el = separated_nonempty_list(SEMI, simple_expr) RSQUARE
+    { Elist (e1 :: el) }
 
 expr:
 | e = simple_expr
@@ -115,7 +117,8 @@ expr:
   { Elet (x, Esample (x, Adynamic, v), e) }
 | OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
     { Eobserve (e1, e2) }
-
+| VALUE LPAREN e1 = simple_expr RPAREN
+    { Evalue e1 }
 // typ:
 // | INTT { Tany }
 // | FLOATT { Tany }

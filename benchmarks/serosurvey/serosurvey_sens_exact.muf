@@ -2,43 +2,56 @@
   inference strategy
   betas - approx
   sigma - approx
-  sens - exact
-  fpr/spec - approx
+  sens - approx
+  fpr/spec - exact
   true_pos - approx
   eta - approx
 *)
 
 (* helper functions *)
-val wrap_x = fun x -> const (x)
+
+(* [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1; week3; week4; week5; sigma_h; sens; spec] *)
+val output = fun l ->
+  Print.print_float_list (List.map (mean_float, l))
 
 val preprocess_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
-  let survey_res = if const(eq_det(List.hd(entry), 1.)) then const(true) else const(false) in
-  let h = int_of_float(List.hd(List.tl(entry))) in
-  let x' = List.cons(1., List.tl(List.tl(entry))) in
-  let x = List.map (wrap_x, x') in
+  let survey_res = eq_det(List.hd(entry), 1.) in
+  let h = int_of_float_det(List.hd(List.tl(entry))) in
+  let x = List.cons(1., List.tl(List.tl(entry))) in
+  (* let x = List.map (wrap_x, x') in *)
   (x, h, survey_res)
 
-val dot = fun (acc, (x, b)) -> Infer_semi_symbolic.add(acc, mult(x, b))
-val sigmoid = fun x -> div(const (1.), add(const (1.), expp(subtract((const (0.)), x))))
+val dot = fun (acc, p) -> 
+  let (x, b) = split (p) in
+  add(acc, mul(x, b))
+  
+val sigmoid = fun x -> div(1., add(1., exp(sub(1., x))))
 
 (* model *)
 val init_eta = fun i ->
-  let eta <- gaussian(const(0.), const(1.)) in
+  let eta <- gaussian(0., 1.) in
   eta 
 
-val make_observations = fun ((b, eta, sigma_h, sens, fpr), (x, h, survey_result)) ->
+val make_observations = fun (params, data) ->
+  let (b, params) = split(params) in
+  let (eta, params) = split(params) in
+  let (sigma_h, params) = split(params) in
+  let (sens, fpr) = split(params) in
+  let (x, data) = split(data) in
+  let (h, survey_result) = split(data) in
+
   let eta_h = Array.get(eta, h) in
   let p' = add(
-    List.fold (dot, const(0.), List.zip(x, b)),
-    mult(sigma_h, eta_h)
+    List.fold (dot, 0., List.zip(x, b)),
+    mul(sigma_h, eta_h)
     ) in
   let p = sigmoid(p') in
   
   let approx true_pos <- bernoulli(p) in
   let pos_prob = if true_pos then sens else fpr in
   
-  let () = observe(bernoulli(pos_prob), eval(survey_result)) in
+  let () = observe(bernoulli(pos_prob), survey_result) in
   (b, eta, sigma_h, sens, fpr)
 
 (* parameters *)
@@ -55,46 +68,34 @@ let data = List.map(preprocess_data, read ("data/processed_data.csv")) in
 
 let exact sens <- beta (1., 1.) in
 let approx fpr <- beta (1., 1.) in
-let sigma <- gaussian(const (0.), const (1.)) in
+let sigma <- gaussian(0., 1.) in
 (* Half-gaussian *)
-let sigma_h = if lt(const(0.), sigma) then sigma else subtract(const(0.), sigma) in
+let sigma_h = if lt(0., sigma) then sigma else sub(0., sigma) in
 
 let eta = Array.init(hh, init_eta) in
 
 (* b coefficients *)
 (* sex = 0 is female, 1 is male *)
 (* age_cat[20, 50) is encoded by all 0s; likewise for week2 *)
-let intercept <- gaussian (const (0.), const (1.)) in
-let sex <- gaussian (const (0.), const (1.)) in
-let age_cat_5_10 <- gaussian (const (0.), const (1.)) in
-let age_cat_10_20 <- gaussian (const (0.), const (1.)) in
-let age_cat_50_65 <- gaussian (const (0.), const (1.)) in
-let age_cat_65_105 <- gaussian (const (0.), const (1.)) in
-let week1 <- gaussian (const (0.), const (1.)) in
-let week3 <- gaussian (const (0.), const (1.)) in
-let week4 <- gaussian (const (0.), const (1.)) in
-let week5 <- gaussian (const (0.), const (1.)) in
-let b = List.cons(intercept, List.cons(sex, List.cons(age_cat_5_10, List.cons(age_cat_10_20, 
-            List.cons(age_cat_50_65, List.cons(age_cat_65_105, List.cons(week1, List.cons(week3, List.cons(week4, List.cons(week5, List.nil)))))))))) in
+let intercept <- gaussian (0., 1.) in
+let sex <- gaussian (0., 1.) in
+let age_cat_5_10 <- gaussian (0., 1.) in
+let age_cat_10_20 <- gaussian (0., 1.) in
+let age_cat_50_65 <- gaussian (0., 1.) in
+let age_cat_65_105 <- gaussian (0., 1.) in
+let week1 <- gaussian (0., 1.) in
+let week3 <- gaussian (0., 1.) in
+let week4 <- gaussian (0., 1.) in
+let week5 <- gaussian (0., 1.) in
+let b = [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105;
+week1; week3; week4; week5] in
 
 let _ = List.fold(make_observations, (b, eta, sigma_h, sens, fpr), data) in
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
 let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 
 (* anything after fold is done after the particle filter is done *)
-let spec = subtract(const (1.), fpr) in
+let spec = sub(1., fpr) in
 
-lst(
-List.cons (intercept,
-List.cons (sex,
-List.cons (age_cat_5_10,
-List.cons (age_cat_10_20,
-List.cons (age_cat_50_65,
-List.cons (age_cat_65_105,
-List.cons (week1,
-List.cons (week3,
-List.cons (week4,
-List.cons (week5,
-List.cons (const(eval(sigma_h)), (* SSI marginals can't be comparisons *)
-List.cons (sens, 
-List.cons (spec, List.nil))))))))))))))
+[intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; 
+ week1; week3; week4; week5; sigma_h; sens; spec]

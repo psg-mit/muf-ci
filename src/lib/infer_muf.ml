@@ -1,107 +1,73 @@
-open Ztypes
-open Probzelus
 
-module type InferSig = sig
-  type pstate
-  type 'a ds_distribution
-  type 'a expr
+type 'a expr = 'a Semi_symbolic.expr
 
-  val const : 'a -> 'a expr
+let const = Semi_symbolic.const
+let get_const = Semi_symbolic.get_const
+let add (a, b) = Semi_symbolic.add a b
+let sub (a, b) =
+  Semi_symbolic.add a (Semi_symbolic.mul (Semi_symbolic.const (-1.)) b)
+let mul (a, b) = Semi_symbolic.mul a b
+let div (a, b) = Semi_symbolic.div a b
+let exp = Semi_symbolic.exp
+let eq (a, b) = Semi_symbolic.eq a b
+let lt (a, b) = Semi_symbolic.lt a b
+let pair = Semi_symbolic.pair
+let split = Semi_symbolic.split
+let array = Semi_symbolic.array
+let get_array = Semi_symbolic.get_array
+let matrix = Semi_symbolic.matrix
+let ite = Semi_symbolic.ite
+let lst = Semi_symbolic.lst
+let get_lst = Semi_symbolic.get_lst
+let mat_add (a, b) = Semi_symbolic.mat_add a b
+let mat_scalar_mult (a, b) = Semi_symbolic.mat_scalar_mult a b
+let mat_dot (a, b) = Semi_symbolic.mat_dot a b
+let vec_get (a, b) = Semi_symbolic.vec_get a b
+let int_to_float = Semi_symbolic.int_to_float
+let gaussian (a, b) = Semi_symbolic.gaussian a b
+let beta (a, b) = Semi_symbolic.beta a b
+let bernoulli = Semi_symbolic.bernoulli
+let binomial (a, b) = Semi_symbolic.binomial a b
+let beta_binomial (a, b) = Semi_symbolic.beta_binomial a b
+let negative_binomial (a, b) = Semi_symbolic.negative_binomial a b
+let exponential = Semi_symbolic.exponential
+let gamma (a, b) = Semi_symbolic.gamma a b
+let poisson = Semi_symbolic.poisson
+(* let mv_gaussian (a, b) = Semi_symbolic.mv_gaussian a b *)
+(* let sampler (a, b) = Semi_symbolic.sampler a b *)
+(* let categorical (a, b, c) = Semi_symbolic.categorical ~lower: a ~upper: b c *)
+let sample = Semi_symbolic.sample
+let make_marginal = Semi_symbolic.make_marginal
+(* TODO: observe's score needs to be added to weight when sampling *)
+let observe d v =
+  (fun d v -> 
+    let _ =  Semi_symbolic.observe 0. d (get_const v) in
+    ()) d v
+let value x = const (Semi_symbolic.eval_sample x)
+let pp_approx_status = Semi_symbolic.pp_approx_status
 
-  val add : float expr * float expr -> float expr
-  val subtract : float expr * float expr -> float expr
-  (* TODO sig conflict ds_streaming and semi_symb *)
-  (* val ( +~ ) : float expr -> float expr -> float expr *)
-  val mult : float expr * float expr -> float expr
-  val div : float expr * float expr -> float expr
-  val expp : float expr -> float expr
-  (* val ( *~ ) : float expr -> float expr -> float expr *)
-  val pair : 'a expr * 'b expr -> ('a * 'b) expr
-  val array : 'a expr array -> 'a array expr
-  val matrix : 'a expr array array -> 'a array array expr
-  val lst : 'a expr list -> 'a list expr
-  val ite : bool expr -> 'a expr -> 'a expr -> 'a expr
-  val lt : 'a expr * 'a expr -> bool expr
-  val mat_add : Owl.Mat.mat expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  (* val ( +@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
-  val mat_scalar_mult : float expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  (* val ( $*~ ) : float expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
-  val mat_dot : Owl.Mat.mat expr * Owl.Mat.mat expr -> Owl.Mat.mat expr
-  (* val ( *@~ ) : Owl.Mat.mat expr -> Owl.Mat.mat expr -> Owl.Mat.mat expr *)
-  val vec_get : Owl.Mat.mat expr * int -> float expr
-  val eval : 'a expr -> 'a
-  val of_distribution : 'a Distribution.t -> 'a ds_distribution
-  val gaussian : float expr * float expr -> float ds_distribution
-  val beta : float * float -> float ds_distribution
-  val bernoulli : float expr -> bool ds_distribution
-  val binomial : int * float expr -> int ds_distribution
+let get_marginal_expr = Semi_symbolic.get_marginal_expr
 
-  val mv_gaussian :
-    Owl.Mat.mat expr * Owl.Mat.mat -> Owl.Mat.mat ds_distribution
+let pp_distribution = Semi_symbolic.pp_distribution
+let mean_float = Semi_symbolic.mean_float
+let mean_int = Semi_symbolic.mean_int
+let mean_bool = Semi_symbolic.mean_bool
 
-  val sample : (pstate * (string * 'a ds_distribution), 'a expr) cnode
-  val observe : (pstate * ('a ds_distribution * 'a), unit) cnode
-  val factor : (pstate * float, unit) cnode
+let infer f output =
+  (* TODO: particle filter *)
+  let res = f () in
+  let marginal_res = Semi_symbolic.get_marginal_expr res in
+  match output with
+  | Some output -> 
+    let _ = output marginal_res in
+    marginal_res
+  | None -> marginal_res
 
-  val infer_marginal :
-    int -> (pstate * 'a, 'b expr) cnode -> ('a, 'b Distribution.t) cnode
-  val pp_approx_status : bool -> unit
-end
-
-module Make (Infer : InferSig) = struct
-  include Infer
-
-  let prob = ref (Obj.magic ())
-
-  let sample =
-    let (Cnode { alloc; reset; copy; step }) = Infer.sample in
-    let step self (_, x) = step self (!prob, x) in
-    Cnode { alloc; reset; copy; step }
-
-  let observe =
-    let (Cnode { alloc; reset; copy; step }) = Infer.observe in
-    let step self (_, x) = step self (!prob, x) in
-    Cnode { alloc; reset; copy; step }
-
-  let infer n f =
-    let (Cnode { alloc; reset; copy; step }) = f in
-    let step self (proba, x) =
-      prob := proba;
-      step self (!prob, x)
-    in
-    let f = Cnode { alloc; reset; copy; step } in
-    Infer.infer_marginal n f
-
-  let ite (i, t, e) = Infer.ite i t e
-
-  (* let abs x =
-     Infer.ite
-       (Infer.lt(x, Infer.const(0.)))
-       (Infer.subtract(Infer.const(0.), x))
-       x *)
-  (* TODO missing lt and subtract *)
-
-  let random_order len =
-    let sample_fn _ =
-      let arr = Array.init len (fun i -> i) in
-      for n = Array.length arr - 1 downto 1 do
-        let k = Random.int (n + 1) in
-        let tmp = arr.(n) in
-        arr.(n) <- arr.(k);
-        arr.(k) <- tmp
-      done;
-      arr
-    in
-    let obs_fn _ = assert false in
-    Infer.of_distribution (Types.Dist_sampler (sample_fn, obs_fn))
-end
-
-module Infer_semi_symbolic = Make (Infer_semi_symbolic)
-(* TODO: add var name to sample for ds *)
-(* module Infer_ds_streaming = Make (Infer_ds_streaming) *)
-
+let int_of_float_det f =
+  Semi_symbolic.const (int_of_float (get_const f))
 let lt_det (a, b) = a < b
-let eq_det (a, b) = a = b
+let eq_det (a, b) = 
+  Semi_symbolic.const (get_const a = get_const b)
 let add_int (x, y) = x + y
 let sub_int (x, y) = x - y
 let add_float (x, y) = x +. y
@@ -112,6 +78,7 @@ let exit code = exit code
 let concat (a, b) = a ^ b
 
 let read file =
+  let file = get_const file in
   let data = ref [] in
   let ic = open_in file in
   let first = ref true in
@@ -121,63 +88,103 @@ let read file =
       if !first then first := false
       else
         let line_list = String.split_on_char ',' line in
-        let line_list = List.map float_of_string line_list in
-        data := line_list :: !data
+        let line_list = List.map (fun x -> 
+          Semi_symbolic.const (float_of_string x)) line_list in
+        data := Semi_symbolic.lst(line_list) :: !data
     done;
-    !data
+    Semi_symbolic.lst (!data)
   with
   | End_of_file ->
       close_in ic;
-      !data
+      Semi_symbolic.lst (!data)
   | e ->
       close_in_noerr ic;
       raise e
 
 module List = struct
-  let length l = List.length l
-  let nil = []
-  let nil2 = []
-  let hd = List.hd
-  let tl = List.tl
-  let cons (x, l) = x :: l
-  let empty l = if List.length l = 0 then true else false
-  let rev l = List.rev_append l []
-  let filter (f, l) = List.filter f l
-  let init (n, f) = List.init n f
-  let append (a, b) = List.append a b
-  let map (f, l) = List.map f l
-  let iter (f, l) = List.iter f l
-  let fold (f, a, b) = List.fold_left (fun a b -> f (a, b)) a b
-  let zip (a, b) = List.map2 (fun x y -> (x, y)) a b
+  let length l = Semi_symbolic.const(List.length l)
+  let nil = (fun () -> Semi_symbolic.lst [])
+  let hd l =
+    let l = Semi_symbolic.get_lst l in
+    List.hd l
+  let tl l = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.lst(List.tl l)
+  let cons (x, l) = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.lst(x :: l)
+  let empty l = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.const(List.length l = 0)
+  let rev l = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.lst(List.rev_append l [])
+  let filter (f, l) = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.lst(List.filter f l)
+  let init (n, f) = 
+    let n = get_const n in
+    Semi_symbolic.lst(List.init n (fun i ->
+      let i = Semi_symbolic.const i in
+      f i))
+  let append (a, b) = 
+    let a = Semi_symbolic.get_lst a in
+    let b = Semi_symbolic.get_lst b in
+    Semi_symbolic.lst(List.append a b)
+  let map (f, l) = 
+    let l = Semi_symbolic.get_lst l in
+    Semi_symbolic.lst(List.map f l)
+  let iter (f, l) = 
+    let l = Semi_symbolic.get_lst l in
+    List.iter f l
+  let fold (f, a, l) = 
+    let l = Semi_symbolic.get_lst l in
+    List.fold_left (fun a b -> f (a, b)) a l
+  let zip (a, b) = 
+    let a = Semi_symbolic.get_lst a in
+    let b = Semi_symbolic.get_lst b in
+    Semi_symbolic.lst(List.map2 (fun x y -> Semi_symbolic.pair x y) a b)
 
   let iter2 (f, l1, l2) =
+    let l1 = Semi_symbolic.get_lst l1 in
+    let l2 = Semi_symbolic.get_lst l2 in
     let f a b = f (a, b) in
     List.iter2 f l1 l2
+end
 
-  let shuffle (order, l) =
-    let l_arr = Array.of_list l in
-    let new_arr =
-      Array.init (Array.length l_arr) (fun i ->
-          Array.get l_arr (Array.get order i))
-    in
-    Array.to_list new_arr
+module Array = struct
+  let empty = (fun _ -> Semi_symbolic.array [||])
+  let init (n, f) = 
+    Semi_symbolic.array (
+      Array.init (get_const n) (fun x -> 
+        f (Semi_symbolic.const x)))
+  let get (a, x) = 
+    let a = Semi_symbolic.get_array a in
+    Array.get a (get_const x)
+end
 
-  let print_float_list l =
+module Print = struct
+  let print_float (f) =
+    let f = get_const f in
+    Format.printf "%f" f
+  let print_string (s) =
+    let s = get_const s in
+    Format.printf "%s" s
+  let print_endline (s) =
+    let s = get_const s in
+    Format.printf "%s\n" s
+  let print_float_list : float list Semi_symbolic.expr -> unit =
+  fun l ->
+    let l = Semi_symbolic.get_lst l in
     let rec aux l =
       match l with
       | [] -> ()
-      | [ x ] -> Format.printf "%f" x
+      | [ x ] -> Format.printf "%f" (get_const x)
       | x :: xs ->
-          Format.printf "%f, " x;
-          aux xs
+        Format.printf "%f, " (get_const x);
+        aux xs
     in
     Format.printf "[@[";
     aux l;
     Format.printf "@]]"
-end
-
-module Array = struct
-  let empty = [||]
-  let init (n, f) = Array.init n f
-  let get (a, x) = Array.get a x
 end

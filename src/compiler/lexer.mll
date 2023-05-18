@@ -20,6 +20,7 @@
           (* ("factor", FACTOR); *)
           (* ("sample", SAMPLE); *)
           ("observe", OBSERVE);
+          ("value", VALUE);
           (* ("infer", INFER); *)
           ("true", BOOL true);
           ("false", BOOL false);
@@ -33,8 +34,6 @@
           ("open", OPEN);
           ("exact", EXACT);
           ("approx", APPROX);
-          (* ("nil", NIL); *)
-          (* ("cons", CONS); *)
           (* ("unfold", UNFOLD); *)
           (* ("reset", RESET); *)
           (* ("exact", EXACT);
@@ -66,8 +65,8 @@ rule token sbuff = parse
 | "*" { STAR }
 | "_" { UNDERSCORE }
 | "." { DOT }
-(* | "[|" { LSQUARE }
-| "|]" { RSQUARE } *)
+| "[" { LSQUARE }
+| "]" { RSQUARE }
 | [' ' '\t']
     { token sbuff lexbuf }
 | newline
