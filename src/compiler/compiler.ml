@@ -60,7 +60,7 @@ let analyze_file n_iters p =
   if unsep then Format.printf "     o Unseparated paths analysis success@."
   else Format.printf "     x Unseparated paths analysis failure@."
 
-let compile_file program name output =
+let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
   let mlff = Format.formatter_of_out_channel mlc in
   let output_header, output = 
@@ -79,11 +79,11 @@ let compile_file program name output =
     Format.fprintf mlff
       "@[<v 2>@[let post_main _ = @]@;\
        @[%s@]@;\
-       @[let _ = infer main %s in@]@;\
+       @[let _ = infer %d main %s in@]@;\
        @[let () = Format.printf \"\\n==== APPROXIMATION STATUS ====\\n\" in@]@;\
        @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
        @[<v 2>@[let _ =@]@;\
-       @[post_main ()@]@]@." output_header output
+       @[post_main ()@]@]@." output_header particles output
   with Zmisc.Error ->
     close_out mlc;
     raise Error
@@ -145,5 +145,5 @@ let compile verbose only_check particles output file =
   if not only_check then (
     Format.printf "-- Generating %s.ml@." name;
 
-    compile_file program name output;
+    compile_file particles program name output;
     print_cmd name)

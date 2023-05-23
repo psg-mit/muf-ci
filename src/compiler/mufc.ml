@@ -21,7 +21,7 @@ let () =
              "\t Only run the static analysis (default false)" );
            ( "--output",
              Arg.Set_string output,
-             "\t function (takes in distribution) to call to print inference result (optional)");
+             "\t function (takes in marginal distribution) to call to print inference result (optional)");
            ( "--particles",
              Arg.Set_int particles,
              "<int> \t number of particles \

@@ -1,73 +1,124 @@
+(* Semi-symbolic inference interface *)
+module SSI = Semi_symbolic.Semi_symbolic_impl
+open Utils
 
-type 'a expr = 'a Semi_symbolic.expr
+type 'a expr = 'a Utils.expr
 
-let const = Semi_symbolic.const
-let get_const = Semi_symbolic.get_const
-let add (a, b) = Semi_symbolic.add a b
+let const = SSI.const
+let add (a, b) = SSI.add a b
 let sub (a, b) =
-  Semi_symbolic.add a (Semi_symbolic.mul (Semi_symbolic.const (-1.)) b)
-let mul (a, b) = Semi_symbolic.mul a b
-let div (a, b) = Semi_symbolic.div a b
-let exp = Semi_symbolic.exp
-let eq (a, b) = Semi_symbolic.eq a b
-let lt (a, b) = Semi_symbolic.lt a b
-let pair = Semi_symbolic.pair
-let split = Semi_symbolic.split
-let array = Semi_symbolic.array
-let get_array = Semi_symbolic.get_array
-let matrix = Semi_symbolic.matrix
-let ite = Semi_symbolic.ite
-let lst = Semi_symbolic.lst
-let get_lst = Semi_symbolic.get_lst
-let mat_add (a, b) = Semi_symbolic.mat_add a b
-let mat_scalar_mult (a, b) = Semi_symbolic.mat_scalar_mult a b
-let mat_dot (a, b) = Semi_symbolic.mat_dot a b
-let vec_get (a, b) = Semi_symbolic.vec_get a b
-let int_to_float = Semi_symbolic.int_to_float
-let gaussian (a, b) = Semi_symbolic.gaussian a b
-let beta (a, b) = Semi_symbolic.beta a b
-let bernoulli = Semi_symbolic.bernoulli
-let binomial (a, b) = Semi_symbolic.binomial a b
-let beta_binomial (a, b) = Semi_symbolic.beta_binomial a b
-let negative_binomial (a, b) = Semi_symbolic.negative_binomial a b
-let exponential = Semi_symbolic.exponential
-let gamma (a, b) = Semi_symbolic.gamma a b
-let poisson = Semi_symbolic.poisson
-(* let mv_gaussian (a, b) = Semi_symbolic.mv_gaussian a b *)
-(* let sampler (a, b) = Semi_symbolic.sampler a b *)
-(* let categorical (a, b, c) = Semi_symbolic.categorical ~lower: a ~upper: b c *)
-let sample = Semi_symbolic.sample
-let make_marginal = Semi_symbolic.make_marginal
-(* TODO: observe's score needs to be added to weight when sampling *)
+  SSI.add a (SSI.mul (SSI.const (-1.)) b)
+let mul (a, b) = SSI.mul a b
+let div (a, b) = SSI.div a b
+let exp = SSI.exp
+let eq (a, b) = SSI.eq a b
+let lt (a, b) = SSI.lt a b
+let pair = SSI.pair
+let split = Utils.split
+
+let array = SSI.array
+let matrix = SSI.matrix
+let ite = SSI.ite
+let lst = SSI.lst
+let mat_add (a, b) = SSI.mat_add a b
+let mat_scalar_mult (a, b) = SSI.mat_scalar_mult a b
+let mat_dot (a, b) = SSI.mat_dot a b
+let vec_get (a, b) = SSI.vec_get a b
+let int_to_float = SSI.int_to_float
+let gaussian (a, b) = SSI.gaussian a b
+let beta (a, b) = SSI.beta a b
+let bernoulli = SSI.bernoulli
+let binomial (a, b) = SSI.binomial a b
+let beta_binomial (a, b) = SSI.beta_binomial a b
+let negative_binomial (a, b) = SSI.negative_binomial a b
+let exponential = SSI.exponential
+let gamma (a, b) = SSI.gamma a b
+let poisson = SSI.poisson
+let delta = SSI.delta
+let mixture = SSI.mixture
+(* let mv_gaussian (a, b) = SSI.mv_gaussian a b *)
+(* let sampler (a, b) = SSI.sampler a b *)
+let categorical (lower, upper, f) = SSI.categorical ~lower ~upper f
+
+let value v = const (SSI.eval_sample v)
+
+let pp_approx_status = SSI.pp_approx_status
+
+let get_marginal_expr = Utils.get_marginal_expr
+
+
+(* Inference *)
+let sample name dist k (prob : 'b prob) =
+  let v = SSI.sample name dist in
+  k v prob
+
+let factor score k prob =
+  let particle = prob.particles.(prob.id) in
+  prob.particles.(prob.id) <- { particle with score = particle.score +. score };
+  k () prob
+
 let observe d v =
-  (fun d v -> 
-    let _ =  Semi_symbolic.observe 0. d (get_const v) in
-    ()) d v
-let value x = const (Semi_symbolic.eval_sample x)
-let pp_approx_status = Semi_symbolic.pp_approx_status
+  let score = SSI.observe 0. d (Utils.get_const v) in
+  factor score
+  
+let return x k = k x
+let ( let* ) x f k = x (fun y -> f y k)
 
-let get_marginal_expr = Semi_symbolic.get_marginal_expr
+let resample () k prob =
+  let resample' particles = 
+    let scores = Array.map (fun p -> p.score) particles in
+    let probabilities = Utils.normalize scores in
+    let values = Array.map (fun p -> {p with score = 0.}) particles in
 
-let pp_distribution = Semi_symbolic.pp_distribution
-let mean_float = Semi_symbolic.mean_float
-let mean_int = Semi_symbolic.mean_int
-let mean_bool = Semi_symbolic.mean_bool
+    Array.init (Array.length particles) (fun _ ->
+      let i = Owl_stats.categorical_rvs probabilities in
+      Utils.copy values.(i)
+    )
+  in
 
-let infer f output =
-  (* TODO: particle filter *)
-  let res = f () in
-  let marginal_res = Semi_symbolic.get_marginal_expr res in
-  match output with
-  | Some output -> 
-    let _ = output marginal_res in
-    marginal_res
-  | None -> marginal_res
+  (* At a resample operator for a given particle,
+   pause (update k for the particle) and run the next one *)
+  let particle = prob.particles.(prob.id) in
+  prob.particles.(prob.id) <- { particle with k = k () };
+  let prob = 
+    (* Computed everything up until the resample operator,
+       so resample and start from beginning *)
+
+    if prob.id = Array.length prob.particles - 1 then
+      { id = -1; particles = resample' prob.particles }
+    else
+      prob
+  in
+  
+  Utils.run_next prob
+
+(* scores is logscale *)
+let infer n model output_function =
+  let init_particles = { value = None; score = 0.; k = (model ()) Utils.finish } in
+  let prob = { id = -1; particles = Array.make n init_particles } in
+
+  let prob = Utils.run_next prob in
+
+  let values = Array.map (fun p -> 
+    get_marginal_expr (Option.get p.value)) prob.particles in
+  let scores = Array.map (fun p -> p.score) prob.particles in
+
+  (* Normalize and make mixture distribution *)
+  let distr = Utils.to_distribution values scores in
+
+  match output_function with
+  | Some output_function -> 
+    let _ = output_function distr in
+    distr
+  | None -> distr
+
+(* Other useful functions *)
 
 let int_of_float_det f =
-  Semi_symbolic.const (int_of_float (get_const f))
+  const (int_of_float (Utils.get_const f))
 let lt_det (a, b) = a < b
 let eq_det (a, b) = 
-  Semi_symbolic.const (get_const a = get_const b)
+  const (Utils.get_const a = Utils.get_const b)
 let add_int (x, y) = x + y
 let sub_int (x, y) = x - y
 let add_float (x, y) = x +. y
@@ -78,7 +129,7 @@ let exit code = exit code
 let concat (a, b) = a ^ b
 
 let read file =
-  let file = get_const file in
+  let file = Utils.get_const file in
   let data = ref [] in
   let ic = open_in file in
   let first = ref true in
@@ -89,99 +140,213 @@ let read file =
       else
         let line_list = String.split_on_char ',' line in
         let line_list = List.map (fun x -> 
-          Semi_symbolic.const (float_of_string x)) line_list in
-        data := Semi_symbolic.lst(line_list) :: !data
+          const (float_of_string x)) line_list in
+        data := lst(line_list) :: !data
     done;
-    Semi_symbolic.lst (!data)
+    lst (!data)
   with
   | End_of_file ->
       close_in ic;
-      Semi_symbolic.lst (!data)
+      lst (!data)
   | e ->
       close_in_noerr ic;
       raise e
 
+(* Output Related functions *)
+let pp_mdistr : type a. a mdistr -> string expr =
+fun d ->
+  let rec get_string : type a. a mdistr -> string =
+  fun d -> 
+    let pp_distribution : type a. a distribution -> string =
+    fun d ->
+      match d with
+      | Normal (ExConst(mu), ExConst(var)) ->
+        Format.sprintf "Gaussian(%f, %f)" mu var
+      | Beta (ExConst(a), ExConst(b)) ->
+        Format.sprintf "Beta(%f, %f)" a b
+      | Bernoulli (ExConst(p)) ->
+        Format.sprintf "Bernoulli(%f)" p
+      | Binomial (ExConst(n), ExConst(p)) ->
+        Format.sprintf "Binomial(%d, %f)" n p
+      | BetaBinomial (ExConst(n), ExConst(a), ExConst(b)) ->
+        Format.sprintf "BetaBinomial(%d, %f, %f)" n a b
+      | NegativeBinomial (ExConst(n), ExConst(p)) ->
+        Format.sprintf "NegativeBinomial(%d, %f)" n p
+      | Gamma (ExConst(a), ExConst(b)) ->
+        Format.sprintf "Gamma(%f, %f)" a b
+      | Poisson (ExConst(p)) ->
+        Format.sprintf "Poisson(%f)" p
+      | Delta (ExConst(_)) ->
+        (* TODO: any way to print the value? *)
+        Format.sprintf "Delta (_)" 
+      | Mixture (l) -> 
+        Format.sprintf "Mixture([%s])" 
+          (String.concat "; " (List.map (fun (e, p) -> 
+            Format.sprintf "(%s, %f)" (get_string e) p) l))
+      | Sampler _ | MvNormal _ | Categorical _ -> failwith "not implemented"
+      | _ -> failwith "not marginal"
+    in
+    match d with
+    | ExConst _ -> Format.sprintf "Const (_)"
+    | ExRand rv -> Format.sprintf "%s" (pp_distribution rv.distr)
+    | ExAdd (e1, e2) -> Format.sprintf "Add(%s, %s)" (get_string e1) (get_string e2)
+    | ExMul (e1, e2) -> Format.sprintf "Mul(%s, %s)" (get_string e1) (get_string e2)
+    | ExDiv (e1, e2) -> Format.sprintf "Div(%s, %s)" (get_string e1) (get_string e2)
+    | ExList l -> Format.sprintf "List([%s])" (String.concat "; " (List.map get_string l))
+    | ExPair (e1, e2) -> Format.sprintf "Pair(%s, %s)" (get_string e1) (get_string e2)
+    | ExArray a -> Format.sprintf "Array([%s])" 
+      (String.concat "; " (Array.to_list (Array.map get_string a)))
+    | _ -> failwith "not marginal"
+  in
+  const (get_string d)
+  
+
+let mean_int : int mdistr -> float expr =
+fun e ->
+  let rec mean_int' : int expr -> float =
+  fun e ->
+    match e with
+    | ExConst c -> float_of_int c
+    | ExRand rv -> Utils.mean_int_d rv.distr
+    | ExIte (i, t, e) -> if Utils.get_const (value i) then (mean_int' t) else (mean_int' e)
+    | _ -> failwith "not marginal"
+  in
+  ExConst (mean_int' e)
+
+let mean_float : float expr -> float expr =
+  fun e ->
+    let e = SSI.eval e in
+    let rec mean_float' : float expr -> float =
+    fun e ->
+      match e with
+      | ExConst c -> c
+      | ExRand rv -> Utils.mean_float_d rv.distr
+      | ExAdd (e1, e2) -> mean_float' e1 +. mean_float' e2
+      | ExMul (e1, e2) -> mean_float' e1 *. mean_float' e2
+      | ExDiv (e1, e2) -> mean_float' e1 /. mean_float' e2
+      | ExIte (i, t, e) -> 
+        if Utils.get_const (value i) then (mean_float' t) else (mean_float' e)
+      | ExUnop (Squared, e_inner) -> (mean_float' e_inner) ** 2.
+      | ExUnop (SquareRoot, e_inner) -> Float.sqrt (mean_float' e_inner)
+      | ExUnop (Exp, e_inner) -> Float.exp (mean_float' e_inner)
+      | ExIntToFloat e_inner -> Utils.get_const (mean_int e_inner)
+      | _ -> failwith "not marginal"
+    in 
+    ExConst (mean_float' e)
+
+let mean_bool : bool expr -> float expr =
+  fun e ->
+    let e = SSI.eval e in
+    let rec mean_bool' : bool expr -> float =
+    fun e ->
+      match e with
+      | ExConst c -> if c then 1. else 0.
+      | ExRand rv -> Utils.mean_bool_d rv.distr
+      | ExIte (i, t, e) -> 
+        if Utils.get_const (value i) then (mean_bool' t) else (mean_bool' e)
+      | _ -> failwith "not marginal"
+    in
+    ExConst (mean_bool' e)
+
 module List = struct
-  let length l = Semi_symbolic.const(List.length l)
-  let nil = (fun () -> Semi_symbolic.lst [])
+  let length l = const(List.length l)
+  let nil = (fun () -> lst [])
   let hd l =
-    let l = Semi_symbolic.get_lst l in
+    let l = Utils.get_lst l in
     List.hd l
   let tl l = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.lst(List.tl l)
+    let l = Utils.get_lst l in
+    lst(List.tl l)
   let cons (x, l) = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.lst(x :: l)
+    let l = Utils.get_lst l in
+    lst(x :: l)
   let empty l = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.const(List.length l = 0)
+    let l = Utils.get_lst l in
+    const(List.length l = 0)
   let rev l = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.lst(List.rev_append l [])
+    let l = Utils.get_lst l in
+    lst(List.rev_append l [])
   let filter (f, l) = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.lst(List.filter f l)
+    let l = Utils.get_lst l in
+    lst(List.filter f l)
   let init (n, f) = 
-    let n = get_const n in
-    Semi_symbolic.lst(List.init n (fun i ->
-      let i = Semi_symbolic.const i in
+    let n = Utils.get_const n in
+    lst(List.init n (fun i ->
+      let i = const i in
       f i))
   let append (a, b) = 
-    let a = Semi_symbolic.get_lst a in
-    let b = Semi_symbolic.get_lst b in
-    Semi_symbolic.lst(List.append a b)
+    let a = Utils.get_lst a in
+    let b = Utils.get_lst b in
+    lst(List.append a b)
   let map (f, l) = 
-    let l = Semi_symbolic.get_lst l in
-    Semi_symbolic.lst(List.map f l)
-  let iter (f, l) = 
-    let l = Semi_symbolic.get_lst l in
-    List.iter f l
-  let fold (f, a, l) = 
-    let l = Semi_symbolic.get_lst l in
-    List.fold_left (fun a b -> f (a, b)) a l
+    let l = Utils.get_lst l in
+    lst(List.map f l)
+
+  let iter (f, l) k =
+    let rec traversal f l k =
+      match l with [] -> k () | h :: t -> f h (fun () -> traversal f t k)
+    in
+    let l = Utils.get_lst l in
+    traversal f l k
+
+  let fold (f, l, init) k =
+    let rec traversal l acc k =
+      match l with
+      | [] -> k acc
+      | h :: t -> (f (acc, h)) (fun acc -> traversal t acc k)
+    in
+    traversal (Utils.get_lst l) init k
+
+  let fold_resample (f, l, init) k =
+    let f' = (fun (acc, h) -> 
+      let* x = f (acc, h) in
+      let* () = resample () in
+      return x
+    ) in
+    fold (f', l, init) k
+    
   let zip (a, b) = 
-    let a = Semi_symbolic.get_lst a in
-    let b = Semi_symbolic.get_lst b in
-    Semi_symbolic.lst(List.map2 (fun x y -> Semi_symbolic.pair x y) a b)
+    let a = Utils.get_lst a in
+    let b = Utils.get_lst b in
+    lst(List.map2 (fun x y -> pair x y) a b)
 
   let iter2 (f, l1, l2) =
-    let l1 = Semi_symbolic.get_lst l1 in
-    let l2 = Semi_symbolic.get_lst l2 in
+    let l1 = Utils.get_lst l1 in
+    let l2 = Utils.get_lst l2 in
     let f a b = f (a, b) in
     List.iter2 f l1 l2
 end
 
 module Array = struct
-  let empty = (fun _ -> Semi_symbolic.array [||])
+  let empty = (fun _ -> array [||])
   let init (n, f) = 
-    Semi_symbolic.array (
-      Array.init (get_const n) (fun x -> 
-        f (Semi_symbolic.const x)))
+    array (
+      Array.init (Utils.get_const n) (fun x -> 
+        f (const x)))
   let get (a, x) = 
-    let a = Semi_symbolic.get_array a in
-    Array.get a (get_const x)
+    let a = Utils.get_array a in
+    Array.get a (Utils.get_const x)
 end
 
 module Print = struct
   let print_float (f) =
-    let f = get_const f in
+    let f = Utils.get_const f in
     Format.printf "%f" f
   let print_string (s) =
-    let s = get_const s in
+    let s = Utils.get_const s in
     Format.printf "%s" s
   let print_endline (s) =
-    let s = get_const s in
+    let s = Utils.get_const s in
     Format.printf "%s\n" s
-  let print_float_list : float list Semi_symbolic.expr -> unit =
+  let print_float_list : float list expr -> unit =
   fun l ->
-    let l = Semi_symbolic.get_lst l in
+    let l = Utils.get_lst l in
     let rec aux l =
       match l with
       | [] -> ()
-      | [ x ] -> Format.printf "%f" (get_const x)
+      | [ x ] -> Format.printf "%f" (Utils.get_const x)
       | x :: xs ->
-        Format.printf "%f, " (get_const x);
+        Format.printf "%f, " (Utils.get_const x);
         aux xs
     in
     Format.printf "[@[";
