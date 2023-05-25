@@ -246,10 +246,12 @@ let rec cps_pass (e: expr) (k: expr) : expr =
     begin match e1 with
     (* All list and array functions should be CPS *)
     | Evar {modul=Some "List"; _} | Evar {modul=Some "Array"; _} -> 
-      Eapp(e, k)
+      let temp = temp_var () in
+      let k' = Efun(Pid temp, Eapp(Eapp(e1, Evar temp), k)) in
+      cps_pass e2 k'
     | _ -> 
       let temp = temp_var () in
-      let k' = Efun(Pid temp, Eapp(k, Evar temp)) in
+      let k' = Efun(Pid temp, Eapp(k, Eapp(e1, Evar temp))) in
       cps_pass e2 k'
     end
   | Elet (x, e1, e2) ->
