@@ -16,6 +16,8 @@ let lt (a, b) = SSI.lt a b
 let pair = SSI.pair
 let split = Utils.split
 
+let get_const = Utils.get_const
+
 let array = SSI.array
 let matrix = SSI.matrix
 let ite = SSI.ite
@@ -55,7 +57,7 @@ let sample name dist k (prob : 'b prob) =
 let factor score k prob =
   let particle = prob.particles.(prob.id) in
   prob.particles.(prob.id) <- { particle with score = particle.score +. score };
-  k () prob
+  k (const ()) prob
 
 let observe d v =
   let score = SSI.observe 0. d (Utils.get_const v) in
@@ -64,7 +66,10 @@ let observe d v =
 let return x k = k x
 let ( let* ) x f k = x (fun y -> f y k)
 
-let resample () k prob =
+let resample unitt k prob =
+  (* resample takes unit *)
+  let () = Utils.get_const unitt in
+
   let resample' particles = 
     let scores = Array.map (fun p -> p.score) particles in
     let probabilities = Utils.normalize scores in
@@ -79,7 +84,7 @@ let resample () k prob =
   (* At a resample operator for a given particle,
    pause (update k for the particle) and run the next one *)
   let particle = prob.particles.(prob.id) in
-  prob.particles.(prob.id) <- { particle with k = k () };
+  prob.particles.(prob.id) <- { particle with k = k (const ()) };
   let prob = 
     (* Computed everything up until the resample operator,
        so resample and start from beginning *)
@@ -93,12 +98,14 @@ let resample () k prob =
   Utils.run_next prob
 
 (* scores is logscale *)
-let infer n model output_function =
+let infer =
+fun n model output_function ->
   let init_particles = { value = None; score = 0.; k = (model ()) Utils.finish } in
   let prob = { id = -1; particles = Array.make n init_particles } in
 
   let prob = Utils.run_next prob in
 
+  (* Check if value of particles is unit *)
   let values = Array.map (fun p -> 
     get_marginal_expr (Option.get p.value)) prob.particles in
   let scores = Array.map (fun p -> p.score) prob.particles in
@@ -300,7 +307,7 @@ module List = struct
   let fold_resample (f, l, init) k =
     let f' = (fun (acc, h) -> 
       let* x = f (acc, h) in
-      let* () = resample () in
+      let* _ = resample (const ()) in
       return x
     ) in
     fold (f', l, init) k
@@ -344,9 +351,9 @@ module Print = struct
     let rec aux l =
       match l with
       | [] -> ()
-      | [ x ] -> Format.printf "%f" (Utils.get_const x)
+      | [ x ] -> Format.printf "%f" (Utils.get_const (mean_float x))
       | x :: xs ->
-        Format.printf "%f, " (Utils.get_const x);
+        Format.printf "%f, " (Utils.get_const (mean_float x));
         aux xs
     in
     Format.printf "[@[";

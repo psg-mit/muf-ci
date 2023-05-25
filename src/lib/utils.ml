@@ -86,6 +86,7 @@ let get_const e =
 let split p = 
   match p with
   | ExPair(a, b) -> (a, b)
+  | ExConst((a, b)) -> (ExConst a, ExConst b)
   | _ -> raise (InternalError "not a pair")
 
 let get_array a =

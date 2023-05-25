@@ -72,13 +72,13 @@ simple_expr:
 | m = IDENT DOT x = IDENT
     { Evar { modul = Some m; name = x } }
 (* Unit *)
-| LPAREN RPAREN { Etuple [] }
+| LPAREN RPAREN { Econst (Cunit) }
 (* Tuple *)
 | LPAREN e1 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
     { Epair (e1 :: el) }
 (* Call unit *)
 | e1 = simple_expr LPAREN RPAREN
-    { Eapp (e1, Etuple []) }
+    { Eapp (e1, Econst (Cunit)) }
 (* Call *)
 | e1 = simple_expr LPAREN e2 = expr RPAREN
     { Eapp (e1, e2) }
@@ -135,7 +135,7 @@ patt:
     { Pid { modul = None; name = x } }
 | LPAREN p1 = patt COMMA pl = separated_nonempty_list(COMMA, patt) RPAREN
     { Ptuple (p1::pl) }
-| LPAREN RPAREN { Ptuple [] }
+| LPAREN RPAREN { Punit }
 // | x = IDENT COLON t = typ
 //     { mk_patt (Ptype (mk_patt (Pid { modul = None; name = x }), t))}
 | UNDERSCORE { Pany }

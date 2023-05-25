@@ -63,7 +63,7 @@ let analyze_file n_iters p =
 let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
   let mlff = Format.formatter_of_out_channel mlc in
-  let output_header, output = 
+  let output_header, output_option = 
     match output with 
     | "" -> "", "None"
     | o -> 
@@ -71,7 +71,7 @@ let compile_file particles program name output =
         Format.sprintf "(Some %s)" o)
   in
   try
-    let ml_list = List.map Mufextern.compile_program [program] in
+    let ml_list = List.map (Mufextern.compile_program output) [program] in
     Format.fprintf mlff "%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
       "open Distribution" "open Muf" "open Infer_muf"
       (pp_print_list ~pp_sep:pp_force_newline Pprintast.structure)
@@ -83,7 +83,7 @@ let compile_file particles program name output =
        @[let () = Format.printf \"\\n==== APPROXIMATION STATUS ====\\n\" in@]@;\
        @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
        @[<v 2>@[let _ =@]@;\
-       @[post_main ()@]@]@." output_header particles output
+       @[post_main ()@]@]@." output_header particles output_option
   with Zmisc.Error ->
     close_out mlc;
     raise Error
