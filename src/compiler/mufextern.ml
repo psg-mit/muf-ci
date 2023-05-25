@@ -41,6 +41,7 @@ type expr =
   | Elet of pattern * expr * expr
   | Esample of pattern * annotation * expr
   | Eobserve of expr * expr
+  | Eresample
   | Evalue of expr
   | Elist of expr list
   | Epair of expr list
@@ -91,10 +92,129 @@ let get_v () =
 let temp_var () = 
   {modul=None; name=get_v ()}
 
+(* If body has resample/observe, turn into regular if then else *)
+let ite_pass (output: string) (p: program) : program =
+
+  let rec ite_pass' (ctx: (string, bool) Hashtbl.t) (e: expr) : bool * expr =
+    match e with
+    | Evar x -> 
+      let has_side_effects = 
+        match x with 
+        | { modul = None; name } -> 
+          begin match Hashtbl.find_opt ctx name with
+          | Some b -> b
+          | None -> false
+          end
+        | _ -> false
+      in
+      has_side_effects, e
+    | Eobserve (p, e) ->
+      true, Eobserve (p, snd (ite_pass' ctx e))
+    | Eresample -> true, Eresample
+    | Eif (e1, e2, e3) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects3, e3 = ite_pass' ctx e3 in
+      let has_side_effects = 
+        has_side_effects1 || has_side_effects2 || has_side_effects3 in
+      let e = if has_side_effects then Eifeval(e1, e2, e3) else Eif(e1, e2, e3) in
+      has_side_effects, e
+    | Eifeval (e1, e2, e3) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects3, e3 = ite_pass' ctx e3 in
+      let has_side_effects = 
+        has_side_effects1 || has_side_effects2 || has_side_effects3 in
+      has_side_effects, Eifeval(e1, e2, e3)
+    | Eapp (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Eapp (e1, e2)
+    | Elet (x, e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Elet (x, e1, e2)
+    | Evalue e1 -> 
+      let has_side_effects, e1 = ite_pass' ctx e1 in
+      has_side_effects, Evalue e1
+    | Elist l -> 
+      let has_side_effects, l = 
+        List.fold_left 
+          (fun (has_side_effects, l) e -> 
+            let has_side_effects', e = ite_pass' ctx e in
+            has_side_effects || has_side_effects', e :: l)
+          (false, []) l in
+      has_side_effects, Elist (List.rev l)
+    | Epair l -> 
+      let has_side_effects, l = 
+        List.fold_left 
+          (fun (has_side_effects, l) e -> 
+            let has_side_effects', e = ite_pass' ctx e in
+            has_side_effects || has_side_effects', e :: l)
+          (false, []) l in
+      has_side_effects, Epair (List.rev l)
+    | Etuple l -> 
+      let has_side_effects, l = 
+        List.fold_left 
+          (fun (has_side_effects, l) e -> 
+            let has_side_effects', e = ite_pass' ctx e in
+            has_side_effects || has_side_effects', e :: l)
+          (false, []) l in
+      has_side_effects, Etuple (List.rev l)
+    | Esample (p, a, e) -> 
+      let has_side_effects, e = ite_pass' ctx e in
+      has_side_effects, Esample (p, a, e)
+    | Efun (p, e) -> 
+      let has_side_effects, e = ite_pass' ctx e in
+      has_side_effects, Efun (p, e)
+    | Econst _ -> false, e
+  in
+
+  let rec force_ite' (e: expr) : expr =
+    match e with
+    | Eif (e1, e2, e3) -> Eifeval(force_ite' e1, force_ite' e2, force_ite' e3)
+    | Eifeval (e1, e2, e3) -> Eifeval(force_ite' e1, force_ite' e2, force_ite' e3)
+    | Eobserve (p, e) -> Eobserve (p, force_ite' e)
+    | Elet (x, e1, e2) -> Elet (x, force_ite' e1, force_ite' e2)
+    | Eapp (e1, e2) -> Eapp (force_ite' e1, force_ite' e2)
+    | Evalue e1 -> Evalue (force_ite' e1)
+    | Elist l -> Elist (List.map force_ite' l)
+    | Epair l -> Epair (List.map force_ite' l)
+    | Etuple l -> Etuple (List.map force_ite' l)
+    | Esample (p, a, e) -> Esample (p, a, force_ite' e)
+    | Efun (p, e) -> Efun (p, force_ite' e)
+    | Evar _ | Econst _ | Eresample -> e
+  in
+
+  let ctx = Hashtbl.create 10 in
+  let decls, e = p in
+
+  let decls = List.map (fun d ->
+    match d with
+    | Ddecl (p, e) -> Ddecl (p, snd(ite_pass' ctx e))
+    | Dfun (s, p, e) ->
+      let has_side_effects, e = if s = output then 
+        true, force_ite' e
+      else
+        ite_pass' ctx e
+      in
+      Hashtbl.add ctx s has_side_effects;
+      Dfun (s, p, e)
+    (* | Dtype (s, ss, td) -> M.Dtype (s, ss, td) *)
+    | Dopen _ -> d
+  ) decls in
+
+  let _, e = ite_pass' ctx e in
+
+  decls, e
+
+(* Converts program into CPS, must be done after ite_pass *)
 let rec cps_pass (e: expr) (k: expr) : expr =
   match e with
   | Evar _ | Econst _ -> Eapp(k, e)
-  | Esample _ | Eobserve _ -> Eapp(e, k)
+  | Esample _ | Eobserve _ | Eresample -> Eapp(e, k)
   | Efun _ -> failwith "Fun is internal"
   | Eif (e1, e2, e3) ->
     (* Does not contain observe/sample in e2 or e3 *)
@@ -213,6 +333,7 @@ let rec get_rv_name (p: pattern) : Parsetree.expression =
   | Pany -> Exp.constant (Const.string "")
   | Punit -> failwith "RV cannot be unit"
 
+(* Compiles approx annotations into value *)
 let rec annotation_pass (e: expr) : expr =
   match e with
   | Esample (p, a, e) ->
@@ -233,32 +354,24 @@ let rec annotation_pass (e: expr) : expr =
   | Elist l -> Elist (List.map annotation_pass l)
   | Epair l -> Epair (List.map annotation_pass l)
   | Etuple l -> Etuple (List.map annotation_pass l)
-  | Evar _ | Econst _ -> e
+  | Evar _ | Econst _ | Eresample -> e
 
-(* TODO: analyze when to use semi-symbolic ite *)
-(* If body has resample/observe, turn into regular if then else *)
-(* let rec ite_pass (e: expr) : expr = *)
-  
-let rec compile_sample (p: pattern) (a: annotation) (e: expr) : Parsetree.expression =
+(* Compiles sample, ignoring annotations. Must be done after annotation pass *)
+let rec compile_sample (p: pattern) (e: expr) : Parsetree.expression =
   match p, e with
   (* Single vars *)
   | Pid _, Evar _ | Pid _, Eapp _ | Pany, _ ->
-    let inner = Exp.apply (Exp.ident (with_loc (Longident.Lident "sample"))) 
-                  [Nolabel, get_rv_name p; Nolabel, compile_expr' e] in
-    begin match a with 
-    | Aapprox -> 
-      let value = Exp.ident (with_loc (Longident.Lident "value")) in
-      Exp.apply value [Nolabel, inner]
-    | _ -> inner
-    end
+    Exp.apply (Exp.ident (with_loc (Longident.Lident "sample"))) 
+        [Nolabel, get_rv_name p; Nolabel, compile_expr' e]
   (* Tuple vars *)
-  | Ptuple [p'], Etuple [e'] -> compile_sample p' a e'
+  | Ptuple [p'], Etuple [e'] -> compile_sample p' e'
   | Ptuple (p'::ps), Etuple (e'::es) ->
-    let first = compile_sample p' a e' in
-    let rest = compile_sample (Ptuple ps) a (Etuple es) in
+    let first = compile_sample p' e' in
+    let rest = compile_sample (Ptuple ps) (Etuple es) in
     Exp.tuple [first; rest]
   | _ -> failwith "Invalid sample expression"
 
+(* Must be done after annotation pass *)
 and compile_expr' (e: expr) : Parsetree.expression =
   match e with
   | Econst c -> compile_const c
@@ -286,7 +399,7 @@ and compile_expr' (e: expr) : Parsetree.expression =
         pvb_attributes = [];
         pvb_loc = Location.none; } ]
       (compile_expr' e2)
-  | Esample (p, a, e) -> compile_sample p a e
+  | Esample (p, _, e) -> compile_sample p e
   | Eobserve (e1, e2) -> 
     Exp.apply (Exp.ident (with_loc (Longident.Lident "observe"))) 
       [Nolabel, compile_expr' e1; Nolabel, compile_expr' e2]
@@ -309,15 +422,20 @@ and compile_expr' (e: expr) : Parsetree.expression =
     aux es
   | Evalue e ->
     Exp.apply (Exp.ident (with_loc (Longident.Lident "value"))) [Nolabel, compile_expr' e]
+  | Eresample ->
+    let unit = 
+      Exp.apply (Exp.ident (with_loc (Longident.Lident "const"))) 
+        [Nolabel, Exp.construct (with_loc (Longident.Lident "()")) None] in
+    Exp.apply (Exp.ident (with_loc (Longident.Lident "resample"))) [Nolabel, unit]
   | Efun (p, e) ->
     Exp.fun_ Nolabel None (compile_pattern p) (compile_expr' e)
 
 let compile_expr (cps: bool) (e: expr) : Parsetree.expression =
   let e = annotation_pass e in
-  (* let e = ite_pass e in *)
   let e = if cps then 
-    let e = cps_pass e (Evar {modul=None; name = "muf_k"}) in
-    Exp.fun_ Nolabel None (Pat.var (with_loc "muf_k")) (compile_expr' e)
+    let e' = cps_pass e (Evar {modul=None; name = "muf_k"}) in
+    let e' = compile_expr' e' in
+    Exp.fun_ Nolabel None (Pat.var (with_loc "muf_k")) e'
   else 
     compile_expr' e
   in
@@ -343,7 +461,7 @@ let compile_declarations (output: string) (ds: declaration list) : Parsetree.str
   ) ds
 
 let compile_program (output: string) (p: program) : Parsetree.structure =
-  let decls, e = p in
+  let decls, e = ite_pass output p in
 
   let main = 
     Str.value Nonrecursive 

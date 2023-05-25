@@ -11,7 +11,7 @@
 %token OPEN
 %token LET IN FUN VAL
 %token IF THEN ELSE
-%token OBSERVE VALUE
+%token OBSERVE VALUE RESAMPLE
 // %token BOOLT INTT FLOATT
 // %token DIST UNIT ARRAY LIST
 %token EXACT APPROX
@@ -119,6 +119,8 @@ expr:
     { Eobserve (e1, e2) }
 | VALUE LPAREN e1 = simple_expr RPAREN
     { Evalue e1 }
+| RESAMPLE LPAREN RPAREN
+    { Eresample }
 // typ:
 // | INTT { Tany }
 // | FLOATT { Tany }

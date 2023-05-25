@@ -21,6 +21,7 @@
           (* ("sample", SAMPLE); *)
           ("observe", OBSERVE);
           ("value", VALUE);
+          ("resample", RESAMPLE);
           (* ("infer", INFER); *)
           ("true", BOOL true);
           ("false", BOOL false);
