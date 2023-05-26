@@ -211,78 +211,100 @@ let ite_pass (output: string) (p: program) : program =
   decls, e
 
 (* Converts program into CPS, must be done after ite_pass *)
-let rec cps_pass (e: expr) (k: expr) : expr =
-  match e with
-  | Evar _ | Econst _ -> Eapp(k, e)
-  | Esample _ | Eobserve _ | Eresample -> Eapp(e, k)
-  | Efun _ -> failwith "Fun is internal"
-  | Eif (e1, e2, e3) ->
-    (* Does not contain observe/sample in e2 or e3 *)
-    (* Symbolic ite *)
-    let guard_temp = temp_var () in
-    let then_temp = temp_var () in
-    let else_temp = temp_var () in
-
-    let k = Eapp(k, Eif(Evar guard_temp, Evar then_temp, Evar else_temp)) in
-
-    cps_pass e1 (Efun (Pid guard_temp,
-      cps_pass e2 (Efun (Pid then_temp,
-        cps_pass e3 (Efun (Pid else_temp, k))))))
-  | Eifeval (e1, e2, e3) ->
-    (* Eagerly evals e1 *)
-    (* Used for when there's side effects expected *)
-    let guard_temp = temp_var () in
-    let k_temp = temp_var () in
-
-    let k' = 
-      Efun (Pid guard_temp, 
-        Elet (Pid k_temp, k,
-        Eifeval(Evar guard_temp, 
-          cps_pass e2 (Evar k_temp), 
-          cps_pass e3 (Evar k_temp)))) in
-    cps_pass e1 k'
-  | Eapp (e1, e2) ->
-    (* e1 should be atomic *)
-    begin match e1 with
-    (* All list and array functions should be CPS *)
-    | Evar {modul=Some "List"; _} | Evar {modul=Some "Array"; _} -> 
+let cps_pass (functions: string list) (e: expr) (k: expr) : expr =
+  let rec cps_pass (e: expr) (k: expr) : expr =
+    match e with
+    | Evar _ | Econst _ -> Eapp(k, e)
+    | Eresample -> Eapp(e, k)
+    | Esample (p, a, e1) ->
+      (* assumes e1 is distribution *)
       let temp = temp_var () in
-      let k' = Efun(Pid temp, Eapp(Eapp(e1, Evar temp), k)) in
-      cps_pass e2 k'
-    | _ -> 
+      cps_pass e1 (Efun (Pid temp, Eapp (Esample (p, a, Evar temp), k)))
+    | Eobserve (e1, e2) ->
+      let temp1 = temp_var () in
+      let temp2 = temp_var () in
+      let k' = Eapp (Eobserve (Evar temp1, Evar temp2), k) in
+      cps_pass e1 (Efun (Pid temp1, 
+        cps_pass e2 (Efun (Pid temp2, k'))))
+    | Efun _ -> failwith "Fun is internal"
+    | Eif (e1, e2, e3) ->
+      (* Does not contain observe/sample in e2 or e3 *)
+      (* Symbolic ite *)
+      let guard_temp = temp_var () in
+      let then_temp = temp_var () in
+      let else_temp = temp_var () in
+
+      let k = Eapp(k, Eif(Evar guard_temp, Evar then_temp, Evar else_temp)) in
+
+      cps_pass e1 (Efun (Pid guard_temp,
+        cps_pass e2 (Efun (Pid then_temp,
+          cps_pass e3 (Efun (Pid else_temp, k))))))
+    | Eifeval (e1, e2, e3) ->
+      (* Eagerly evals e1 *)
+      (* Used for when there's side effects expected *)
+      let guard_temp = temp_var () in
+      let k_temp = temp_var () in
+
+      let k' = 
+        Efun (Pid guard_temp, 
+          Elet (Pid k_temp, k,
+          Eifeval(Evar guard_temp, 
+            cps_pass e2 (Evar k_temp), 
+            cps_pass e3 (Evar k_temp)))) in
+      cps_pass e1 k'
+    | Eapp (e1, e2) ->
+      (* e1 should be atomic *)
+      begin match e1 with
+      (* All list and array functions should be CPS *)
+      | Evar {modul=Some "List"; _} | Evar {modul=Some "Array"; _} -> 
+        let temp = temp_var () in
+        let k' = Efun(Pid temp, Eapp(Eapp(e1, Evar temp), k)) in
+        cps_pass e2 k'
+      | Evar {modul=None; name} ->
+        if List.mem name functions then
+          let temp = temp_var () in
+          let k' = Efun(Pid temp, Eapp(Eapp(e1, Evar temp), k)) in
+          cps_pass e2 k'
+        else
+          let temp = temp_var () in
+          let k' = Efun(Pid temp, Eapp(k, Eapp(e1, Evar temp))) in
+          cps_pass e2 k'
+      | _ -> 
+        let temp = temp_var () in
+        let k' = Efun(Pid temp, Eapp(k, Eapp(e1, Evar temp))) in
+        cps_pass e2 k'
+      end
+    | Elet (x, e1, e2) ->
       let temp = temp_var () in
-      let k' = Efun(Pid temp, Eapp(k, Eapp(e1, Evar temp))) in
-      cps_pass e2 k'
-    end
-  | Elet (x, e1, e2) ->
-    let temp = temp_var () in
-    let k' = Efun(Pid temp, Elet(x, Evar temp, cps_pass e2 k)) in
-    cps_pass e1 k'
-  | Evalue e1 ->
-    let temp = temp_var () in
-    let k' = Efun(Pid temp, Eapp(k, Evalue (Evar temp))) in
-    cps_pass e1 k'
-  | Elist l ->
-    let temps = List.map (fun _ -> temp_var ()) l in
-    let k' = Eapp(k, Elist (List.map (fun e -> Evar e) temps)) in
-    List.fold_left2 (fun k temp e ->
-      let k' = Efun(Pid temp, k) in
-      cps_pass e k'
-    ) k' (List.rev temps) (List.rev l)
-  | Epair l ->
-    let temps = List.map (fun _ -> temp_var ()) l in
-    let k' = Eapp(k, Epair (List.map (fun e -> Evar e) temps)) in
-    List.fold_left2 (fun k temp e ->
-      let k' = Efun(Pid temp, k) in
-      cps_pass e k'
-    ) k' (List.rev temps) (List.rev l)
-  | Etuple l ->
-    let temps = List.map (fun _ -> temp_var ()) l in
-    let k' = Eapp(k, Etuple (List.map (fun e -> Evar e) temps)) in
-    List.fold_left2 (fun k temp e ->
-      let k' = Efun(Pid temp, k) in
-      cps_pass e k'
-    ) k' (List.rev temps) (List.rev l)
+      let k' = Efun(Pid temp, Elet(x, Evar temp, cps_pass e2 k)) in
+      cps_pass e1 k'
+    | Evalue e1 ->
+      let temp = temp_var () in
+      let k' = Efun(Pid temp, Eapp(k, Evalue (Evar temp))) in
+      cps_pass e1 k'
+    | Elist l ->
+      let temps = List.map (fun _ -> temp_var ()) l in
+      let k' = Eapp(k, Elist (List.map (fun e -> Evar e) temps)) in
+      List.fold_left2 (fun k temp e ->
+        let k' = Efun(Pid temp, k) in
+        cps_pass e k'
+      ) k' (List.rev temps) (List.rev l)
+    | Epair l ->
+      let temps = List.map (fun _ -> temp_var ()) l in
+      let k' = Eapp(k, Epair (List.map (fun e -> Evar e) temps)) in
+      List.fold_left2 (fun k temp e ->
+        let k' = Efun(Pid temp, k) in
+        cps_pass e k'
+      ) k' (List.rev temps) (List.rev l)
+    | Etuple l ->
+      let temps = List.map (fun _ -> temp_var ()) l in
+      let k' = Eapp(k, Etuple (List.map (fun e -> Evar e) temps)) in
+      List.fold_left2 (fun k temp e ->
+        let k' = Efun(Pid temp, k) in
+        cps_pass e k'
+      ) k' (List.rev temps) (List.rev l)
+  in
+  cps_pass e k
 
 let with_loc x : 'a with_loc = 
   { txt = x;
@@ -432,10 +454,10 @@ and compile_expr' (e: expr) : Parsetree.expression =
   | Efun (p, e) ->
     Exp.fun_ Nolabel None (compile_pattern p) (compile_expr' e)
 
-let compile_expr (cps: bool) (e: expr) : Parsetree.expression =
+let compile_expr (functions: string list) (cps: bool) (e: expr) : Parsetree.expression =
   let e = annotation_pass e in
   let e = if cps then 
-    let e' = cps_pass e (Evar {modul=None; name = "muf_k"}) in
+    let e' = cps_pass functions e (Evar {modul=None; name = "muf_k"}) in
     let e' = compile_expr' e' in
     Exp.fun_ Nolabel None (Pat.var (with_loc "muf_k")) e'
   else 
@@ -443,32 +465,33 @@ let compile_expr (cps: bool) (e: expr) : Parsetree.expression =
   in
   e
 
-let compile_declarations (output: string) (ds: declaration list) : Parsetree.structure_item list =
-  List.map (fun d ->
+let compile_declarations (output: string) (ds: declaration list) : string list * Parsetree.structure_item list =
+  List.fold_left_map (fun acc d ->
     match d with
     | Ddecl (p, e) -> 
-      Str.value Nonrecursive [ Vb.mk (compile_pattern p) (compile_expr false e) ]
+      acc, Str.value Nonrecursive [ Vb.mk (compile_pattern p) (compile_expr acc false e) ]
     | Dfun (s, p, e) ->
       let e = if s = output then 
-        compile_expr false e 
+        compile_expr acc false e 
       else
-        compile_expr true e
+        compile_expr acc true e
       in
-        Str.value Nonrecursive
+        (s::acc), Str.value Nonrecursive
           [ Vb.mk (Pat.var (with_loc s))
               (Exp.fun_ Nolabel None (compile_pattern p) e) ]
     (* | Dtype (s, ss, td) -> M.Dtype (s, ss, td) *)
     | Dopen s ->
-      Str.open_ (Opn.mk (Mod.ident (with_loc (Longident.Lident s))))
-  ) ds
+      acc, Str.open_ (Opn.mk (Mod.ident (with_loc (Longident.Lident s))))
+  ) [] ds
 
 let compile_program (output: string) (p: program) : Parsetree.structure =
   let decls, e = ite_pass output p in
+  let functions, decls = compile_declarations output decls in
 
   let main = 
     Str.value Nonrecursive 
       [ Vb.mk (Pat.var (with_loc "main"))
           (Exp.fun_ Nolabel None (Pat.any ()) 
-              (compile_expr true e)) ] in
-  let compiled_program = (compile_declarations output decls)@[main] in
+              (compile_expr functions true e)) ] in
+  let compiled_program = decls@[main] in
   compiled_program
