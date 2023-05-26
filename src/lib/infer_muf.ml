@@ -62,9 +62,6 @@ let factor score k prob =
 let observe d v =
   let score = SSI.observe 0. d (Utils.get_const v) in
   factor score
-  
-let return x k = k x
-let ( let* ) x f k = x (fun y -> f y k)
 
 let resample unitt k prob =
   (* resample takes unit *)
@@ -75,9 +72,12 @@ let resample unitt k prob =
     let probabilities = Utils.normalize scores in
     let values = Array.map (fun p -> {p with score = 0.}) particles in
 
-    Array.init (Array.length particles) (fun _ ->
-      let i = Owl_stats.categorical_rvs probabilities in
-      Utils.copy values.(i)
+    Array.init (Array.length particles) (fun i ->
+      let j = Owl_stats.categorical_rvs probabilities in
+      if i = j then
+        values.(i)
+      else
+        {values.(j) with k = Utils.copy values.(j).k}
     )
   in
 
@@ -317,10 +317,9 @@ module List = struct
     traversal (Utils.get_lst l) init k
 
   let fold_resample (f, l, init) k =
-    let f' = (fun (acc, h) -> 
-      let* x = f (acc, h) in
-      let* _ = resample (const ()) in
-      return x
+    let f' = (fun (acc, h) k -> 
+      f (acc, h) (fun x -> 
+        (resample (const ())) (fun _ -> k x))
     ) in
     fold (f', l, init) k
     
