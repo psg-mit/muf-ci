@@ -1,5 +1,4 @@
 (* 
-  default inference strategy is the truepos_exact strategy
   inference strategy
   betas - approx
   sigma - approx
@@ -13,14 +12,13 @@
 
 (* [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1;  week3; week4; week5; sigma_h; sens; spec] *)
 val output = fun l ->
-  Print.print_float_list (List.map (mean_float, l))
+  Print.print_float_list (l)
 
 val preprocess_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
   let survey_res = eq_det(List.hd(entry), 1.) in
   let h = int_of_float_det(List.hd(List.tl(entry))) in
   let x = List.cons(1., List.tl(List.tl(entry))) in
-  (* let x = List.map (wrap_x, x') in *)
   (x, h, survey_res)
 
 val dot = fun (acc, p) -> 
@@ -44,7 +42,7 @@ val make_observations = fun (params, data) ->
 
   let eta_h = Array.get(eta, h) in
   let p' = add(
-    List.fold (dot, 0., List.zip(x, b)),
+    List.fold (dot, List.zip(x, b), 0.),
     mul(sigma_h, eta_h)
     ) in
   let p = sigmoid(p') in
@@ -91,7 +89,7 @@ let week5 <- gaussian (0., 1.) in
 let b = [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105;
 week1; week3; week4; week5] in
 
-let _ = List.fold(make_observations, (b, eta, sigma_h, sens, fpr), data) in
+let _ = List.fold_resample(make_observations, data, (b, eta, sigma_h, sens, fpr)) in
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
 let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 
