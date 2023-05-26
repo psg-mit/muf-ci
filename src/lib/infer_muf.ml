@@ -256,38 +256,50 @@ let mean_bool : bool expr -> float expr =
     ExConst (mean_bool' e)
 
 module List = struct
-  let length l = const(List.length l)
-  let nil = (fun () -> lst [])
-  let hd l =
+  let length l k = k (const(List.length l))
+  let nil () k = k (lst([]))
+  let hd l k =
     let l = Utils.get_lst l in
-    List.hd l
-  let tl l = 
+    k (List.hd l)
+  let tl l k = 
     let l = Utils.get_lst l in
-    lst(List.tl l)
-  let cons (x, l) = 
+    k (lst(List.tl l))
+  let cons (x, l) k = 
     let l = Utils.get_lst l in
-    lst(x :: l)
-  let empty l = 
+    k (lst(x :: l))
+  let empty l k = 
     let l = Utils.get_lst l in
-    const(List.length l = 0)
-  let rev l = 
+    k (const(List.length l = 0))
+  let rev l k = 
     let l = Utils.get_lst l in
-    lst(List.rev_append l [])
-  let filter (f, l) = 
+    k (lst(List.rev_append l []))
+  let filter (f, l) k = 
     let l = Utils.get_lst l in
-    lst(List.filter f l)
-  let init (n, f) = 
+    let rec traversal f l acc k =
+      match l with
+      | [] -> k (lst(List.rev acc))
+      | h :: t -> (f h) (fun a -> if Utils.get_const a then traversal f t (h :: acc) k else traversal f t acc k)
+    in
+    traversal f l [] k
+  let init (n, f) k = 
     let n = Utils.get_const n in
-    lst(List.init n (fun i ->
-      let i = const i in
-      f i))
-  let append (a, b) = 
+    let rec traversal n f acc k =
+      if n = 0 then k (lst(List.rev acc))
+      else (f (const n)) (fun a -> traversal (n - 1) f (a :: acc) k)
+    in
+    traversal n f [] k
+  let append (a, b) k = 
     let a = Utils.get_lst a in
     let b = Utils.get_lst b in
-    lst(List.append a b)
-  let map (f, l) = 
+    k (lst(List.append a b))
+  let map (f, l) k = 
     let l = Utils.get_lst l in
-    lst(List.map f l)
+    let rec traversal l acc k =
+      match l with
+      | [] -> k (lst(List.rev acc))
+      | h :: t -> (f h) (fun a -> traversal t (a :: acc) k)
+    in
+    traversal l [] k
 
   let iter (f, l) k =
     let rec traversal f l k =
@@ -312,40 +324,52 @@ module List = struct
     ) in
     fold (f', l, init) k
     
-  let zip (a, b) = 
+  let zip (a, b) k = 
     let a = Utils.get_lst a in
     let b = Utils.get_lst b in
-    lst(List.map2 (fun x y -> pair x y) a b)
+    k (lst(List.map2 (fun x y -> pair x y) a b))
 
-  let iter2 (f, l1, l2) =
+  let iter2 (f, l1, l2) k =
     let l1 = Utils.get_lst l1 in
     let l2 = Utils.get_lst l2 in
-    let f a b = f (a, b) in
-    List.iter2 f l1 l2
+    let rec traversal f l1 l2 k =
+      match l1, l2 with
+      | [], [] -> k ()
+      | h1 :: t1, h2 :: t2 -> f h1 h2 (fun () -> traversal f t1 t2 k)
+      | _ -> failwith "iter2: lists have different lengths"
+    in
+    traversal f l1 l2 k
 end
 
 module Array = struct
   let empty = (fun _ -> array [||])
-  let init (n, f) = 
-    array (
-      Array.init (Utils.get_const n) (fun x -> 
-        f (const x)))
-  let get (a, x) = 
+  let init (n, f) k = 
+    let n = Utils.get_const n in
+    let rec traversal n acc k =
+      if n = 0 then k (array (Array.of_list (Stdlib.List.rev acc)))
+      else f (const (n - 1)) (fun a -> traversal (n - 1) (a :: acc) k)
+    in
+    traversal n [] k
+
+  let get (a, x) k = 
     let a = Utils.get_array a in
-    Array.get a (Utils.get_const x)
+    k (Array.get a (Utils.get_const x))
 end
 
 module Print = struct
   let print_float (f) =
     let f = Utils.get_const f in
-    Format.printf "%f" f
+    Format.printf "%f" f;
+    const ()
   let print_string (s) =
     let s = Utils.get_const s in
-    Format.printf "%s" s
+    Format.printf "%s" s;
+    const ()
   let print_endline (s) =
     let s = Utils.get_const s in
-    Format.printf "%s\n" s
-  let print_float_list : float list expr -> unit =
+    Format.printf "%s\n" s;
+    const ()
+  let print_float_list =
   fun l ->
     let l = Utils.get_lst l in
     let rec aux l =
@@ -358,5 +382,6 @@ module Print = struct
     in
     Format.printf "[@[";
     aux l;
-    Format.printf "@]]"
+    Format.printf "@]]";
+    const ()
 end
