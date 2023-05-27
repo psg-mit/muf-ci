@@ -72,17 +72,18 @@ let resample unitt k prob =
     let probabilities = Utils.normalize scores in
     let values = Array.map (fun p -> {p with score = 0.}) particles in
 
-    let used = ref [] in
+    let used = Hashtbl.create (Array.length particles) in
 
     Array.init (Array.length particles) (fun _ ->
       let j = Owl_stats.categorical_rvs probabilities in
       let particle = 
-        if List.mem j !used then
+        if Hashtbl.mem used j then
           {values.(j) with k = Utils.copy values.(j).k}
-        else
+        else begin
+          Hashtbl.add used j ();
           values.(j)
+        end
       in
-      used := j :: !used;
       particle
     )
   in
