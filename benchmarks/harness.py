@@ -7,15 +7,20 @@ from math import log
 import matplotlib.pyplot as plt
 import glob
 
-def error_func(x):
+def error_func(config, x):
+  if config['error_func'] == "se":
   # squared error
-  # return x ** 2
+    return x ** 2
   # absolute error
-  return x
+  elif config['error_func'] == "ae":
+    return abs(x)
+  else:
+    return
 
-def run_muf(benchmark, filename, output, p, n, config, verbose=False):
+# Runs benchmark executable and computes the absolute error of each variable
+def run_muf(benchmark, filename, config, verbose=False):
   # run muf file
-  cmd = './{}_main.exe'.format(os.path.splitext(os.path.basename(filename))[0])
+  cmd = './{}.exe'.format(os.path.splitext(os.path.basename(filename))[0])
   
   if verbose:
     print('>', cmd)
@@ -33,14 +38,26 @@ def run_muf(benchmark, filename, output, p, n, config, verbose=False):
   
   # parse output
   lines = out.strip().split('\n')
-  line = lines[-1]
+  output_line = lines[1] # second line
 
   # parse line into dict
   program_output = {}
-  # [2.738712, 0.295334, 1.406225, -1.462784, 1.211603, 0.803564, -0.674772, -1.833021, 0.007779, 0.496084, 1.222381, 0.749403, 0.745628]
-  line = line.strip()[1:-1]
-  for k, v in enumerate(line.split(', ')):
-    program_output[config["true_vars"][k][0]] = abs(float(v) - config["true_vars"][k][1])
+
+  output_line = output_line.strip()[1:-1] # remove brackets
+  if config['streaming'] is not None:
+    # TODO: check this
+    values = output_line.split(', ')
+    start = 0
+    for k, n in enumerate(config['streaming']):
+      mse = [abs(float(v) - config["true_vars"][k][1][i]) for i, v in enumerate(values[start:start + n])]
+      mse = sum(mse) / len(mse)
+      program_output[config['true_vars'][k][0]] = mse
+      start += n
+
+  else:
+    # [2.738712, 0.295334, 1.406225, -1.462784, 1.211603, 0.803564, -0.674772, -1.833021, 0.007779, 0.496084, 1.222381, 0.749403, 0.745628]
+    for k, v in enumerate(output_line.split(', ')):
+      program_output[config["true_vars"][k][0]] = abs(float(v) - config["true_vars"][k][1])
   
   return program_output, (t2 - t1)
 
@@ -57,7 +74,8 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
       print('Running with {} particles'.format(p))
 
     # Compile muf
-    cmd = 'mufc --particles {} {}'.format(p, filename)
+    # mufc -- --particles 1 --output output test.muf
+    cmd = 'mufc --particles {} --output output {}'.format(p, filename)
     if verbose:
       print('>', cmd)
 
@@ -71,7 +89,7 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
       if verbose:
         print('{} particles - Run {}'.format(p, i))
 
-      program_output, t = run_muf(benchmark, filename, output, p, n, config, verbose)
+      program_output, t = run_muf(benchmark, filename, config, verbose)
       for k, v in program_output.items():
         if k not in mses:
           mses[k] = []
@@ -130,8 +148,15 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   n_files = len(results)
 
   # colors = ["#ec8688", "#feb140", "#f3dd8d", "#a2b128", "#7fcad5", "#567bb7", "#ac88b3"]
-  colors = ['#f4827b', '#feb140', '#9baa20', '#7cc7d2', '#9879a4', '#f7dd73', '#5999d3']
+  # red orange green blue purple indigo yellow 
+  colors = ['#f4827b', '#feb140', '#9baa20', '#7cc7d2', '#9879a4', '#5999d3', '#f7dd73']
+  # edgecolors = ["#b7575c","#c78200","#c0ab5f","#708200","#4d9aa4","#204f87","#204f87"]
+  edgecolors = ["#b7575c",
+  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200"]
+
   markers = ['s', 'v', 'd', 'o', 'x', 'p', 'h', 'D', 'H', '8', 'P', 'X']
+
+  markersize = 8
 
   # runtime
   all_labels = []
@@ -150,7 +175,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
       measurement_label = 'runtime'
 
-      runtimes = sorted(map(error_func, data_[measurement_label]['all']))
+      runtimes = sorted(map((lambda x: error_func(config, x)), data_[measurement_label]['all']))
 
       lower.append(runtimes[int(0.10 * len(runtimes))])
       median.append(runtimes[int(0.50 * len(runtimes))])
@@ -162,7 +187,8 @@ def plot(benchmark, output, files, particles, config, verbose=False):
     all_labels.append(label)
     fmt = markers[i]
 
-    ax.scatter(p, median, marker=markers[i], color=colors[i], label=label)
+    ax.scatter(p, median, marker=markers[i], color=colors[i], label=label, 
+               edgecolors=edgecolors[i], s=50)
     # ax.set_xticks(p)
 
     # ax.errorbar(p, median, yerr=[lower, upper], fmt=fmt, color=colors[i], capsize=5, label=label)
@@ -208,7 +234,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
         if v == 'runtime':
           continue
 
-        transformed_errors = sorted(map(error_func, errors['all']))
+        transformed_errors = sorted(map((lambda x: error_func(config, x)), errors['all']))
 
         if v not in all_errors:
           all_errors[v] = {
@@ -235,11 +261,14 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       for ax in [axes1, axes2, axes3, axes4]:
         ax[plot_j][plot_i].set_visible(True)
 
-
-      axes1[plot_j][plot_i].plot(p, mses['median'], marker=markers[i], color=colors[i], label=label)
-      axes2[plot_j][plot_i].plot(p, mses['lower'], marker=markers[i], color=colors[i], label=label)
-      axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label)
-      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], capsize=5, label=label)
+      axes1[plot_j][plot_i].plot(p, mses['median'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      axes2[plot_j][plot_i].plot(p, mses['lower'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
 
       # axes1[plot_j][plot_i].set_xticks(p)
       # axes2[plot_j][plot_i].set_xticks(p)
@@ -312,9 +341,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
 
   # print ratio of runtime
-  print('runtime: {}'.format(
-    results['serosurvey_default.muf']['60']['runtime']['median'] / \
-    results['serosurvey_sens_fpr_exact.muf']['60']['runtime']['median']))
+  if '60' in results['serosurvey_default.muf'] and '60' in results['serosurvey_sens_fpr_exact.muf']:
+    print('runtime: {}'.format(
+      results['serosurvey_default.muf']['60']['runtime']['median'] / \
+      results['serosurvey_sens_fpr_exact.muf']['60']['runtime']['median']))
 
 
 
