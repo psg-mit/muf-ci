@@ -72,12 +72,18 @@ let resample unitt k prob =
     let probabilities = Utils.normalize scores in
     let values = Array.map (fun p -> {p with score = 0.}) particles in
 
-    Array.init (Array.length particles) (fun i ->
+    let used = ref [] in
+
+    Array.init (Array.length particles) (fun _ ->
       let j = Owl_stats.categorical_rvs probabilities in
-      if i = j then
-        values.(i)
-      else
-        {values.(j) with k = Utils.copy values.(j).k}
+      let particle = 
+        if List.mem j !used then
+          {values.(j) with k = Utils.copy values.(j).k}
+        else
+          values.(j)
+      in
+      used := j :: !used;
+      particle
     )
   in
 
@@ -126,7 +132,10 @@ let int_of_float_det f =
 let lt_det (a, b) = a < b
 let eq_det (a, b) = 
   const (Utils.get_const a = Utils.get_const b)
-let add_int (x, y) = x + y
+let add_int (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const(x + y)
 let sub_int (x, y) = x - y
 let add_float (x, y) = x +. y
 let sub_float (x, y) = x -. y
