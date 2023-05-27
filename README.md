@@ -11,3 +11,5 @@
     let x = v1 in
     ...)
 ```
+- extend SSI module to keep changes local to muf
+- SSI MCMC
