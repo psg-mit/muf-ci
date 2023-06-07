@@ -12,7 +12,7 @@
 
 (* [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1;  week3; week4; week5; sigma_h; sens; spec] *)
 val output = fun l ->
-  Print.print_float_list (l)
+  Print.print_float_list3 (l)
 
 val preprocess_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
