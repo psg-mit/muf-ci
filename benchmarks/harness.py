@@ -38,27 +38,30 @@ def run_muf(benchmark, filename, config, verbose=False):
   
   # parse output
   lines = out.strip().split('\n')
-  output_line = lines[1] # second line
+
+  # get outputs between ==== OUTPUT ==== and ==== APPROXIMATION STATUS ====
+  output_lines = []
+  start = False
+  for line in lines:
+    if '==== OUTPUT ====' in line:
+      start = True
+    elif '====' in line:
+      break
+    elif start:
+      output_lines.append(line)
+
+  # print(output_lines)
 
   # parse line into dict
   program_output = {}
 
-  output_line = output_line.strip()[1:-1] # remove brackets
-  if config['streaming'] is not None:
-    # TODO: check this
-    values = output_line.split(', ')
-    start = 0
-    for k, n in enumerate(config['streaming']):
-      mse = [abs(float(v) - config["true_vars"][k][1][i]) for i, v in enumerate(values[start:start + n])]
-      mse = sum(mse) / len(mse)
-      program_output[config['true_vars'][k][0]] = mse
-      start += n
+  for i, (k, true_vs) in enumerate(config['true_vars']):
+    line = output_lines[i].strip()
+    values = line.split(' ')
+    error = [error_func(config, float(v) - true_vs[i]) for i, v in enumerate(values)]
+    error = sum(error) / len(error)
+    program_output[k] = error
 
-  else:
-    # [2.738712, 0.295334, 1.406225, -1.462784, 1.211603, 0.803564, -0.674772, -1.833021, 0.007779, 0.496084, 1.222381, 0.749403, 0.745628]
-    for k, v in enumerate(output_line.split(', ')):
-      program_output[config["true_vars"][k][0]] = abs(float(v) - config["true_vars"][k][1])
-  
   return program_output, (t2 - t1)
 
 def close_to_target(target_accuracy, accuracy):
@@ -175,7 +178,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
       measurement_label = 'runtime'
 
-      runtimes = sorted(map((lambda x: error_func(config, x)), data_[measurement_label]['all']))
+      runtimes = sorted(data_[measurement_label]['all'])
 
       lower.append(runtimes[int(0.10 * len(runtimes))])
       median.append(runtimes[int(0.50 * len(runtimes))])
@@ -234,7 +237,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
         if v == 'runtime':
           continue
 
-        transformed_errors = sorted(map((lambda x: error_func(config, x)), errors['all']))
+        transformed_errors = sorted(errors['all'])
 
         if v not in all_errors:
           all_errors[v] = {
@@ -268,14 +271,15 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
       axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], label=label, 
-                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
 
       # axes1[plot_j][plot_i].set_xticks(p)
       # axes2[plot_j][plot_i].set_xticks(p)
       # axes3[plot_j][plot_i].set_xticks(p)
       # axes4[plot_j][plot_i].set_xticks(p)
 
-      axes4[plot_j][plot_i].set_yscale('log')
+      for ax in [axes1, axes2, axes3, axes4]:
+        ax[plot_j][plot_i].set_yscale('log')
       # axes1[k][0].set_ylim(1e-4, 1e3)
       # axes1[k][0].set_xlabel('log')
       # variable_name = '_'.join(v.split('_')[:-1])
@@ -341,12 +345,6 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
 
   # print ratio of runtime
-  if '60' in results['serosurvey_default.muf'] and '60' in results['serosurvey_sens_fpr_exact.muf']:
-    print('runtime: {}'.format(
-      results['serosurvey_default.muf']['60']['runtime']['median'] / \
-      results['serosurvey_sens_fpr_exact.muf']['60']['runtime']['median']))
-
-
 
 
 if __name__ == '__main__':
@@ -375,7 +373,6 @@ if __name__ == '__main__':
   if args.files is None:
     args.files = glob.glob(os.path.join(args.benchmark, '*.muf'))
     args.files = [os.path.basename(f) for f in args.files]
-
 
   # If plotting, just plot and exit. Assumes output is in args.output
   if args.subparser_name == 'plot':
