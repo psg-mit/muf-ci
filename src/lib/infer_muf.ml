@@ -41,6 +41,10 @@ let mixture = SSI.mixture
 (* let mv_gaussian (a, b) = SSI.mv_gaussian a b *)
 (* let sampler (a, b) = SSI.sampler a b *)
 let categorical (lower, upper, f) = SSI.categorical ~lower ~upper f
+let uniform_int (a, b) = 
+  let a = Utils.get_const a in
+  let b = Utils.get_const b in
+  SSI.categorical ~lower:a ~upper:b (fun _ -> 1./.(float_of_int (b-a+1)))
 
 let value v = const (SSI.eval_sample v)
 
@@ -130,6 +134,8 @@ fun n model output_function ->
 
 let int_of_float_det f =
   const (int_of_float (Utils.get_const f))
+let float_of_int_det i =
+  const (float_of_int (Utils.get_const i))
 let lt_det (a, b) = a < b
 let eq_det (a, b) = 
   const (Utils.get_const a = Utils.get_const b)
@@ -140,7 +146,10 @@ let add_int (x, y) =
 let sub_int (x, y) = x - y
 let add_float (x, y) = x +. y
 let sub_float (x, y) = x -. y
-let div_float (x, y) = x /. y
+let div_float (x, y) =
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x /. y)
 let pow (x, y) = x ** y
 let exit code = exit code
 let concat (a, b) = a ^ b
