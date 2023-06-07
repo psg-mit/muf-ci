@@ -232,6 +232,7 @@ fun e ->
 
 let mean_float : float expr -> float expr =
   fun e ->
+    let e = Utils.get_marginal_expr e in
     let e = SSI.eval e in
     let rec mean_float' : float expr -> float =
     fun e ->
@@ -313,7 +314,10 @@ module List = struct
 
   let iter (f, l) k =
     let rec traversal f l k =
-      match l with [] -> k () | h :: t -> f h (fun () -> traversal f t k)
+      match l with 
+      | [] -> k (const ())
+      | h :: t -> (f h) (fun _ : unit expr -> 
+        traversal f t k)
     in
     let l = Utils.get_lst l in
     traversal f l k
@@ -375,8 +379,8 @@ module Print = struct
     Format.printf "%s" s;
     const ()
   let print_endline (s) =
-    let s = Utils.get_const s in
-    Format.printf "%s\n" s;
+    let () = Utils.get_const s in
+    Format.printf "\n";
     const ()
   let print_float_list =
   fun l ->
@@ -384,7 +388,8 @@ module Print = struct
     let rec aux l =
       match l with
       | [] -> ()
-      | [ x ] -> Format.printf "%f" (Utils.get_const (mean_float x))
+      | [ x ] -> 
+        Format.printf "%f" (Utils.get_const (mean_float x))
       | x :: xs ->
         Format.printf "%f, " (Utils.get_const (mean_float x));
         aux xs
@@ -392,5 +397,35 @@ module Print = struct
     Format.printf "[@[";
     aux l;
     Format.printf "@]]";
+    const ()
+  let print_float_list2 =
+  fun l ->
+    let l = Utils.get_lst l in
+    let rec aux l =
+      match l with
+      | [] -> ()
+      | [ x ] -> 
+        Format.printf "%f" (Utils.get_const (mean_float x))
+      | x :: xs ->
+        Format.printf "%f " (Utils.get_const (mean_float x));
+        aux xs
+    in
+    Format.printf "@[";
+    aux l;
+    Format.printf "@]";
+    const ()
+  let print_float_list3 =
+  fun l ->
+    let l = Utils.get_lst l in
+    let rec aux l =
+      match l with
+      | [] -> ()
+      | [ x ] -> 
+        Format.printf "%f" (Utils.get_const (mean_float x))
+      | x :: xs ->
+        Format.printf "%f\n" (Utils.get_const (mean_float x));
+        aux xs
+    in
+    aux l;
     const ()
 end
