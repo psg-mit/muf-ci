@@ -136,6 +136,8 @@ let int_of_float_det f =
   const (int_of_float (Utils.get_const f))
 let float_of_int_det i =
   const (float_of_int (Utils.get_const i))
+let bool_of_float_det f =
+  const (Utils.get_const f > 0.)
 let lt_det (a, b) = a < b
 let eq_det (a, b) = 
   const (Utils.get_const a = Utils.get_const b)

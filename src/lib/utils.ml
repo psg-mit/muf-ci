@@ -67,7 +67,14 @@ fun e ->
   match e with
   | ExConst c -> ExConst c
   | ExRand rv -> 
-    hoist_and_eval rv;
+    let rec marginalize _ =
+      try hoist_and_eval rv
+      with NonConjugate rv_nc ->
+        (* (Printf.printf "NonConjugate %s\n" rv_nc.name); *)
+        let _ = SSI.value rv_nc in
+        marginalize ()
+    in
+    marginalize ();
     (* rv should now be marginal *)
     ExRand rv
   | ExAdd (e1, e2) -> ExAdd (get_marginal_expr e1, get_marginal_expr e2)
