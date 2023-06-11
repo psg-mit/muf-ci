@@ -14,7 +14,7 @@ val step = fun (prev, yobs) ->
   let xt_mu = if first then 0. else List.hd(xs) in
   let xt_var = if first then 2500. else 1. in
 
-  let xt <- gaussian(xt_mu, xt_var) in
+  let exact xt <- gaussian(xt_mu, xt_var) in
   let approx is_outlier <- bernoulli(outlier_prob) in
   let mu = if is_outlier then 0. else xt in
   let var = if is_outlier then 10000. else 1. in
@@ -40,7 +40,7 @@ let n = 500 in
 (* observations *)
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 
-let outlier_prob <- beta(100., 1000.) in
+let exact outlier_prob <- beta(100., 1000.) in
 let (_, res) = split(List.fold_resample(step, data, (true, outlier_prob, [0.]))) in
 let (outlier_prob, xs) = split(res) in
 let xs = List.rev(xs) in
