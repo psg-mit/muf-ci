@@ -19,5 +19,6 @@
   "base_x": 6,
   "n_y": 5,
   "n_x": 3,
+  "legend_width": 3,
   "error_func": "se"
 }
