@@ -1,5 +1,5 @@
 {
-  "sms_behavior_lambda1_exact.muf": {
+  "smsbehavior_lambda1_exact.muf": {
     "50": {
       "tau": {
         "all": [
@@ -16145,7 +16145,7 @@
       }
     }
   },
-  "sms_behavior_lambda2_exact.muf": {
+  "smsbehavior_lambda2_exact.muf": {
     "50": {
       "tau": {
         "all": [
@@ -32291,7 +32291,7 @@
       }
     }
   },
-  "sms_behavior_lambda_both_exact.muf": {
+  "smsbehavior_lambda_both_exact.muf": {
     "50": {
       "tau": {
         "all": [
@@ -48437,7 +48437,7 @@
       }
     }
   },
-  "sms_behavior_default.muf": {
+  "smsbehavior_default.muf": {
     "50": {
       "tau": {
         "all": [

@@ -1,5 +1,5 @@
 {
-  "benchmark": "sms_behavior",
+  "benchmark": "smsbehavior",
   "true_vars": [
     ["tau", [44.308125]],
     ["lambda1", [17.749241151314294]],
@@ -9,5 +9,6 @@
   "base_x": 4,
   "n_y": 2,
   "n_x": 2,
+  "legend_width": 2,
   "error_func": "se"
 }
