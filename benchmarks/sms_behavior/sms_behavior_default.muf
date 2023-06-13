@@ -6,6 +6,13 @@
 *)
 val preprocess_data = fun entry -> int_of_float_det(List.hd(entry))
 
+val add_data = fun (x, y) -> add_float(x, float_of_int_det(y))
+
+val mean = fun data ->
+  let sum = List.fold(add_data, data, 0.) in
+  let n = float_of_int_det(List.length(data)) in
+  div_float(sum, n)
+
 val step = fun (params, count_obs) ->
   let (tau, params) = split(params) in
   let (lambda1, params) = split(params) in
@@ -26,17 +33,16 @@ val output = fun out ->
   let () = Print.print_float (mean_float(lambda2)) in
   ()
 
-(* parameters *)
-let n_data = 74 in
-let alpha = div_float (1.0, float_of_int_det(n_data)) in
-
 (* observations *)
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 
+let n_data = List.length(data) in
+let alpha = div_float (1.0, mean(data)) in
+
 let lambda1 <- exponential(alpha) in
 let lambda2 <- exponential(alpha) in
-let tau <- uniform_int(0, n_data) in
-let res = List.fold_resample(step, data, (tau, lambda1, lambda2, 1)) in
+let tau <- uniform_int(0, sub_int(n_data, 1)) in
+let res = List.fold_resample(step, data, (tau, lambda1, lambda2, 0)) in
 let (tau, res) = split(res) in
 let (lambda1, res) = split(res) in
 let (lambda2, _) = split(res) in
