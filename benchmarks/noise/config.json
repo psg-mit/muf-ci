@@ -410,5 +410,6 @@
   "base_x": 4,
   "n_y": 2,
   "n_x": 2,
+  "legend_width": 3,
   "error_func": "se"
 }
