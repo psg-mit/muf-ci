@@ -145,8 +145,14 @@ let add_int (x, y) =
   let x = Utils.get_const x in
   let y = Utils.get_const y in
   const(x + y)
-let sub_int (x, y) = x - y
-let add_float (x, y) = x +. y
+let sub_int (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x - y)
+let add_float (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x +. y)
 let sub_float (x, y) = x -. y
 let div_float (x, y) =
   let x = Utils.get_const x in
@@ -278,7 +284,7 @@ let mean_bool : bool expr -> float expr =
     ExConst (mean_bool' e)
 
 module List = struct
-  let length l k = k (const(List.length l))
+  let length l k = k (const(List.length (Utils.get_lst l)))
   let nil () k = k (lst([]))
   let hd l k =
     let l = Utils.get_lst l in
