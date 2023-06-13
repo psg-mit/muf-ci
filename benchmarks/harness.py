@@ -157,7 +157,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   edgecolors = ["#b7575c",
   "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200"]
 
-  markers = ['s', 'v', 'd', 'o', 'x', 'p', 'h', 'D', 'H', '8', 'P', 'X']
+  markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'D', 'H', '8', 'P', 'x']
 
   markersize = 8
 
@@ -203,7 +203,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   ax.set_ylabel('Elapsed Time in seconds')
 
   fig.suptitle('Elapsed Time')
-  ax.legend(ncols=3, loc='upper center', bbox_to_anchor=(0.5, -0.2))
+  ax.legend(ncols=config['legend_width'], loc='upper center', bbox_to_anchor=(0.5, -0.2))
   fig.tight_layout()
 
   name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
@@ -279,7 +279,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       # axes4[plot_j][plot_i].set_xticks(p)
 
       for ax in [axes1, axes2, axes3, axes4]:
-        ax[plot_j][plot_i].set_yscale('log')
+        ax[plot_j][plot_i].set_yscale('log', nonpositive='mask')
       # axes1[k][0].set_ylim(1e-4, 1e3)
       # axes1[k][0].set_xlabel('log')
       # variable_name = '_'.join(v.split('_')[:-1])
@@ -308,7 +308,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
     ax[config['n_y'] - 1, config['n_x'] - 1].axis('off')
 
   for fig in [fig1, fig2, fig3, fig4]:
-    fig.legend(loc='lower right', ncols=2, bbox_to_anchor=(0.96, 0.125), frameon=False)
+    fig.legend(loc='lower right', ncols=config['legend_width'], bbox_to_anchor=(0.96, 0.125), frameon=False)
     
   if verbose:
     print('Saving plots')
@@ -342,10 +342,6 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   # ax.legend(*ax.get_legend_handles_labels(), loc='center', ncol=5)
   # figlegend.savefig(os.path.join(output, 'legend.png'), bbox_inches='tight')
   # figlegend.savefig(os.path.join(output, 'legend.pdf'), bbox_inches='tight')
-
-
-  # print ratio of runtime
-
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
