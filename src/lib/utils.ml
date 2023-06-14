@@ -85,24 +85,34 @@ fun e ->
   | ExArray a -> ExArray (Array.map get_marginal_expr a)
   | _ -> ExConst (eval_sample e)
 
+let is_const e =
+  let e = eval e in
+  match e with
+  | ExConst _ -> true
+  | _ -> false
+
 let get_const e =
+  let e = eval e in
   match e with
   | ExConst v -> v
   | _ -> raise (InternalError "not a constant")
 
 let split p = 
+  let p = eval p in
   match p with
   | ExPair(a, b) -> (a, b)
   | ExConst((a, b)) -> (ExConst a, ExConst b)
   | _ -> raise (InternalError "not a pair")
 
 let get_array a =
+  let a = eval a in
   match a with
   | ExArray a -> a
   | ExConst l -> Array.map ((fun x -> ExConst x)) l
   | _ -> raise (InternalError "not an array")
 
 let get_lst l =
+  let l = eval l in
   match l with
   | ExList l -> l
   | ExConst l -> List.map ((fun x -> ExConst x)) l

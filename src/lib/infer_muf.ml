@@ -138,9 +138,13 @@ let float_of_int_det i =
   const (float_of_int (Utils.get_const i))
 let bool_of_float_det f =
   const (Utils.get_const f > 0.)
+let float_of_bool_det b =
+  const (if Utils.get_const b then 1. else 0.)
 let lt_det (a, b) = a < b
 let eq_det (a, b) = 
   const (Utils.get_const a = Utils.get_const b)
+let not(x) = 
+  const (not (Utils.get_const x))
 let add_int (x, y) = 
   let x = Utils.get_const x in
   let y = Utils.get_const y in
@@ -153,12 +157,18 @@ let add_float (x, y) =
   let x = Utils.get_const x in
   let y = Utils.get_const y in
   const (x +. y)
-let sub_float (x, y) = x -. y
+let sub_float (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x -. y)
 let div_float (x, y) =
   let x = Utils.get_const x in
   let y = Utils.get_const y in
   const (x /. y)
-let pow (x, y) = x ** y
+let pow (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x ** y)
 let exit code = exit code
 let concat (a, b) = a ^ b
 
@@ -218,7 +228,7 @@ fun d ->
           (String.concat "; " (List.map (fun (e, p) -> 
             Format.sprintf "(%s, %f)" (get_string e) p) l))
       | Sampler _ | MvNormal _ | Categorical _ -> failwith "not implemented"
-      | _ -> failwith "not marginal"
+      | _ -> failwith "pp_mdistr: not marginal"
     in
     match d with
     | ExConst _ -> Format.sprintf "Const (_)"
@@ -230,20 +240,22 @@ fun d ->
     | ExPair (e1, e2) -> Format.sprintf "Pair(%s, %s)" (get_string e1) (get_string e2)
     | ExArray a -> Format.sprintf "Array([%s])" 
       (String.concat "; " (Array.to_list (Array.map get_string a)))
-    | _ -> failwith "not marginal"
+    | _ -> failwith "pp_mdistr: not marginal"
   in
   const (get_string d)
   
 
 let mean_int : int mdistr -> float expr =
 fun e ->
+  let e = Utils.get_marginal_expr e in
+  let e = SSI.eval e in
   let rec mean_int' : int expr -> float =
   fun e ->
     match e with
     | ExConst c -> float_of_int c
     | ExRand rv -> Utils.mean_int_d rv.distr
     | ExIte (i, t, e) -> if Utils.get_const (value i) then (mean_int' t) else (mean_int' e)
-    | _ -> failwith "not marginal"
+    | _ -> failwith "mean_int: not marginal"
   in
   ExConst (mean_int' e)
 
@@ -265,12 +277,13 @@ let mean_float : float expr -> float expr =
       | ExUnop (SquareRoot, e_inner) -> Float.sqrt (mean_float' e_inner)
       | ExUnop (Exp, e_inner) -> Float.exp (mean_float' e_inner)
       | ExIntToFloat e_inner -> Utils.get_const (mean_int e_inner)
-      | _ -> failwith "not marginal"
+      | _ -> failwith "mean_float: not marginal"
     in 
     ExConst (mean_float' e)
 
 let mean_bool : bool expr -> float expr =
   fun e ->
+    let e = Utils.get_marginal_expr e in
     let e = SSI.eval e in
     let rec mean_bool' : bool expr -> float =
     fun e ->
@@ -279,7 +292,7 @@ let mean_bool : bool expr -> float expr =
       | ExRand rv -> Utils.mean_bool_d rv.distr
       | ExIte (i, t, e) -> 
         if Utils.get_const (value i) then (mean_bool' t) else (mean_bool' e)
-      | _ -> failwith "not marginal"
+      | _ -> failwith "mean_bool: not marginal"
     in
     ExConst (mean_bool' e)
 
@@ -369,6 +382,10 @@ module List = struct
       | _ -> failwith "iter2: lists have different lengths"
     in
     traversal f l1 l2 k
+
+  let from_array (a) k = 
+    let a = Utils.get_array a in
+    k (lst(Array.to_list a))
 end
 
 module Array = struct
@@ -383,7 +400,18 @@ module Array = struct
 
   let get (a, x) k = 
     let a = Utils.get_array a in
-    k (Array.get a (Utils.get_const x))
+    if Utils.is_const x then k (Array.get a (Utils.get_const x))
+    else
+      let rec traversal inner i =
+        let inner = ite (eq (const i, x)) (Array.get a i) inner in
+        if i = Array.length a - 1 then k inner
+        else traversal inner (i + 1)
+      in
+      traversal (Array.get a 0) 1
+
+  let from_list (l) k = 
+    let l = Utils.get_lst l in
+    k (array (Array.of_list l))
 end
 
 module Print = struct
