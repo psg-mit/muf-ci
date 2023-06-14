@@ -473,4 +473,21 @@ module Print = struct
     in
     aux l;
     const ()
+
+  let print_bool_list2 =
+  fun l ->
+    let l = Utils.get_lst l in
+    let rec aux l =
+      match l with
+      | [] -> ()
+      | [ x ] -> 
+        Format.printf "%f" (Utils.get_const (mean_bool x))
+      | x :: xs ->
+        Format.printf "%f " (Utils.get_const (mean_bool x));
+        aux xs
+    in
+    Format.printf "@[";
+    aux l;
+    Format.printf "@]";
+    const ()
 end
