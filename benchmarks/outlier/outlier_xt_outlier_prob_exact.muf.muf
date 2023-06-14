@@ -1,6 +1,6 @@
 (* 
   inference strategy
-  outlier_prob - approx
+  outlier_prob - exact
   xt - exact
   is_outlier - approx
 *)
@@ -40,7 +40,7 @@ let n = 100 in
 (* observations *)
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 
-let approx outlier_prob <- beta(100., 1000.) in
+let exact outlier_prob <- beta(100., 1000.) in
 let (_, res) = split(List.fold_resample(step, data, (true, outlier_prob, [0.]))) in
 let (outlier_prob, xs) = split(res) in
 let xs = List.rev(xs) in
