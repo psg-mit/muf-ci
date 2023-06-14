@@ -21,7 +21,7 @@ val step = fun (params, count_obs) ->
   let lambda = if lt(i, tau) then lambda1 else lambda2 in
 
   let () = observe(poisson(lambda), count_obs) in
-  (tau, lambda1, lambda2, add_int(i, 1))
+  (tau, lambda1, lambda2, int_add(i, 1))
 
 val output = fun out ->
   let (tau, out) = split(out) in
