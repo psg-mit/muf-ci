@@ -12,17 +12,13 @@
           ("val", VAL);
           ("let", LET);
 	      ("in", IN);
-          (* ("stream", STREAM); *)
           ("fun", FUN);
           ("if", IF);
           ("then", THEN);
           ("else", ELSE);
-          (* ("factor", FACTOR); *)
-          (* ("sample", SAMPLE); *)
           ("observe", OBSERVE);
           ("value", VALUE);
           ("resample", RESAMPLE);
-          (* ("infer", INFER); *)
           ("true", BOOL true);
           ("false", BOOL false);
           (* ("bool", BOOLT); *)
@@ -35,10 +31,6 @@
           ("open", OPEN);
           ("exact", EXACT);
           ("approx", APPROX);
-          (* ("unfold", UNFOLD); *)
-          (* ("reset", RESET); *)
-          (* ("exact", EXACT);
-          ("approx", APPROX); *)
 	]; tbl
     end
 
@@ -62,8 +54,6 @@ rule token sbuff = parse
 | ")" { RPAREN }
 | "," { COMMA }
 | ";" { SEMI }
-| ":" { COLON }
-| "*" { STAR }
 | "_" { UNDERSCORE }
 | "." { DOT }
 | "[" { LSQUARE }

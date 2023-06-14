@@ -21,8 +21,6 @@
 %token LPAREN RPAREN LSQUARE RSQUARE
 %token COMMA SEMI
 %token EOF
-%token COLON
-%token STAR
 %token UNDERSCORE
 
 %start <Mufextern.program> program
@@ -32,9 +30,8 @@
 program:
 | e = expr EOF
     { [], e }
-| p = list(decl) e = expr EOF
-    { p, e }
-
+| d = decl p = program
+    { List.cons d (fst p), snd p }
 
 decl:
 | OPEN m = IDENT
@@ -44,14 +41,6 @@ decl:
     { Dfun (x, p, e) }
 // | VAL x = patt EQUAL e = expr
 //     { Ddecl (x, e) }
-// | LET x = IDENT EQUAL STREAM LCURLY INIT EQUAL e_init = expr SEMI step = IDENT p = patt EQUAL e_step = expr RCURLY
-//     { begin match step with "step" -> () | _ -> failwith "step expected" end;
-//       let n =
-//         { n_type = ([], TKrecord []); (* XXX TODO XXX *)
-//           n_init = e_init;
-//           n_step = (p, e_step); }
-//       in
-//       { decl = Dnode (x, [], n) } }
 
 simple_expr:
 (* Parenthesized expression *)
@@ -79,6 +68,8 @@ simple_expr:
 (* Call unit *)
 | e1 = simple_expr LPAREN RPAREN
     { Eapp (e1, Econst (Cunit)) }
+| VALUE LPAREN e1 = simple_expr RPAREN
+    { Evalue e1 }
 (* Call *)
 | e1 = simple_expr LPAREN e2 = expr RPAREN
     { Eapp (e1, e2) }
@@ -117,8 +108,6 @@ expr:
   { Elet (x, Esample (x, Adynamic, v), e) }
 | OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
     { Eobserve (e1, e2) }
-| VALUE LPAREN e1 = simple_expr RPAREN
-    { Evalue e1 }
 | RESAMPLE LPAREN RPAREN
     { Eresample }
 // typ:
