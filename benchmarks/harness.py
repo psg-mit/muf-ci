@@ -151,13 +151,13 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   n_files = len(results)
 
   # colors = ["#ec8688", "#feb140", "#f3dd8d", "#a2b128", "#7fcad5", "#567bb7", "#ac88b3"]
-  # red orange green blue purple indigo yellow 
-  colors = ['#f4827b', '#feb140', '#9baa20', '#7cc7d2', '#9879a4', '#5999d3', '#f7dd73']
+  # red orange green blue purple indigo yellow brown magenta
+  colors = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6"]
   # edgecolors = ["#b7575c","#c78200","#c0ab5f","#708200","#4d9aa4","#204f87","#204f87"]
   edgecolors = ["#b7575c",
-  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200"]
+  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085"]
 
-  markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'D', 'H', '8', 'P', 'x']
+  markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*']
 
   markersize = 8
 
@@ -214,10 +214,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
   # accuracy
 
-  fig1, axes1 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_y'] * config['n_y'], config['base_x'] * config['n_x']))
-  fig2, axes2 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_y'] * config['n_y'], config['base_x'] * config['n_x']))
-  fig3, axes3 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_y'] * config['n_y'], config['base_x'] * config['n_x']))
-  fig4, axes4 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_y'] * config['n_y'], config['base_x'] * config['n_x']))
+  fig1, axes1 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig2, axes2 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig3, axes3 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig4, axes4 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
 
   for ax in [axes1, axes2, axes3, axes4]:
     for a in ax.flatten():
