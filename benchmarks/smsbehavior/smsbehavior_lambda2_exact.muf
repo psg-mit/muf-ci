@@ -6,12 +6,12 @@
 *)
 val preprocess_data = fun entry -> int_of_float_det(List.hd(entry))
 
-val add_data = fun (x, y) -> add_float(x, float_of_int_det(y))
+val add_data = fun (x, y) -> add(x, float_of_int_det(y))
 
 val mean = fun data ->
   let sum = List.fold(add_data, data, 0.) in
   let n = float_of_int_det(List.length(data)) in
-  div_float(sum, n)
+  div(sum, n)
 
 val step = fun (params, count_obs) ->
   let (tau, params) = split(params) in
@@ -37,7 +37,7 @@ val output = fun out ->
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 
 let n_data = List.length(data) in
-let alpha = div_float (1.0, mean(data)) in
+let alpha = div (1.0, mean(data)) in
 
 let approx lambda1 <- exponential(alpha) in
 let exact lambda2 <- exponential(alpha) in
