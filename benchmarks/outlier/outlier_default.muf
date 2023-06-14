@@ -34,7 +34,7 @@ val output = fun out ->
   ()
 
 (* parameters *)
-let n = 500 in
+let n = 100 in
 
 (* observations *)
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
