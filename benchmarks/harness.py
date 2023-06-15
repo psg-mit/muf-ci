@@ -270,7 +270,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
       axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
-      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[mses['lower'], mses['upper']], fmt=fmt, color=colors[i], label=label, 
+      
+      lower_err = [abs(mses['median'][i] - mses['lower'][i]) for i in range(len(mses['median']))]
+      upper_err = [abs(mses['upper'][i] - mses['median'][i]) for i in range(len(mses['median']))]
+      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
 
       # axes1[plot_j][plot_i].set_xticks(p)
