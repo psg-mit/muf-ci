@@ -23,6 +23,10 @@
 %token EOF
 %token UNDERSCORE
 
+%token GAUSSIAN CATEGORICAL BETA BERNOULLI 
+%token BINOMIAL BETA_BINOMIAL NEGATIVE_BINOMIAL 
+%token EXPONENTIAL GAMMA POISSON DELTA
+
 %start <Mufextern.program> program
 
 %%
@@ -41,6 +45,30 @@ decl:
     { Dfun (x, p, e) }
 // | VAL x = patt EQUAL e = expr
 //     { Ddecl (x, e) }
+
+distr:
+| GAUSSIAN LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Dgaussian (e1, e2) }
+| CATEGORICAL LPAREN e1 = simple_expr COMMA e2 = simple_expr COMMA e3 = simple_expr RPAREN
+    { Dcategorical (e1, e2, e3) }
+| BETA LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Dbeta (e1, e2) }
+| BERNOULLI LPAREN e1 = simple_expr RPAREN
+    { Dbernoulli e1 }
+| BINOMIAL LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Dbinomial (e1, e2) }
+| BETA_BINOMIAL LPAREN e1 = simple_expr COMMA e2 = simple_expr COMMA e3 = simple_expr RPAREN
+    { Dbetabinomial (e1, e2, e3) }
+| NEGATIVE_BINOMIAL LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Dnegativebinomial (e1, e2) }
+| EXPONENTIAL LPAREN e1 = simple_expr RPAREN
+    { Dexponential e1 }
+| GAMMA LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Dgamma (e1, e2) }
+| POISSON LPAREN e1 = simple_expr RPAREN
+    { Dpoisson e1 }
+| DELTA LPAREN e1 = simple_expr RPAREN
+    { Ddelta e1 }
 
 simple_expr:
 (* Parenthesized expression *)
@@ -65,13 +93,16 @@ simple_expr:
 (* Tuple *)
 | LPAREN e1 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
     { Epair (e1 :: el) }
+(* Distribution *)
+| d = distr
+    { Edistr d }
 (* Call unit *)
 | e1 = simple_expr LPAREN RPAREN
     { Eapp (e1, Econst (Cunit)) }
 | VALUE LPAREN e1 = simple_expr RPAREN
     { Evalue e1 }
 (* Call *)
-| e1 = simple_expr LPAREN e2 = expr RPAREN
+| e1 = simple_expr LPAREN e2 = simple_expr RPAREN
     { Eapp (e1, e2) }
 (* Call Tuple *)
 | e1 = simple_expr LPAREN e2 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
@@ -81,11 +112,8 @@ simple_expr:
 //     { mk_expr (Earray el) }
 // | LSQUARE RSQUARE
 //     { mk_expr (Earray []) }
-(* List *)
-// | NIL
-//     { Enil }
-// | CONS LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
-//     { Econs (e1, e2) }
+| LSQUARE RSQUARE
+    { Elist ([]) }
 | LSQUARE e1 = simple_expr RSQUARE
     { Elist ([e1]) }
 | LSQUARE e1 = simple_expr SEMI el = separated_nonempty_list(SEMI, simple_expr) RSQUARE

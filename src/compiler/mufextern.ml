@@ -46,16 +46,21 @@ type expr =
   | Elist of expr list
   | Epair of expr list
   | Efun of pattern * expr
+  | Edistr of distribution
+and distribution =
+  | Dgaussian of expr * expr
+  (* | DmvNormal of expr * expr *)
+  | Dcategorical of expr * expr * expr
+  | Dbeta of expr * expr
+  | Dbernoulli of expr
+  | Dbinomial of expr * expr
+  | Dbetabinomial of expr * expr * expr
+  | Dnegativebinomial of expr * expr
+  | Dexponential of expr
+  | Dgamma of expr * expr
+  | Dpoisson of expr
+  | Ddelta of expr
 [@@deriving show, map, fold]
-
-(* type distribution =
-  | Beta of expr * expr
-  | Bernoulli of expr
-  | Binomial of expr * expr
-  | Gaussian of expr * expr
-  | Gamma of expr * expr
-  | Poisson of expr
-[@@deriving show, map, fold] *)
 
 (* type type_declaration =
   | TKabstract_type
@@ -92,6 +97,85 @@ let get_v () =
 let temp_var () = 
   {modul=None; name=get_v ()}
 
+let unique_rv_pass (p: program) : program =
+  let rec make_rv_unique (p: pattern) : pattern =
+    match p with
+    | Pid { name = x; modul } -> 
+      let x = if List.mem x !used_rv_names then get_rv x else x in
+      used_rv_names := x :: !used_rv_names;
+      Pid { modul; name = x }
+    | Ptuple ps -> Ptuple (List.map make_rv_unique ps)
+    (* | Ptype (p, t) -> mk_expression (M.Etype (convert_pattern p, t)) *)
+    | Pany -> Pany
+    | Punit -> failwith "RV cannot be unit"
+  in
+
+  let rec unique_rv_pass_expr (e: expr) : expr =
+    match e with
+    | Econst _ | Evar _ | Eresample -> e
+    | Etuple es -> 
+      Etuple (List.map unique_rv_pass_expr es)
+    | Eapp (e1, e2) -> 
+      Eapp (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Eif (e1, e2, e3) -> 
+      Eif (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+    | Eifeval (e1, e2, e3) ->
+      Eifeval (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+    | Elet (p, e1, e2) -> 
+      Elet (p, unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Esample (p, a, e) ->
+      Esample (make_rv_unique p, a, unique_rv_pass_expr e)
+    | Eobserve (e1, e2) -> 
+      Eobserve (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Elist es ->
+      Elist (List.map unique_rv_pass_expr es)
+    | Epair es ->
+      Epair (List.map unique_rv_pass_expr es)
+    | Evalue e ->
+      Evalue (unique_rv_pass_expr e)
+    | Efun (p, e) ->
+      Efun (p, unique_rv_pass_expr e)
+    | Edistr d -> 
+      Edistr (unique_rv_pass_distr d)
+  and unique_rv_pass_distr (d: distribution) : distribution =
+    match d with
+    | Dgaussian (e1, e2) -> 
+      Dgaussian (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Dcategorical (e1, e2, e3) -> 
+      Dcategorical (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+    | Dbeta (e1, e2) -> 
+      Dbeta (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Dbernoulli e -> 
+      Dbernoulli (unique_rv_pass_expr e)
+    | Dbinomial (e1, e2) -> 
+      Dbinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Dbetabinomial (e1, e2, e3) -> 
+      Dbetabinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+    | Dnegativebinomial (e1, e2) -> 
+      Dnegativebinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Dexponential e -> 
+      Dexponential (unique_rv_pass_expr e)
+    | Dgamma (e1, e2) -> 
+      Dgamma (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+    | Dpoisson e -> 
+      Dpoisson (unique_rv_pass_expr e)
+    | Ddelta e -> 
+      Ddelta (unique_rv_pass_expr e)
+  in
+  
+  let (decls, e) = p in
+
+  let decls = List.map (fun d -> 
+    match d with
+    | Ddecl (p, e) -> Ddecl (p, unique_rv_pass_expr e)
+    | Dfun (f, p, e) -> 
+      Dfun (f, p, unique_rv_pass_expr e)
+    | Dopen s -> Dopen s
+  ) decls in
+
+  let e = unique_rv_pass_expr e in
+  (decls, e)
+
 (* If body has resample/observe, turn into regular if then else *)
 let ite_pass (output: string) (p: program) : program =
 
@@ -108,8 +192,8 @@ let ite_pass (output: string) (p: program) : program =
         | _ -> false
       in
       has_side_effects, e
-    | Eobserve (p, e) ->
-      true, Eobserve (p, snd (ite_pass' ctx e))
+    | Eobserve (e1, e2) ->
+      true, Eobserve (snd (ite_pass' ctx e1), snd (ite_pass' ctx e2))
     | Eresample -> true, Eresample
     | Eif (e1, e2, e3) -> 
       let has_side_effects1, e1 = ite_pass' ctx e1 in
@@ -126,6 +210,9 @@ let ite_pass (output: string) (p: program) : program =
       let has_side_effects = 
         has_side_effects1 || has_side_effects2 || has_side_effects3 in
       has_side_effects, Eifeval(e1, e2, e3)
+    | Edistr d -> 
+      let has_side_effects, d = ite_pass_distr ctx d in
+      has_side_effects, Edistr d
     | Eapp (e1, e2) -> 
       let has_side_effects1, e1 = ite_pass' ctx e1 in
       let has_side_effects2, e2 = ite_pass' ctx e2 in
@@ -170,6 +257,63 @@ let ite_pass (output: string) (p: program) : program =
       let has_side_effects, e = ite_pass' ctx e in
       has_side_effects, Efun (p, e)
     | Econst _ -> false, e
+  and ite_pass_distr (ctx: (string, bool) Hashtbl.t) (d: distribution) : bool * distribution =
+    match d with
+    | Dgaussian (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Dgaussian (e1, e2)
+    | Dcategorical (e1, e2, e3) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects3, e3 = ite_pass' ctx e3 in
+      let has_side_effects = 
+        has_side_effects1 || has_side_effects2 || has_side_effects3 in
+      has_side_effects, Dcategorical (e1, e2, e3)
+    | Dbeta (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Dbeta (e1, e2)
+    | Dbernoulli e1 -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects = has_side_effects1 in
+      has_side_effects, Dbernoulli e1
+    | Dbinomial (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Dbinomial (e1, e2)
+    | Dbetabinomial (e1, e2, e3) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects3, e3 = ite_pass' ctx e3 in
+      let has_side_effects = 
+        has_side_effects1 || has_side_effects2 || has_side_effects3 in
+      has_side_effects, Dbetabinomial (e1, e2, e3)
+    | Dpoisson e1 ->
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects = has_side_effects1 in
+      has_side_effects, Dpoisson e1
+    | Dnegativebinomial (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Dnegativebinomial (e1, e2)
+    | Dexponential e1 -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects = has_side_effects1 in
+      has_side_effects, Dexponential e1
+    | Dgamma (e1, e2) ->
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Dgamma (e1, e2)
+    | Ddelta e1 -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects = has_side_effects1 in
+      has_side_effects, Ddelta e1
   in
 
   let rec force_ite' (e: expr) : expr =
@@ -178,6 +322,7 @@ let ite_pass (output: string) (p: program) : program =
     | Eifeval (e1, e2, e3) -> Eifeval(force_ite' e1, force_ite' e2, force_ite' e3)
     | Eobserve (p, e) -> Eobserve (p, force_ite' e)
     | Elet (x, e1, e2) -> Elet (x, force_ite' e1, force_ite' e2)
+    | Edistr d -> Edistr (force_ite_distr d)
     | Eapp (e1, e2) -> Eapp (force_ite' e1, force_ite' e2)
     | Evalue e1 -> Evalue (force_ite' e1)
     | Elist l -> Elist (List.map force_ite' l)
@@ -186,6 +331,19 @@ let ite_pass (output: string) (p: program) : program =
     | Esample (p, a, e) -> Esample (p, a, force_ite' e)
     | Efun (p, e) -> Efun (p, force_ite' e)
     | Evar _ | Econst _ | Eresample -> e
+  and force_ite_distr (d: distribution) : distribution =
+    match d with
+    | Dgaussian (e1, e2) -> Dgaussian (force_ite' e1, force_ite' e2)
+    | Dcategorical (e1, e2, e3) -> Dcategorical (force_ite' e1, force_ite' e2, force_ite' e3)
+    | Dbeta (e1, e2) -> Dbeta (force_ite' e1, force_ite' e2)
+    | Dbernoulli e1 -> Dbernoulli (force_ite' e1)
+    | Dbinomial (e1, e2) -> Dbinomial (force_ite' e1, force_ite' e2)
+    | Dbetabinomial (e1, e2, e3) -> Dbetabinomial (force_ite' e1, force_ite' e2, force_ite' e3)
+    | Dpoisson e1 -> Dpoisson (force_ite' e1)
+    | Dnegativebinomial (e1, e2) -> Dnegativebinomial (force_ite' e1, force_ite' e2)
+    | Dexponential e1 -> Dexponential (force_ite' e1)
+    | Dgamma (e1, e2) -> Dgamma (force_ite' e1, force_ite' e2)
+    | Ddelta e1 -> Ddelta (force_ite' e1)
   in
 
   let ctx = Hashtbl.create 10 in
@@ -210,7 +368,54 @@ let ite_pass (output: string) (p: program) : program =
 
   decls, e
 
-(* Converts program into CPS, must be done after ite_pass *)
+(* Compiles distribution into Eapp *)
+let distribution_pass (e: expr) : expr =
+  let rec distribution_pass' (e: expr) : expr =
+    match e with
+    | Evar _ | Econst _ | Eresample -> e
+    | Eobserve (e1, e2) -> Eobserve(distribution_pass' e1, distribution_pass' e2)
+    | Eif (e1, e2, e3) -> Eif(distribution_pass' e1, distribution_pass' e2, distribution_pass' e3)
+    | Eifeval (e1, e2, e3) -> Eifeval(distribution_pass' e1, distribution_pass' e2, distribution_pass' e3)
+    | Edistr d -> distribution_pass_distr d
+    | Eapp (e1, e2) -> Eapp(distribution_pass' e1, distribution_pass' e2)
+    | Elet (x, e1, e2) -> Elet(x, distribution_pass' e1, distribution_pass' e2)
+    | Evalue e1 -> Evalue(distribution_pass' e1)
+    | Elist l -> Elist(List.map distribution_pass' l)
+    | Epair l -> Epair(List.map distribution_pass' l)
+    | Etuple l -> Etuple(List.map distribution_pass' l)
+    | Esample (p, a, e) -> Esample(p, a, distribution_pass' e)
+    | Efun (p, e) -> Efun(p, distribution_pass' e)
+  and distribution_pass_distr (d: distribution) : expr =
+    match d with
+    | Dgaussian (e1, e2) -> 
+      Eapp(Evar {modul=None; name="gaussian"}, Etuple [distribution_pass' e1; distribution_pass' e2])
+    | Dcategorical (e1, e2, e3) -> 
+      Eapp(Evar {modul=None; name="categorical"}, 
+      Etuple [distribution_pass' e1; distribution_pass' e2; distribution_pass' e3])
+    | Dbeta (e1, e2) -> 
+      Eapp(Evar {modul=None; name="beta"}, Etuple [distribution_pass' e1; distribution_pass' e2])
+    | Dbernoulli e1 -> 
+      Eapp(Evar {modul=None; name="bernoulli"}, distribution_pass' e1)
+    | Dbinomial (e1, e2) -> 
+      Eapp(Evar {modul=None; name="binomial"}, Etuple [distribution_pass' e1; distribution_pass' e2])
+    | Dbetabinomial (e1, e2, e3) -> 
+      Eapp(Evar {modul=None; name="beta_binomial"}, 
+        Etuple [distribution_pass' e1; distribution_pass' e2; distribution_pass' e3])
+    | Dpoisson e1 -> 
+      Eapp(Evar {modul=None; name="poisson"}, distribution_pass' e1)
+    | Dnegativebinomial (e1, e2) -> 
+      Eapp(Evar {modul=None; name="negative_binomial"}, Etuple [distribution_pass' e1; distribution_pass' e2])
+    | Dexponential e1 -> 
+      Eapp(Evar {modul=None; name="exponential"}, distribution_pass' e1)
+    | Dgamma (e1, e2) -> 
+      Eapp(Evar {modul=None; name="gamma"}, Etuple [distribution_pass' e1; distribution_pass' e2])
+    | Ddelta e1 -> 
+      Eapp(Evar {modul=None; name="delta"}, distribution_pass' e1)
+  in
+  distribution_pass' e
+
+
+(* Converts program into CPS, must be done after ite_pass and distribution_pass *)
 let cps_pass (functions: string list) (e: expr) (k: expr) : expr =
   let rec cps_pass (e: expr) (k: expr) : expr =
     match e with
@@ -303,6 +508,7 @@ let cps_pass (functions: string list) (e: expr) (k: expr) : expr =
         let k' = Efun(Pid temp, k) in
         cps_pass e k'
       ) k' (List.rev temps) (List.rev l)
+    | Edistr _ -> failwith "Distr is internal"
   in
   cps_pass e k
 
@@ -348,10 +554,7 @@ let rec compile_pattern (p: pattern) : Parsetree.pattern =
 
 let rec get_rv_name (p: pattern) : Parsetree.expression =
   match p with
-  | Pid { name = x; _ } -> 
-    let x = if List.mem x !used_rv_names then get_rv x else x in
-    used_rv_names := x :: !used_rv_names;
-    Exp.constant (Const.string x)
+  | Pid { name = x; _ } -> Exp.constant (Const.string x)
   | Ptuple ps -> Exp.tuple (List.map get_rv_name ps)
   (* | Ptype (p, t) -> mk_expression (M.Etype (convert_pattern p, t)) *)
   | Pany -> Exp.constant (Const.string "")
@@ -379,6 +582,7 @@ let rec annotation_pass (e: expr) : expr =
   | Epair l -> Epair (List.map annotation_pass l)
   | Etuple l -> Etuple (List.map annotation_pass l)
   | Evar _ | Econst _ | Eresample -> e
+  | Edistr _ -> failwith "Distr is internal"
 
 (* Compiles sample, ignoring annotations. Must be done after annotation pass *)
 let rec compile_sample (p: pattern) (e: expr) : Parsetree.expression =
@@ -395,7 +599,7 @@ let rec compile_sample (p: pattern) (e: expr) : Parsetree.expression =
     Exp.tuple [first; rest]
   | _ -> failwith "Invalid sample expression"
 
-(* Must be done after annotation pass *)
+(* Must be done after annotation pass and distribution_pass *)
 and compile_expr' (e: expr) : Parsetree.expression =
   match e with
   | Econst c -> compile_const c
@@ -453,8 +657,10 @@ and compile_expr' (e: expr) : Parsetree.expression =
     Exp.apply (Exp.ident (with_loc (Longident.Lident "resample"))) [Nolabel, unit]
   | Efun (p, e) ->
     Exp.fun_ Nolabel None (compile_pattern p) (compile_expr' e)
+  | Edistr _ -> failwith "Distr is internal"
 
 let compile_expr (functions: string list) (cps: bool) (e: expr) : Parsetree.expression =
+  let e = distribution_pass e in
   let e = annotation_pass e in
   let e = if cps then 
     let e' = cps_pass functions e (Evar {modul=None; name = "muf_k"}) in
@@ -484,8 +690,13 @@ let compile_declarations (output: string) (ds: declaration list) : string list *
       acc, Str.open_ (Opn.mk (Mod.ident (with_loc (Longident.Lident s))))
   ) [] ds
 
-let compile_program (output: string) (p: program) : Parsetree.structure =
+let pre_passes (output: string) (p: program) : program =
   let decls, e = ite_pass output p in
+  let decls, e = unique_rv_pass (decls, e) in
+  decls, e
+
+let compile_program (output: string) (p: program) : Parsetree.structure =
+  let (decls, e) = p in
   let functions, decls = compile_declarations output decls in
 
   let main = 

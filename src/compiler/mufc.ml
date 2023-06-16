@@ -3,6 +3,8 @@ open Compiler
 
 let only_check = ref false
 
+let analyze = ref false
+
 let output = ref ""
 
 let particles = ref 1
@@ -19,6 +21,9 @@ let () =
            ( "--only-check",
              Arg.Set only_check,
              "\t Only run the static analysis (default false)" );
+           ( "--analyze",
+             Arg.Set analyze,
+             "\t Run the static analysis (default false)" );
            ( "--output",
              Arg.Set_string output,
              "\t function (takes in marginal distribution) to call to print inference result (optional)");
@@ -32,4 +37,4 @@ let () =
          ])
       (fun f -> filename := f) "The muF Compiler. Options are:"
   with Error -> exit 2;;
-  compile !verbose !only_check !particles !output !filename
+  compile !verbose !only_check !analyze !particles !output !filename

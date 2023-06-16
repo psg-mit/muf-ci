@@ -28,7 +28,7 @@ let parse parsing_fun lexing_fun source_name =
       close_in ic;
       syntax_error (source_name, loc)
 
-let analyze_file n_iters p =
+(* let analyze_file n_iters p =
   let module SMap = Map.Make (String) in
   let open Muf in
   List.fold_left
@@ -58,7 +58,7 @@ let analyze_file n_iters p =
   if mcons then Format.printf "     o m-consumed analysis success@."
   else Format.printf "     x m-consumed analysis failure@.";
   if unsep then Format.printf "     o Unseparated paths analysis success@."
-  else Format.printf "     x Unseparated paths analysis failure@."
+  else Format.printf "     x Unseparated paths analysis failure@." *)
 
 let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
@@ -80,7 +80,7 @@ let compile_file particles program name output =
       "@[<v 2>@[let post_main _ = @]@;\
        @[%s@]@;\
        @[let _ = infer %d main %s in@]@;\
-       @[let () = Format.printf \"\\n==== APPROXIMATION STATUS ====\\n\" in@]@;\
+       @[let () = Format.printf \"\\n==== RUNTIME APPROXIMATION STATUS ====\\n\" in@]@;\
        @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
        @[<v 2>@[let _ =@]@;\
        @[post_main ()@]@]@." output_header particles output_option
@@ -115,7 +115,10 @@ let print_cmd name =
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
 
-let approx_status muf_list = 
+let approx_status output program = 
+  let analysis_output = Analysis.infer output program in
+  Format.printf "==== STATIC APPROXIMATION STATUS ====@.";
+  Format.printf "%s@." analysis_output
   (* let typs = Siren.approximation_status muf_list in
   Siren.pp_map std_formatter typs; *)
   (* let approx_status, muf_list = Siren.approximation_status muf_list in *)
@@ -126,9 +129,8 @@ let approx_status muf_list =
   (* List.iter print_approx_status approx_status; *)
 
   (* approx_status, muf_list *)
-  muf_list
 
-let compile verbose only_check particles output file =
+let compile verbose only_check analyze particles output file =
   (* let name = Filename.basename file in *)
   let name = Filename.chop_extension file in
   let program = parse Parser.program (Lexer.token ()) file in
@@ -139,11 +141,18 @@ let compile verbose only_check particles output file =
       (* (fun ff () -> Format.fprintf ff "()") *)
       program));
 
-  Format.printf "-- Approximation Status Analysis %s.ml@." name;
-  let _ = approx_status program in
+  (* Passes that need to be done before analysis *)
+  let program = Mufextern.pre_passes output program in
+
+  if only_check || analyze then (
+    Format.printf "-- Approximation Status Analysis %s.ml@." name;
+    approx_status output program
+  );
   
   if not only_check then (
+
     Format.printf "-- Generating %s.ml@." name;
 
     compile_file particles program name output;
-    print_cmd name)
+    print_cmd name
+  )
