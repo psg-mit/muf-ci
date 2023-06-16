@@ -10,8 +10,8 @@ r = 1
 
 prev_x = 0
 for i in range(n):
-  x = np.random.normal(f * prev_x, 1/q)
-  z = np.random.normal(h * prev_x, 1/r)
+  x = np.random.normal(f * prev_x, np.sqrt(1/q))
+  z = np.random.normal(h * prev_x, np.sqrt(1/r))
 
   prev_x = x
 
