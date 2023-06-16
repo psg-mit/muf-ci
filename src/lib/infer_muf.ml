@@ -165,11 +165,11 @@ let read file =
           const (float_of_string x)) line_list in
         data := lst(line_list) :: !data
     done;
-    lst (!data)
+    lst (List.rev !data)
   with
   | End_of_file ->
       close_in ic;
-      lst (!data)
+      lst (List.rev !data)
   | e ->
       close_in_noerr ic;
       raise e
@@ -397,6 +397,10 @@ module Print = struct
   let print_float (f) =
     let f = Utils.get_const f in
     Format.printf "%f" f;
+    const ()
+  let print_int (i) =
+    let i = Utils.get_const i in
+    Format.printf "%d" i;
     const ()
   let print_string (s) =
     let s = Utils.get_const s in
