@@ -380,6 +380,7 @@ module Array = struct
     let a = Utils.get_array a in
     if Utils.is_const x then k (Array.get a (Utils.get_const x))
     else
+      (* TODO: use let-expressions instead of directly nexting *)
       let rec traversal inner i =
         let inner = ite (eq (const i, x)) (Array.get a i) inner in
         if i = Array.length a - 1 then k inner
