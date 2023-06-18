@@ -52,7 +52,6 @@ and abs_distribution =
 | Dpoisson of abs_expr
 | Ddelta of abs_expr
 | Ddelta_sampled 
-| Ddelta_observed
 | Dunk
 
 let rv_n = ref 0
@@ -148,7 +147,6 @@ fun d ->
   | Ddelta e1 ->
     Printf.sprintf "Delta(%s)" (string_of_expr e1)
   | Ddelta_sampled -> "Delta_sampled()"
-  | Ddelta_observed -> "Delta_observed()"
   | Dunk -> "Unknown"
 
 module VarMap = Map.Make (struct
@@ -195,37 +193,25 @@ module ApproximationStatus = struct
     | Approx, Approx -> Approx
     | Exact, Exact -> Exact
     | _ -> Dynamic
+
+  let verify : t -> t -> bool =
+  fun ann inf ->
+    match ann, inf with
+    | Approx, Approx -> true
+    | Exact, Exact -> true
+    | Dynamic, _ -> true
+    | _, _ -> false
+
+  let to_string : t -> string =
+  fun status ->
+    match status with
+    | Approx -> "Approx"
+    | Exact -> "Exact"
+    | Dynamic -> "Dynamic"
 end
 
 exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
-
-module InferenceStrategy = struct
-  type t = ApproximationStatus.t RVMap.t
-
-  let join : t -> t -> t =
-  fun s1 s2 ->
-    RVMap.merge (fun _ s1 s2 ->
-      match s1, s2 with
-      | Some s1, Some s2 -> Some (ApproximationStatus.join s1 s2)
-      | Some s1, None -> Some s1
-      | None, Some s2 -> Some s2
-      | None, None -> None
-    ) s1 s2
-
-  let empty = RVMap.empty
-
-  let add : RandomVar.t -> ApproximationStatus.t -> t -> t =
-  fun rv a inf ->
-    RVMap.add rv a inf
-
-  let rec add_patt : pattern -> ApproximationStatus.t -> t -> t =
-  fun patt a inf ->
-    match patt with
-    | Pid id -> add id a inf
-    | Ptuple ps -> List.fold_left (fun inf p -> add_patt p a inf) inf ps
-    | Punit -> inf
-    | Pany -> inf
-end
+exception Inference_Strategy_Error of string
 
 let rec has_randomvar ctx e =
   match e with 
@@ -250,7 +236,7 @@ and has_randomvar_distr ctx d =
     has_randomvar ctx e1 || has_randomvar ctx e2 || has_randomvar ctx e3
   | Dbernoulli e1 | Dexponential e1 
   | Dpoisson e1 | Ddelta e1 -> has_randomvar ctx e1
-  | Ddelta_sampled | Ddelta_observed | Dunk -> false
+  | Ddelta_sampled | Dunk -> false
 
 let rec eval_add e1 e2 =
   match e1, e2 with
@@ -375,7 +361,7 @@ fun d ->
   | Ddelta e ->
     let e = eval_expr e in
     Ddelta e
-  | Ddelta_sampled | Ddelta_observed | Dunk -> d
+  | Ddelta_sampled | Dunk -> d
 
 and join_expr e1 e2 =
   let e1 = eval_expr e1 in
@@ -459,13 +445,13 @@ module SymState = struct
   let empty : t =
     RVMap.empty
 
-  let add : RandomVar.t -> abs_expr -> t -> t =
+  let assume : RandomVar.t -> abs_expr -> t -> t =
     fun rv e g ->
       match e with
       | Edistr d -> RVMap.add rv d g
       | _ -> failwith "SymState.add: Not a distribution"
 
-  let add_patt : pattern -> abs_expr -> t -> t * abs_expr =
+  let assume_patt : pattern -> abs_expr -> t -> t * abs_expr =
     fun patt es g ->
     let rec add_patt : pattern -> abs_expr -> t * RandomVar.t list -> t * RandomVar.t list =
       fun patt es (g, xs) ->
@@ -473,7 +459,7 @@ module SymState = struct
         | Pid id, es -> 
           begin match es with
           | Etuple _ -> failwith "SymState.add_patt: Cannot sample multiple distributions"
-          | _ -> add id es g, id :: xs
+          | _ -> assume id es g, id :: xs
           end
         | Ptuple (p :: ps), Etuple (e :: es) ->
           add_patt (Ptuple ps) (Etuple es) (add_patt p e (g, xs))
@@ -494,6 +480,57 @@ module SymState = struct
     fun g ->
       RVMap.fold (fun rv d acc ->
         Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (string_of_distribution d)) g ""
+end
+
+module InferenceStrategy = struct
+  type t = ApproximationStatus.t RVMap.t
+
+  let join : t -> t -> t =
+  fun s1 s2 ->
+    RVMap.merge (fun _ s1 s2 ->
+      match s1, s2 with
+      | Some s1, Some s2 -> Some (ApproximationStatus.join s1 s2)
+      | Some s1, None -> Some s1
+      | None, Some s2 -> Some s2
+      | None, None -> None
+    ) s1 s2
+
+  let empty = RVMap.empty
+
+  let add : RandomVar.t -> ApproximationStatus.t -> t -> t =
+  fun rv a inf ->
+    RVMap.add rv a inf
+
+  let rec add_patt : pattern -> ApproximationStatus.t -> t -> t =
+  fun patt a inf ->
+    match patt with
+    | Pid id -> add id a inf
+    | Ptuple ps -> List.fold_left (fun inf p -> add_patt p a inf) inf ps
+    | Punit -> inf
+    | Pany -> inf
+
+  let from_symstate : SymState.t -> t =
+  fun g ->
+    RVMap.map (fun d ->
+      match d with
+      | Ddelta_sampled -> ApproximationStatus.Approx
+      | Dunk -> ApproximationStatus.Dynamic
+      | _ -> ApproximationStatus.Exact
+    ) g
+
+  let to_string : t -> string =
+  fun inf ->
+    RVMap.fold (fun rv status acc ->
+      Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (ApproximationStatus.to_string status)
+    ) inf ""
+
+  let verify : t -> t -> unit =
+  fun ann inferred ->
+    RVMap.iter (fun rv ann_status ->
+      let inferred_status = RVMap.find rv inferred in
+      (if not (ApproximationStatus.verify ann_status inferred_status) then
+        raise (Approximation_Status_Error (rv, ann_status, inferred_status)));
+    ) ann
 end
 
 let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
@@ -559,10 +596,9 @@ fun output p ->
     | Dfun (s, _, _) -> not (s = output)
   ) decls in
 
-  let _ann_inf = annotated_inference_strategy (decls, e) in
+  let ann_inf = annotated_inference_strategy (decls, e) in
 
   (* TODO: do abstract SSI *)
-  (* DOING: get symstate *)
   let rec infer' : ctx -> SymState.t -> expr -> 
     ctx * SymState.t * abs_expr =
   fun ctx g e ->
@@ -643,13 +679,15 @@ fun output p ->
       ctx, g, e2
     | Esample (p, _, e1) ->
       let ctx, g, e1 = infer' ctx g e1 in
-      let g, xs = SymState.add_patt p e1 g in
+      let g, xs = SymState.assume_patt p e1 g in
       ctx, g, xs
     | Eobserve (e1, e2) ->
+      (* TODO *)
       let ctx, g, _e1 = infer' ctx g e1 in
       let ctx, g, _ = infer' ctx g e2 in
       ctx, g, Econst Cunit
     | Evalue e1 ->
+      (* TODO *)
       let ctx, g, _e1 = infer' ctx g e1 in
       ctx, g, Econst Cunk
     | Edistr d ->
@@ -664,6 +702,7 @@ fun output p ->
         let ctx, g, e3 = infer' ctx g e3 in
         ctx, g, Edistr (Dcategorical (e1, e2, e3))
       | Duniformint (e1, e2) ->
+        (* Uniform int is a wrapper for categorical *)
         let ctx, g, e1 = infer' ctx g e1 in
         let ctx, g, e2 = infer' ctx g e2 in
         (* TODO: if e1 and e2 are constant, we know what each probability is *)
@@ -703,7 +742,6 @@ fun output p ->
         ctx, g, Edistr (Ddelta e1)
       end
     | Efun _ -> failwith "infer: fun is internal"
-  
   in
 
   let ctx = VarMap.empty in
@@ -714,20 +752,22 @@ fun output p ->
 
   let _, g', _ = infer' ctx g e in
 
-  (* TODO: reduce g' into inference strategy *)
+  (* Reduce g' into inference strategy *)
+  let inferred_inf = InferenceStrategy.from_symstate g' in
 
-  (* TODO: Compare g'_inf to ann_inf *)
-  (* throw Approximation Status error for things aren't satisfied *)
+  let inferred_inf_s = InferenceStrategy.to_string inferred_inf in
 
-  (* TODO: output g'_inf *)
-  SymState.to_string g'
+  (* TODO: debug. delete later *)
+  let sym_state_s = SymState.to_string g' in
+  let inferred_inf_s = sym_state_s ^ "\n" ^ inferred_inf_s in
 
-  (* RVMap.fold (fun rv status acc ->
-    let status = 
-      match status with
-      | ApproximationStatus.Approx -> "Approx"
-      | ApproximationStatus.Exact -> "Exact"
-      | ApproximationStatus.Dynamic -> "Dynamic"
+  try 
+    InferenceStrategy.verify ann_inf inferred_inf;
+    inferred_inf_s
+  with Approximation_Status_Error (rv, ann, inf) ->
+    let err = 
+      Format.sprintf "`%s` is annotated with %s but expected to be %s\n" 
+        (string_of_ident rv) (ApproximationStatus.to_string ann) (ApproximationStatus.to_string inf)
     in
-    (Format.sprintf "%s%s: %s\n" acc rv status)
-  ) ann_inf ""  *)
+    raise (Inference_Strategy_Error err)
+  
