@@ -271,9 +271,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       axes3[plot_j][plot_i].plot(p, mses['upper'], marker=markers[i], color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
       
-      lower_err = [abs(mses['median'][i] - mses['lower'][i]) for i in range(len(mses['median']))]
-      upper_err = [abs(mses['upper'][i] - mses['median'][i]) for i in range(len(mses['median']))]
-      axes4[plot_j][plot_i].errorbar(p, mses['median'], yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
+      median = mses['median']
+      lower_err = [abs(median[i] - mses['lower'][i]) for i in range(len(median))]
+      upper_err = [abs(mses['upper'][i] - median[i]) for i in range(len(median))]
+      axes4[plot_j][plot_i].errorbar(p, median, yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
 
       # axes1[plot_j][plot_i].set_xticks(p)
@@ -281,8 +282,13 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       # axes3[plot_j][plot_i].set_xticks(p)
       # axes4[plot_j][plot_i].set_xticks(p)
 
+      # min non-zero value
+      thresh = min([x for x in mses['lower'] if x > 0])
+
       for ax in [axes1, axes2, axes3, axes4]:
-        ax[plot_j][plot_i].set_yscale('log', nonpositive='mask')
+        ax[plot_j][plot_i].set_yscale('symlog', linthresh=thresh)
+        # ax[plot_j][plot_i].set_yscale('log', nonpositive='clip')
+        # ax[plot_j][plot_i].set_xscale('log', nonpositive='mask')
       # axes1[k][0].set_ylim(1e-4, 1e3)
       # axes1[k][0].set_xlabel('log')
       # variable_name = '_'.join(v.split('_')[:-1])
