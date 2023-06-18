@@ -1,7 +1,7 @@
 open Mufextern
 (* Abstract *)
 module RandomVar = struct
-  type t = String.t
+  type t = identifier
 
   let compare = compare
 end
@@ -9,15 +9,14 @@ end
 module RVSet = Set.Make (RandomVar)
 module RVMap = Map.Make (RandomVar)
 
-type abs_identifier = Mufextern.identifier
 type abs_constant = 
 | Cbool of bool
 | Cint of int
 | Cfloat of float
 | Cstring of string
 | Cunit
+| Cunk (* TODO: Remove if not used *)
 
-type abs_pattern = Mufextern.pattern
 type abs_unop =
 | Squared
 | SquareRoot
@@ -25,9 +24,7 @@ type abs_unop =
 
 type abs_expr =
 | Econst of abs_constant
-| Evar of abs_identifier
 | Etuple of abs_expr list
-| Eapp of abs_expr * abs_expr
 (* ops *)
 | Eadd of abs_expr * abs_expr
 | Emul of abs_expr * abs_expr
@@ -58,15 +55,6 @@ and abs_distribution =
 | Ddelta_observed
 | Dunk
 
-module VarMap = Map.Make (struct
-  type t = identifier
-
-  let compare = compare
-  
-end)
-
-type ctx = abs_expr VarMap.t
-
 let rv_n = ref 0
 let get_rv x =
   rv_n := !rv_n + 1;
@@ -86,9 +74,114 @@ let get_obs () =
 let temp_var () : identifier = 
   {modul=None; name=get_v ()}
 
-exception Approximation_Status_Error of string
+let string_of_ident : identifier -> string =
+fun id ->
+  match id.modul with
+  | None -> id.name
+  | Some m -> m ^ "." ^ id.name
 
-exception NonConjugate of RandomVar.t
+let string_of_constant : abs_constant -> string =
+fun c ->
+  match c with
+  | Cbool b -> string_of_bool b
+  | Cint i -> string_of_int i
+  | Cfloat f -> string_of_float f
+  | Cstring s -> s
+  | Cunit -> "()"
+  | Cunk -> "Unknown"
+
+let string_of_unop : abs_unop -> string =
+fun op ->
+  match op with
+  | Squared -> "squared"
+  | SquareRoot -> "sqrt"
+  | Exp -> "exp"
+
+let rec string_of_pattern : pattern -> string =
+fun p ->
+  match p with
+  | Pid id -> string_of_ident id
+  | Ptuple ps -> Printf.sprintf "(%s)" (String.concat ", " (List.map string_of_pattern ps))
+  | Punit -> "()"
+  | Pany -> "_"
+
+let rec string_of_expr : abs_expr -> string =
+fun e ->
+  match e with
+  | Econst c -> string_of_constant c
+  | Etuple es -> Printf.sprintf "(%s)" (String.concat ", " (List.map string_of_expr es))
+  | Eadd (e1, e2) -> Printf.sprintf "%s + %s" (string_of_expr e1) (string_of_expr e2)
+  | Emul (e1, e2) -> Printf.sprintf "%s * %s" (string_of_expr e1) (string_of_expr e2)
+  | Ediv (e1, e2) -> Printf.sprintf "%s / %s" (string_of_expr e1) (string_of_expr e2)
+  | Eunop (op, e) -> Printf.sprintf "%s(%s)" (string_of_unop op) (string_of_expr e)
+  | Eif (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
+  | Eifeval (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
+  | Elist es -> Printf.sprintf "[%s]" (String.concat ", " (List.map string_of_expr es))
+  | Edistr d -> string_of_distribution d
+  | Erandomvar rv -> string_of_ident rv
+  | Eunk -> "Unknown"
+
+and string_of_distribution : abs_distribution -> string =
+fun d ->
+  match d with
+  | Dgaussian (e1, e2) ->
+    Printf.sprintf "Gaussian(%s, %s)" (string_of_expr e1) (string_of_expr e2)
+  (* | DmvNormal of abs_expr * abs_expr *)
+  | Dcategorical (e1, e2, e3) ->
+    Printf.sprintf "Categorical(%s, %s, %s)" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
+  | Dbeta (e1, e2) ->
+    Printf.sprintf "Beta(%s, %s)" (string_of_expr e1) (string_of_expr e2)
+  | Dbernoulli e1 ->
+    Printf.sprintf "Bernoulli(%s)" (string_of_expr e1)
+  | Dbinomial (e1, e2) ->
+    Printf.sprintf "Binomial(%s, %s)" (string_of_expr e1) (string_of_expr e2)
+  | Dbetabinomial (e1, e2, e3) ->
+    Printf.sprintf "BetaBinomial(%s, %s, %s)" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
+  | Dnegativebinomial (e1, e2) ->
+    Printf.sprintf "NegativeBinomial(%s, %s)" (string_of_expr e1) (string_of_expr e2)
+  | Dexponential e1 ->
+    Printf.sprintf "Exponential(%s)" (string_of_expr e1)
+  | Dgamma (e1, e2) ->
+    Printf.sprintf "Gamma(%s, %s)" (string_of_expr e1) (string_of_expr e2)
+  | Dpoisson e1 ->
+    Printf.sprintf "Poisson(%s)" (string_of_expr e1)
+  | Ddelta e1 ->
+    Printf.sprintf "Delta(%s)" (string_of_expr e1)
+  | Ddelta_sampled -> "Delta_sampled()"
+  | Ddelta_observed -> "Delta_observed()"
+  | Dunk -> "Unknown"
+
+module VarMap = Map.Make (struct
+  type t = identifier
+
+  let compare = compare
+
+end)
+
+type ctx = abs_expr VarMap.t
+
+let rec ctx_add : pattern -> abs_expr -> ctx -> ctx =
+fun p e ctx ->
+  match p, e with
+  | Pid name, _ -> VarMap.add name e ctx
+  | Ptuple [], Etuple [] | Ptuple [], Eunk -> ctx
+  | Ptuple (p :: ps), Etuple (e :: es) ->
+    ctx_add (Ptuple ps) (Etuple es) (ctx_add p e ctx)
+  | Ptuple (p :: ps), Eunk ->
+    ctx_add (Ptuple ps) Eunk (ctx_add p Eunk ctx)
+  | Pany, _ -> ctx
+  | Punit, _ -> ctx
+  | _, _ -> 
+    failwith 
+      (Format.sprintf "ctx_add: %s and %s mismatch" 
+        (string_of_pattern p) (string_of_expr e))
+
+let ctx_find : identifier -> ctx -> abs_expr =
+fun p ctx ->
+  match VarMap.find_opt p ctx with
+  | Some e -> e
+  | None -> Eunk 
+    (* failwith (Format.sprintf "ctx_find: %s not found" (string_of_ident p)) *)
 
 module ApproximationStatus = struct
   type t = 
@@ -103,6 +196,8 @@ module ApproximationStatus = struct
     | Exact, Exact -> Exact
     | _ -> Dynamic
 end
+
+exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
 
 module InferenceStrategy = struct
   type t = ApproximationStatus.t RVMap.t
@@ -123,14 +218,10 @@ module InferenceStrategy = struct
   fun rv a inf ->
     RVMap.add rv a inf
 
-  let rec add_patt : abs_pattern -> ApproximationStatus.t -> t -> t =
+  let rec add_patt : pattern -> ApproximationStatus.t -> t -> t =
   fun patt a inf ->
     match patt with
-    | Pid id -> 
-      begin match id with
-      | {modul=None; name=x} -> add x a inf
-      | _ -> failwith "add_patt: not implemented"
-      end
+    | Pid id -> add id a inf
     | Ptuple ps -> List.fold_left (fun inf p -> add_patt p a inf) inf ps
     | Punit -> inf
     | Pany -> inf
@@ -139,8 +230,7 @@ end
 let rec has_randomvar ctx e =
   match e with 
   | Erandomvar _ -> true
-  | Evar x -> has_randomvar ctx (VarMap.find x ctx)
-  | Eapp (e1, e2) | Eadd (e1, e2) | Emul (e1, e2)
+  | Eadd (e1, e2) | Emul (e1, e2)
   | Ediv (e1, e2) -> 
     (has_randomvar ctx e1) || (has_randomvar ctx e2)
   | Eunop (_, e1) -> has_randomvar ctx e1
@@ -201,10 +291,6 @@ fun e ->
   match e with
   | Etuple es ->
     Etuple (List.map eval_expr es)
-  | Eapp (e1, e2) -> 
-    let e1 = eval_expr e1 in
-    let e2 = eval_expr e2 in
-    Eapp (e1, e2)
   | Eadd (e1, e2) ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
@@ -242,9 +328,7 @@ fun e ->
     let es = List.map eval_expr es in
     Elist es
   | Edistr d -> Edistr (eval_distribution d)
-  | Eunk
-  | Econst _ | Evar _
-  | Erandomvar _ -> e
+  | Eunk | Econst _ | Erandomvar _ -> e
 and eval_distribution : abs_distribution -> abs_distribution =
 fun d ->
   match d with
@@ -300,16 +384,9 @@ and join_expr e1 e2 =
   | Econst c1, Econst c2 ->
     let e = if c1 = c2 then Econst c1 else Eunk in
     e
-  | Evar v1, Evar v2 ->
-    if v1 = v2 then Evar v1 else Eunk
   | Etuple es1, Etuple es2 ->
     let es = List.map2 join_expr es1 es2 in
     Etuple es
-  | Eapp (e11, e12), Eapp (e21, es22) ->
-    if e11 = e21 then
-      Eapp (e11, join_expr e12 es22)
-    else
-      Eunk
   | Eadd (e11, e12), Eadd (e21, e22) ->
     Eadd (join_expr e11 e21, join_expr e12 e22)
   | Emul (e11, e12), Emul (e21, e22) ->
@@ -362,6 +439,63 @@ fun d1 d2 ->
   (* | Ddelta e1, Ddelta_sampled e2 *)
   | _ -> Dunk
 
+exception NonConjugate of RandomVar.t
+
+module SymState = struct
+  type t = abs_distribution RVMap.t
+  (* Abstract Semi-symbolic inference operators *)
+
+  (* Helper functions *)
+  let join : t -> t -> t =
+    fun g1 g2 ->
+      RVMap.merge (fun _ d1 d2 ->
+        match d1, d2 with
+        | Some d1, Some d2 -> Some (join_distribution d1 d2)
+        | Some d1, None -> Some d1
+        | None, Some d2 -> Some d2
+        | None, None -> None
+      ) g1 g2
+
+  let empty : t =
+    RVMap.empty
+
+  let add : RandomVar.t -> abs_expr -> t -> t =
+    fun rv e g ->
+      match e with
+      | Edistr d -> RVMap.add rv d g
+      | _ -> failwith "SymState.add: Not a distribution"
+
+  let add_patt : pattern -> abs_expr -> t -> t * abs_expr =
+    fun patt es g ->
+    let rec add_patt : pattern -> abs_expr -> t * RandomVar.t list -> t * RandomVar.t list =
+      fun patt es (g, xs) ->
+        match patt, es with
+        | Pid id, es -> 
+          begin match es with
+          | Etuple _ -> failwith "SymState.add_patt: Cannot sample multiple distributions"
+          | _ -> add id es g, id :: xs
+          end
+        | Ptuple (p :: ps), Etuple (e :: es) ->
+          add_patt (Ptuple ps) (Etuple es) (add_patt p e (g, xs))
+        | Pany, _ -> g, xs
+        | _, _ -> failwith "SymState.add_patt: Invalid sample expression"
+    in
+    let g, xs = add_patt patt es (g, []) in
+    let xs = List.rev xs in
+    let e = 
+      match xs with
+      | [] -> failwith "SymState.add_patt: Invalid sample expression"
+      | [x] -> Erandomvar x
+      | _ -> Etuple (List.map (fun x -> Erandomvar x) xs)
+    in
+    g, e
+
+  let to_string : t -> string =
+    fun g ->
+      RVMap.fold (fun rv d acc ->
+        Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (string_of_distribution d)) g ""
+end
+
 let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
 fun (decls, e) ->
 
@@ -413,6 +547,8 @@ fun (decls, e) ->
 
   annotated_inference_strategy' inf e
 
+(* Infers whether the program satisfies the annotated inference strategy
+   output - string of the output function, which will be skipped in the analysis *)
 let infer : string -> Mufextern.program -> string =
 fun output p ->
   (* Remove output function from analysis *)
@@ -423,8 +559,170 @@ fun output p ->
     | Dfun (s, _, _) -> not (s = output)
   ) decls in
 
-  let ann_inf = annotated_inference_strategy (decls, e) in
-  RVMap.fold (fun rv status acc ->
+  let _ann_inf = annotated_inference_strategy (decls, e) in
+
+  (* TODO: do abstract SSI *)
+  (* DOING: get symstate *)
+  let rec infer' : ctx -> SymState.t -> expr -> 
+    ctx * SymState.t * abs_expr =
+  fun ctx g e ->
+    match e with
+    | Econst c ->
+      let c = 
+        match c with
+        | Cbool b -> Cbool b
+        | Cint i -> Cint i
+        | Cfloat f -> Cfloat (float_of_string f)
+        | Cstring s -> Cstring s
+        | Cunit -> Cunit
+      in 
+      ctx, g, Econst c
+    | Eresample -> ctx, g, Econst Cunit
+    | Evar x -> 
+      ctx, g, ctx_find x ctx
+    | Etuple es  | Epair es ->
+      let ctx, g, es = 
+        List.fold_left (fun (ctx, g, es) e ->
+          let ctx, g, es' = infer' ctx g e in
+          ctx, g, es @ [es']
+        ) (ctx, g,[]) es in
+      ctx, g, Etuple es
+    | Elist es ->
+      let ctx, g, es = 
+        List.fold_left (fun (ctx, g, es) e ->
+          let ctx, g, es' = infer' ctx g e in
+          ctx, g, es @ [es']
+        ) (ctx, g,[]) es in
+      ctx, g, Elist es
+    | Eapp (e1, e2) ->
+      (* Assuming e1 is an identifier *)
+      begin match e1 with
+      | Evar _f ->
+        let ctx, g, _es2 = infer' ctx g e2 in
+        (* TODO: match on primitive names *)
+        (* TODO: all custom functions are inlined, so there shouldn't be unidentified
+          function calls *)
+        (* TODO: return distribution and abstract expr from primitive function calls 
+          (List/Array only) *)
+        ctx, g, Eunk
+      | _ -> failwith "infer: invalid function call"
+      end
+    | Eif (e1, e2, e3) ->
+      let ctx, g, e1 = infer' ctx g e1 in
+      let ctx, g, e2 = infer' ctx g e2 in
+      let ctx, g, e3 = infer' ctx g e3 in
+      (* Widen distribution *)
+      if has_randomvar ctx e1 then
+        ctx, g, Eif (e1, e2, e3)
+      else
+        let es23 = join_expr e2 e3 in
+        let es = 
+          match es23 with
+          | Eunk -> Eif (e1, e2, e3)
+          | _ -> es23
+        in
+        ctx, g, es
+    | Eifeval (e1, e2, e3) ->
+      let ctx, g, e1 = infer' ctx g e1 in
+      let ctx, g, e2 = infer' ctx g e2 in
+      let ctx, g, e3 = infer' ctx g e3 in
+      (* Widen distribution *)
+      if has_randomvar ctx e1 then
+        ctx, g, Eifeval (e1, e2, e3)
+      else
+        let es23 = join_expr e2 e3 in
+        let es = 
+          match es23 with
+          | Eunk -> Eifeval (e1, e2, e3)
+          | _ -> es23
+        in
+        ctx, g, es
+    | Elet (p, e1, e2) ->
+      let ctx1, g, e1 = infer' ctx g e1 in
+      let _, g, e2 = infer' (ctx_add p e1 ctx1) g e2 in
+      ctx, g, e2
+    | Esample (p, _, e1) ->
+      let ctx, g, e1 = infer' ctx g e1 in
+      let g, xs = SymState.add_patt p e1 g in
+      ctx, g, xs
+    | Eobserve (e1, e2) ->
+      let ctx, g, _e1 = infer' ctx g e1 in
+      let ctx, g, _ = infer' ctx g e2 in
+      ctx, g, Econst Cunit
+    | Evalue e1 ->
+      let ctx, g, _e1 = infer' ctx g e1 in
+      ctx, g, Econst Cunk
+    | Edistr d ->
+      begin match d with
+      | Dgaussian (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        ctx, g, Edistr (Dgaussian (e1, e2))
+      | Dcategorical (e1, e2, e3) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        let ctx, g, e3 = infer' ctx g e3 in
+        ctx, g, Edistr (Dcategorical (e1, e2, e3))
+      | Duniformint (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        (* TODO: if e1 and e2 are constant, we know what each probability is *)
+        ctx, g, Edistr (Dcategorical (e1, e2, Eunk))
+      | Dbeta (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        ctx, g, Edistr (Dbeta (e1, e2))
+      | Dbernoulli e1 ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        ctx, g, Edistr (Dbernoulli e1)
+      | Dbinomial (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        ctx, g, Edistr (Dbinomial (e1, e2))
+      | Dbetabinomial (e1, e2, e3) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        let ctx, g, e3 = infer' ctx g e3 in
+        ctx, g, Edistr (Dbetabinomial (e1, e2, e3))
+      | Dnegativebinomial (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        ctx, g, Edistr (Dnegativebinomial (e1, e2))
+      | Dexponential e1 ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        ctx, g, Edistr (Dexponential e1)
+      | Dgamma (e1, e2) ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        let ctx, g, e2 = infer' ctx g e2 in
+        ctx, g, Edistr (Dgamma (e1, e2))
+      | Dpoisson e1 ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        ctx, g, Edistr (Dpoisson e1)
+      | Ddelta e1 ->
+        let ctx, g, e1 = infer' ctx g e1 in
+        ctx, g, Edistr (Ddelta e1)
+      end
+    | Efun _ -> failwith "infer: fun is internal"
+  
+  in
+
+  let ctx = VarMap.empty in
+  let g = SymState.empty in
+
+  (* TODO: inline functions *)
+  (* TODO: list fold fixpoint *)
+
+  let _, g', _ = infer' ctx g e in
+
+  (* TODO: reduce g' into inference strategy *)
+
+  (* TODO: Compare g'_inf to ann_inf *)
+  (* throw Approximation Status error for things aren't satisfied *)
+
+  (* TODO: output g'_inf *)
+  SymState.to_string g'
+
+  (* RVMap.fold (fun rv status acc ->
     let status = 
       match status with
       | ApproximationStatus.Approx -> "Approx"
@@ -432,4 +730,4 @@ fun output p ->
       | ApproximationStatus.Dynamic -> "Dynamic"
     in
     (Format.sprintf "%s%s: %s\n" acc rv status)
-  ) ann_inf "" 
+  ) ann_inf ""  *)

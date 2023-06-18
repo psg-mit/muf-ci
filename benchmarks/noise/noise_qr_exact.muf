@@ -5,7 +5,7 @@
   x - approx
 *)
 
-val preprocess_data = fun entry -> List.hd(List.tl(entry))
+val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
 
 val step = fun (acc, zobs) ->
   let (xs, acc) = split(acc) in
@@ -22,6 +22,7 @@ val step = fun (acc, zobs) ->
   let () = observe(gaussian(mul(h, prev_x), div(1., r)), zobs) in
   
   (List.cons(x, xs), q, r)
+in
 
 val output = fun out ->
   let (xs, out) = split(out) in
@@ -32,6 +33,7 @@ val output = fun out ->
   let () = Print.print_endline () in
   let () = Print.print_float_list2 (xs) in
   ()
+in
 
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 

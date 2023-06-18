@@ -1,8 +1,8 @@
 (* 
   default inference strategy
-  q - exact
-  r - approx 
-  x - approx
+  q - approx
+  r - exact
+  x - exact
 *)
 
 val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
@@ -18,9 +18,8 @@ val step = fun (acc, zobs) ->
   (* let g = 1. in *)
   (* let u = 0, so g not used *)
 
-  let approx x <- gaussian(mul(f, prev_x), div(1., q)) in
+  let exact x <- gaussian(mul(f, prev_x), div(1., q)) in
   let () = observe(gaussian(mul(h, prev_x), div(1., r)), zobs) in
-  
   (List.cons(x, xs), q, r)
 in
 
@@ -38,9 +37,11 @@ in
 let data = List.map(preprocess_data, read("data/processed_data.csv")) in
 
 (* Improper prior *)
-let exact q <- gamma (1., 1.) in
-let approx r <- gamma (1., 1.) in
+let approx q <- gamma (1., 1.) in
+let exact r <- gamma (1., 1.) in
 let x0 = 0. in
+
+let data = [List.hd(data)] in
 
 let out = List.fold_resample(step, data, ([x0], q, r)) in
 let (xs, out) = split(out) in

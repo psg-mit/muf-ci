@@ -33,6 +33,7 @@
           ("approx", APPROX);
           ("gaussian", GAUSSIAN);
           ("categorical", CATEGORICAL);
+          ("uniform_int", UNIFORM_INT);
           ("beta", BETA);
           ("bernoulli", BERNOULLI);
           ("binomial", BINOMIAL);

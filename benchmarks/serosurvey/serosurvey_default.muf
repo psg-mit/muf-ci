@@ -13,6 +13,7 @@
 (* [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1;  week3; week4; week5; sigma_h; sens; spec] *)
 val output = fun l ->
   Print.print_float_list3 (l)
+in
 
 val preprocess_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
@@ -20,17 +21,20 @@ val preprocess_data = fun entry ->
   let h = int_of_float_det(List.hd(List.tl(entry))) in
   let x = List.cons(1., List.tl(List.tl(entry))) in
   (x, h, survey_res)
+in
 
 val dot = fun (acc, p) -> 
   let (x, b) = split (p) in
   add(acc, mul(x, b))
+in
   
-  val sigmoid = fun x -> div(1., add(1., exp(mul(-1., x))))
+val sigmoid = fun x -> div(1., add(1., exp(mul(-1., x)))) in
 
 (* model *)
 val init_eta = fun i ->
   let eta <- gaussian(0., 1.) in
   eta 
+in
 
 val make_observations = fun (params, data) ->
   let (b, params) = split(params) in
@@ -52,6 +56,7 @@ val make_observations = fun (params, data) ->
   
   let () = observe(bernoulli(pos_prob), survey_result) in
   (b, eta, sigma_h, sens, fpr)
+in
 
 (* parameters *)
 let hh = 98 in

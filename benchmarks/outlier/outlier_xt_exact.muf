@@ -5,7 +5,7 @@
   is_outlier - approx
 *)
 
-val preprocess_data = fun entry -> List.hd(List.tl(entry))
+val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
 
 val step = fun (prev, yobs) ->
   let (first, prev) = split(prev) in
@@ -25,6 +25,7 @@ val step = fun (prev, yobs) ->
   (* let () = observe(y, yobs) in *)
   
   (false, outlier_prob, List.cons(xt, xs))
+in
 
 val output = fun out ->
   let (outlier_prob, xs) = split(out) in
@@ -33,6 +34,7 @@ val output = fun out ->
   let () = Print.print_endline () in
   let () = Print.print_float_list2 (xs) in
   ()
+in
 
 (* parameters *)
 let n = 100 in

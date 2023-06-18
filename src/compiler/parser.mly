@@ -26,6 +26,7 @@
 %token GAUSSIAN CATEGORICAL BETA BERNOULLI 
 %token BINOMIAL BETA_BINOMIAL NEGATIVE_BINOMIAL 
 %token EXPONENTIAL GAMMA POISSON DELTA
+%token UNIFORM_INT
 
 %start <Mufextern.program> program
 
@@ -41,7 +42,7 @@ decl:
 | OPEN m = IDENT
     { Dopen m }
 (* Function *)
-| VAL x = IDENT EQUAL FUN p = patt RARROW e = expr
+| VAL x = IDENT EQUAL FUN p = patt RARROW e = expr IN
     { Dfun (x, p, e) }
 // | VAL x = patt EQUAL e = expr
 //     { Ddecl (x, e) }
@@ -69,10 +70,12 @@ distr:
     { Dpoisson e1 }
 | DELTA LPAREN e1 = simple_expr RPAREN
     { Ddelta e1 }
+| UNIFORM_INT LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
+    { Duniformint (e1, e2) }
 
 simple_expr:
 (* Parenthesized expression *)
-| LPAREN e = expr RPAREN
+| LPAREN e = simple_expr RPAREN
     { e }
 (* Constants *)
 | b = BOOL
@@ -122,6 +125,8 @@ simple_expr:
 expr:
 | e = simple_expr
     { e }
+| LPAREN e = expr RPAREN
+  { e }
 (* Conditional *)
 | IF v = simple_expr THEN e1 = expr ELSE e2 = expr
     { Eif (v, e1, e2) }

@@ -51,6 +51,7 @@ and distribution =
   | Dgaussian of expr * expr
   (* | DmvNormal of expr * expr *)
   | Dcategorical of expr * expr * expr
+  | Duniformint of expr * expr
   | Dbeta of expr * expr
   | Dbernoulli of expr
   | Dbinomial of expr * expr
@@ -143,6 +144,8 @@ let unique_rv_pass (p: program) : program =
       Dgaussian (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
     | Dcategorical (e1, e2, e3) -> 
       Dcategorical (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+    | Duniformint (e1, e2) -> 
+      Duniformint (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
     | Dbeta (e1, e2) -> 
       Dbeta (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
     | Dbernoulli e -> 
@@ -271,6 +274,11 @@ let ite_pass (output: string) (p: program) : program =
       let has_side_effects = 
         has_side_effects1 || has_side_effects2 || has_side_effects3 in
       has_side_effects, Dcategorical (e1, e2, e3)
+    | Duniformint (e1, e2) -> 
+      let has_side_effects1, e1 = ite_pass' ctx e1 in
+      let has_side_effects2, e2 = ite_pass' ctx e2 in
+      let has_side_effects = has_side_effects1 || has_side_effects2 in
+      has_side_effects, Duniformint (e1, e2)
     | Dbeta (e1, e2) -> 
       let has_side_effects1, e1 = ite_pass' ctx e1 in
       let has_side_effects2, e2 = ite_pass' ctx e2 in
@@ -335,6 +343,7 @@ let ite_pass (output: string) (p: program) : program =
     match d with
     | Dgaussian (e1, e2) -> Dgaussian (force_ite' e1, force_ite' e2)
     | Dcategorical (e1, e2, e3) -> Dcategorical (force_ite' e1, force_ite' e2, force_ite' e3)
+    | Duniformint (e1, e2) -> Duniformint (force_ite' e1, force_ite' e2)
     | Dbeta (e1, e2) -> Dbeta (force_ite' e1, force_ite' e2)
     | Dbernoulli e1 -> Dbernoulli (force_ite' e1)
     | Dbinomial (e1, e2) -> Dbinomial (force_ite' e1, force_ite' e2)
@@ -392,6 +401,8 @@ let distribution_pass (e: expr) : expr =
     | Dcategorical (e1, e2, e3) -> 
       Eapp(Evar {modul=None; name="categorical"}, 
       Etuple [distribution_pass' e1; distribution_pass' e2; distribution_pass' e3])
+    | Duniformint (e1, e2) -> 
+      Eapp(Evar {modul=None; name="uniform_int"}, Etuple [distribution_pass' e1; distribution_pass' e2])
     | Dbeta (e1, e2) -> 
       Eapp(Evar {modul=None; name="beta"}, Etuple [distribution_pass' e1; distribution_pass' e2])
     | Dbernoulli e1 -> 
