@@ -584,20 +584,8 @@ fun (decls, e) ->
 
   annotated_inference_strategy' inf e
 
-(* Infers whether the program satisfies the annotated inference strategy
-   output - string of the output function, which will be skipped in the analysis *)
-let infer : string -> Mufextern.program -> string =
-fun output p ->
-  (* Remove output function from analysis *)
-  let decls, e = p in
-  let decls = List.filter (fun d ->
-    match d with
-    | Ddecl _ | Dopen _ -> false
-    | Dfun (s, _, _) -> not (s = output)
-  ) decls in
-
-  let ann_inf = annotated_inference_strategy (decls, e) in
-
+let infer : Mufextern.program -> InferenceStrategy.t =
+fun p ->
   (* TODO: do abstract SSI *)
   let rec infer' : ctx -> SymState.t -> expr -> 
     ctx * SymState.t * abs_expr =
@@ -746,28 +734,17 @@ fun output p ->
 
   let ctx = VarMap.empty in
   let g = SymState.empty in
+  let _decls, e = p in
 
   (* TODO: inline functions *)
   (* TODO: list fold fixpoint *)
 
   let _, g', _ = infer' ctx g e in
+  
+  (* TODO: debug. delete later *)
+  let sym_state_s = SymState.to_string g' in
+  Format.printf "%s\n" sym_state_s;
 
   (* Reduce g' into inference strategy *)
   let inferred_inf = InferenceStrategy.from_symstate g' in
-
-  let inferred_inf_s = InferenceStrategy.to_string inferred_inf in
-
-  (* TODO: debug. delete later *)
-  let sym_state_s = SymState.to_string g' in
-  let inferred_inf_s = sym_state_s ^ "\n" ^ inferred_inf_s in
-
-  try 
-    InferenceStrategy.verify ann_inf inferred_inf;
-    inferred_inf_s
-  with Approximation_Status_Error (rv, ann, inf) ->
-    let err = 
-      Format.sprintf "`%s` is annotated with %s but expected to be %s\n" 
-        (string_of_ident rv) (ApproximationStatus.to_string ann) (ApproximationStatus.to_string inf)
-    in
-    raise (Inference_Strategy_Error err)
-  
+  inferred_inf

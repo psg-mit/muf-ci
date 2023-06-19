@@ -115,20 +115,36 @@ let print_cmd name =
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
 
-let approx_status output program = 
-  let analysis_output = Analysis.infer output program in
+let verify_approx_status output program = 
   Format.printf "==== STATIC APPROXIMATION STATUS ====@.";
-  Format.printf "%s@." analysis_output
-  (* let typs = Siren.approximation_status muf_list in
-  Siren.pp_map std_formatter typs; *)
-  (* let approx_status, muf_list = Siren.approximation_status muf_list in *)
-  (* Print out approx_status *)
-  (* let print_approx_status (name, approx_status) =
-    Format.printf "  %s: %s@." name (Siren.string_of_approx_status approx_status)
-  in *)
-  (* List.iter print_approx_status approx_status; *)
 
-  (* approx_status, muf_list *)
+  let decls, e = program in
+
+  (* Remove output function from analysis *)
+  let decls = List.filter (fun d ->
+    let open Mufextern in
+    match d with
+    | Ddecl _ | Dopen _ -> false
+    | Dfun (s, _, _) -> not (s = output)
+  ) decls in
+
+  let ann_inf = Analysis.annotated_inference_strategy (decls, e) in
+
+  let inferred_inf = Analysis.infer (decls, e) in
+  let inferred_inf_s = Analysis.InferenceStrategy.to_string inferred_inf in
+
+  Format.printf "%s\n" inferred_inf_s;
+
+  try 
+    Analysis.InferenceStrategy.verify ann_inf inferred_inf;
+  with Analysis.Approximation_Status_Error (rv, ann, inf) ->
+    let err = 
+      Format.sprintf "`%s` is annotated with %s but expected to be %s\n" 
+        (Analysis.string_of_ident rv) 
+        (Analysis.ApproximationStatus.to_string ann) 
+        (Analysis.ApproximationStatus.to_string inf)
+    in
+    raise (Analysis.Inference_Strategy_Error err)
 
 let compile verbose only_check analyze particles output file =
   (* let name = Filename.basename file in *)
@@ -146,7 +162,7 @@ let compile verbose only_check analyze particles output file =
 
   if only_check || analyze then (
     Format.printf "-- Approximation Status Analysis %s.ml@." name;
-    approx_status output program
+    verify_approx_status output program
   );
   
   if not only_check then (
