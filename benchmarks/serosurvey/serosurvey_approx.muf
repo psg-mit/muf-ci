@@ -29,7 +29,7 @@ val sigmoid = fun x -> div(1., add(1., exp(mul(-1., x))))
 
 (* model *)
 val init_eta = fun i ->
-  let eta <- gaussian(0., 1.) in
+  let eta <- gaussian(10., 1.) in
   eta 
 
 val make_observations = fun (params, data) ->
@@ -67,7 +67,7 @@ let data = List.map(preprocess_data, read ("data/processed_data.csv")) in
 
 let approx sens <- beta (1., 1.) in
 let approx fpr <- beta (1., 1.) in
-let sigma <- gaussian(0., 1.) in
+let sigma <- gaussian(10., 1.) in
 (* Half-gaussian *)
 let sigma_h = if lt(0., sigma) then sigma else sub(0., sigma) in
 
@@ -76,16 +76,16 @@ let eta = Array.init(hh, init_eta) in
 (* b coefficients *)
 (* sex = 0 is female, 1 is male *)
 (* age_cat[20, 50) is encoded by all 0s; likewise for week2 *)
-let intercept <- gaussian (0., 1.) in
-let sex <- gaussian (0., 1.) in
-let age_cat_5_10 <- gaussian (0., 1.) in
-let age_cat_10_20 <- gaussian (0., 1.) in
-let age_cat_50_65 <- gaussian (0., 1.) in
-let age_cat_65_105 <- gaussian (0., 1.) in
-let week1 <- gaussian (0., 1.) in
-let week3 <- gaussian (0., 1.) in
-let week4 <- gaussian (0., 1.) in
-let week5 <- gaussian (0., 1.) in
+let intercept <- gaussian(10., 1.) in
+let sex <- gaussian(10., 1.) in
+let age_cat_5_10 <- gaussian(10., 1.) in
+let age_cat_10_20 <- gaussian(10., 1.) in
+let age_cat_50_65 <- gaussian(10., 1.) in
+let age_cat_65_105 <- gaussian(10., 1.) in
+let week1 <- gaussian(10., 1.) in
+let week3 <- gaussian(10., 1.) in
+let week4 <- gaussian(10., 1.) in
+let week5 <- gaussian(10., 1.) in
 let b = [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105;
 week1; week3; week4; week5] in
 
