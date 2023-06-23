@@ -6,6 +6,9 @@ import time
 from math import log
 import matplotlib.pyplot as plt
 import glob
+import numpy as np
+
+N_INTERVALS = 30
 
 def error_func(config, x):
   if config['error_func'] == "se":
@@ -68,10 +71,7 @@ def close_to_target(target_accuracy, accuracy):
   return log(accuracy) - log(target_accuracy) < 0.5
 
 # Run experiments
-def run(benchmark, filename, output, particles, accuracy, n, results, config, verbose=False):
-  if len(particles) == 0:
-    particles = [x for x in range(1, 5001)]
-  
+def run(benchmark, filename, output, particles, accuracy, n, results, config, verbose=False):  
   for p in particles:
     if verbose:
       print('Running with {} particles'.format(p))
@@ -199,6 +199,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
     # ax.set_ylim(1e-4, 1e3)
     # ax.set_xlabel('log')
     # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True)
+
+  ax.set_yscale('log')
+  ax.set_xscale('log')
+
   ax.set_xlabel('Particles')
   ax.set_ylabel('Elapsed Time in seconds')
 
@@ -288,7 +292,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       for ax in [axes1, axes2, axes3, axes4]:
         ax[plot_j][plot_i].set_yscale('symlog', linthresh=thresh)
         # ax[plot_j][plot_i].set_yscale('log', nonpositive='clip')
-        # ax[plot_j][plot_i].set_xscale('log', nonpositive='mask')
+        ax[plot_j][plot_i].set_xscale('log')
       # axes1[k][0].set_ylim(1e-4, 1e3)
       # axes1[k][0].set_xlabel('log')
       # variable_name = '_'.join(v.split('_')[:-1])
@@ -363,6 +367,7 @@ if __name__ == '__main__':
 
   rp = sp.add_parser('run')
   rp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
+  rp.add_argument('--prange', '-pr', type=int, required=False, nargs=2, default=[1, 1000])
   rp.add_argument('--accuracy', '-a', type=float, required=False, default=0.01)
   rp.add_argument('--n', '-n', type=int, required=False, default=1000)
   
@@ -387,6 +392,14 @@ if __name__ == '__main__':
   elif args.subparser_name == 'run':
     # make output directory
     os.makedirs(os.path.join(args.benchmark, args.output), exist_ok=True)
+
+    if args.particles is None and args.prange is None:
+      args.particles = [x for x in range(1, 1001)]
+
+    elif args.particles is None and args.prange is not None:
+      args.particles = [int(x) for x in np.logspace(np.log10(args.prange[0]), np.log10(args.prange[1]), N_INTERVALS, dtype=int)]
+
+      print(args.particles)
 
     for file in args.files:
       if not os.path.exists(os.path.join(args.benchmark, file)):
