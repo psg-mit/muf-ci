@@ -763,6 +763,35 @@ module SymState = struct
       end
     | _ -> None
 
+  let beta_bernoulli_marginal : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = find rv1 g, find rv2 g in
+    match prior, likelihood with
+    | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
+      if rv = rv1 &&
+        (not (depends_on a rv2 g true)) &&
+        (not (depends_on b rv2 g true)) 
+      then
+        Some(Dbernoulli(Ediv(a, Eadd(a, b))))
+      else
+        None
+  | _ -> None
+
+  let beta_bernoulli_posterior : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
+    fun rv1 rv2 g ->
+      let prior, likelihood = find rv1 g, find rv2 g in
+      match prior, likelihood with
+      | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
+        if rv = rv1 &&
+          (not (depends_on a rv2 g true)) &&
+          (not (depends_on b rv2 g true)) 
+        then
+          Some(Dbeta(Eadd(a, Eif(Erandomvar rv2, Econst(Cfloat 1.), Econst(Cfloat 0.))),
+            Eadd(b, Eif(Erandomvar(rv2), Econst(Cfloat 0.), Econst(Cfloat 1.)))))
+        else
+          None
+    | _ -> None
+
   let swap : RandomVar.t -> RandomVar.t -> t -> bool * t =
   fun rv1 rv2 g ->
     match (find rv1 g, find rv2 g) with
@@ -774,7 +803,7 @@ module SymState = struct
         true, g
       | _ -> false, g
       end
-    (* | Dbeta(_, _), Dbernoulli(_, _) ->
+    | Dbeta(_, _), Dbernoulli(_) ->
       begin match beta_bernoulli_marginal rv1 rv2 g, beta_bernoulli_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
         let g = add rv2 dist_marg g in
@@ -782,7 +811,7 @@ module SymState = struct
         true, g
       | _ -> false, g
       end
-    | Dbeta(_, _), Dbinomial(_, _) ->
+    (* | Dbeta(_, _), Dbinomial(_, _) ->
       begin match beta_binomial_marginal rv1 rv2 g, beta_binomial_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
         let g = add rv2 dist_marg g in
