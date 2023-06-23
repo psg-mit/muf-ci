@@ -832,30 +832,6 @@ module SymState = struct
       | Edistr d -> add rv d g
       | _ -> failwith "SymState.add: Not a distribution"
 
-  let assume_patt : pattern -> abs_expr -> t -> t * abs_expr =
-    fun patt es g ->
-    let rec add_patt : pattern -> abs_expr -> t * RandomVar.t list -> t * RandomVar.t list =
-      fun patt es (g, xs) ->
-        match patt, es with
-        | Pid id, es -> 
-          begin match es with
-          | Etuple _ -> failwith "SymState.add_patt: Cannot sample multiple distributions"
-          | _ -> assume id es g, id :: xs
-          end
-        | Ptuple (p :: ps), Etuple (e :: es) ->
-          add_patt (Ptuple ps) (Etuple es) (add_patt p e (g, xs))
-        | Pany, _ -> g, xs
-        | _, _ -> failwith "SymState.add_patt: Invalid sample expression"
-    in
-    let g, xs = add_patt patt es (g, []) in
-    let xs = List.rev xs in
-    let e = 
-      match xs with
-      | [] -> failwith "SymState.add_patt: Invalid sample expression"
-      | [x] -> Erandomvar x
-      | _ -> Etuple (List.map (fun x -> Erandomvar x) xs)
-    in
-    g, e
   let value : RandomVar.t -> t -> t =
   fun rv g ->
     add rv Ddelta_sampled g
@@ -874,6 +850,38 @@ module SymState = struct
       value_expr e1 (value_expr e2 (value_expr e3 g))
     | Edistr _ -> 
       failwith "SymState.value_expr: not a random variable"
+
+  let assume_patt : pattern -> annotation -> abs_expr -> t -> t * abs_expr =
+    fun patt a es g ->
+    let rec add_patt : pattern -> abs_expr -> t * RandomVar.t list -> t * RandomVar.t list =
+      fun patt es (g, xs) ->
+        match patt, es with
+        | Pid id, es -> 
+          begin match es with
+          | Etuple _ -> failwith "SymState.add_patt: Cannot sample multiple distributions"
+          | _ -> 
+            let g = assume id es g in
+            let g =
+              match a with
+              | Mufextern.Aapprox -> value id g
+              | _ -> g
+            in
+            g, id :: xs
+          end
+        | Ptuple (p :: ps), Etuple (e :: es) ->
+          add_patt (Ptuple ps) (Etuple es) (add_patt p e (g, xs))
+        | Pany, _ -> g, xs
+        | _, _ -> failwith "SymState.add_patt: Invalid sample expression"
+    in
+    let g, xs = add_patt patt es (g, []) in
+    let xs = List.rev xs in
+    let e = 
+      match xs with
+      | [] -> failwith "SymState.add_patt: Invalid sample expression"
+      | [x] -> Erandomvar x
+      | _ -> Etuple (List.map (fun x -> Erandomvar x) xs)
+    in
+    g, e
 
   let rec hoist : RandomVar.t -> t -> t =
   fun rv g ->
@@ -1125,9 +1133,9 @@ fun p ->
       let ctx1, g, e1 = infer' ctx g e1 in
       let _, g, e2 = infer' (ctx_add p e1 ctx1) g e2 in
       ctx, g, e2
-    | Esample (p, _, e1) ->
+    | Esample (p, a, e1) ->
       let ctx, g, e1 = infer' ctx g e1 in
-      let g, xs = SymState.assume_patt p e1 g in
+      let g, xs = SymState.assume_patt p a e1 g in
       ctx, g, xs
     | Eobserve (e1, e2) ->
       let ctx, g, e1 = infer' ctx g e1 in
