@@ -137,14 +137,14 @@ let verify_approx_status output program =
 
   try 
     Analysis.InferenceStrategy.verify ann_inf inferred_inf;
+    Format.printf "Inference Strategy - Satisfiable@."
   with Analysis.Approximation_Status_Error (rv, ann, inf) ->
-    let err = 
-      Format.sprintf "`%s` is annotated with %s but expected to be %s\n" 
-        (Analysis.string_of_ident rv) 
-        (Analysis.ApproximationStatus.to_string ann) 
-        (Analysis.ApproximationStatus.to_string inf)
-    in
-    raise (Analysis.Inference_Strategy_Error err)
+    Format.printf "Inference Strategy - Unsatisfiable@.";
+    Format.printf "> `%s` is annotated with %s but expected to be %s@." 
+      (Analysis.string_of_ident rv) 
+      (Analysis.ApproximationStatus.to_string ann) 
+      (Analysis.ApproximationStatus.to_string inf);
+    raise (Analysis.Inference_Strategy_Error)
 
 let compile verbose only_check analyze particles output file =
   (* let name = Filename.basename file in *)

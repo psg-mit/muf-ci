@@ -200,7 +200,7 @@ module ApproximationStatus = struct
 end
 
 exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
-exception Inference_Strategy_Error of string
+exception Inference_Strategy_Error
 
 let rec has_randomvar ctx e =
   match e with 
@@ -1054,7 +1054,6 @@ fun (decls, e) ->
 
 let infer : Mufextern.program -> InferenceStrategy.t =
 fun p ->
-  (* TODO: do abstract SSI *)
   let rec infer' : ctx -> SymState.t -> expr -> 
     ctx * SymState.t * abs_expr =
   fun ctx g e ->
