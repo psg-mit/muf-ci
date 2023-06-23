@@ -243,6 +243,8 @@ let rec eval_add e1 e2 =
     eval_add (Econst (Cfloat (c1 +. c3))) e2
   | Eadd(Econst (Cfloat c1), e2), e3 -> 
     eval_add (Econst (Cfloat c1)) (eval_add e2 e3)
+  | Econst (Cfloat 0.), e2 -> e2
+  | e1, Econst (Cfloat 0.) -> e1
   | _ -> Eadd (e1, e2)
 
 let rec eval_mul e1 e2 =
@@ -254,11 +256,13 @@ let rec eval_mul e1 e2 =
     eval_mul (Econst (Cfloat (c1 *. c3))) e2
   | Econst (Cfloat c1), Eadd(Econst (Cfloat c2), e3) -> 
     eval_add (Econst (Cfloat (c1 *. c2))) (eval_mul (Econst (Cfloat c1)) e3)
+  | Econst (Cfloat 0.), _ | _, Econst (Cfloat 0.) -> Econst (Cfloat 0.)
   | _ -> Emul (e1, e2)
 
 let eval_div e1 e2 =
   match e1, e2 with
   | Econst (Cfloat c1), Econst (Cfloat c2) -> Econst (Cfloat (c1 /. c2))
+  | e1, Econst (Cfloat 1.) -> e1
   | _ -> Ediv (e1, e2)
 
 let eval_unop op e =
@@ -856,6 +860,21 @@ module SymState = struct
   fun rv g ->
     add rv Ddelta_sampled g
 
+  let rec value_expr : abs_expr -> t -> t =
+  fun e g ->
+    match e with 
+    | Econst _ | Eunk -> g
+    | Erandomvar rv -> value rv g
+    | Etuple es | Elist es ->
+      List.fold_left (fun g e -> value_expr e g) g es
+    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
+      value_expr e1 (value_expr e2 g)
+    | Eunop (_, e1) -> value_expr e1 g
+    | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
+      value_expr e1 (value_expr e2 (value_expr e3 g))
+    | Edistr _ -> 
+      failwith "SymState.value_expr: not a random variable"
+
   let rec hoist : RandomVar.t -> t -> t =
   fun rv g ->
     let rec hoist_inner : RandomVar.t -> RVSet.t -> t -> t =
@@ -1118,9 +1137,9 @@ fun p ->
       let g = SymState.observe rv g in
       ctx, g, Econst Cunit
     | Evalue e1 ->
-      (* TODO *)
-      let ctx, g, _e1 = infer' ctx g e1 in
-      ctx, g, Econst Cunk
+      let ctx, g, e1 = infer' ctx g e1 in
+      let g = SymState.value_expr e1 g in
+      ctx, g, e1
     | Edistr d ->
       begin match d with
       | Dgaussian (e1, e2) ->
