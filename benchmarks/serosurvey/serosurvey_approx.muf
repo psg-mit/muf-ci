@@ -73,7 +73,7 @@ let approx fpr <- beta (1., 1.) in
 let intercept <- gaussian(2., 0.25) in
 (* let sex <- gaussian(0., 0.25) in *)
 let age_cat <- gaussian(0., 0.25) in
-let week <- gaussian(0., 0.25) in
+(* let week <- gaussian(0., 0.25) in *)
 (* let age_cat_5_10 <- gaussian(0., 0.25) in
 let age_cat_10_20 <- gaussian(0., 0.25) in
 let age_cat_50_65 <- gaussian(0., 0.25) in
@@ -84,7 +84,7 @@ let week4 <- gaussian(0., 0.25) in
 let week5 <- gaussian(0., 0.25) in *)
 (* let b = [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105;
 week1; week3; week4; week5] in *)
-let b = [intercept; age_cat; week] in
+let b = [intercept; age_cat] in
 
 let _ = List.fold_resample(make_observations, data, (b, sens, fpr)) in
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
@@ -94,4 +94,4 @@ let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 let spec = sub(1., fpr) in
 
 (* [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1; week3; week4; week5; sigma_h; sens; spec] *)
-[intercept; age_cat; week; sens; spec]
+[intercept; age_cat; sens; spec]

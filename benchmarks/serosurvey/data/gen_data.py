@@ -15,7 +15,7 @@ age_cat = 0.6693432
 # age_cat_10_20 = -0.0583128
 # age_cat_50_65 = 0.6693432
 # age_cat_65_105 = 0.1790346
-week = 0.2492106
+# week = 0.2492106
 # week1 = 0.2492106
 # week3 = -0.2200088
 # week4 = -0.0593874
@@ -30,7 +30,7 @@ b = np.array([
   intercept,
   # sex,
   age_cat,
-  week,
+  # week,
   # age_cat_5_10,
   # age_cat_10_20,
   # age_cat_50_65,
@@ -90,7 +90,7 @@ for index, row in data.iterrows():
     1,
     # row["sex"],
     row_age_cat,
-    row_week,
+    # row_week,
   ])
 
   # calculate probability of being positive
@@ -101,7 +101,7 @@ for index, row in data.iterrows():
 
   data.at[index, "pos"] = 1 if survey_res else 0
   data.at[index, "age_cat"] = row_age_cat
-  data.at[index, "week"] = row_week
+  # data.at[index, "week"] = row_week
 
 data.drop(columns=["new_household_id", "sex", "age_cat[5,10)", "age_cat[10,20)", "age_cat[50,65)", "age_cat[65,105)", "week_1", "week_3", "week_4", "week_5"], inplace=True)
 # write to file
