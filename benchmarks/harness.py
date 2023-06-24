@@ -397,7 +397,7 @@ if __name__ == '__main__':
       args.particles = [x for x in range(1, 1001)]
 
     elif args.particles is None and args.prange is not None:
-      args.particles = [int(x) for x in np.logspace(np.log10(args.prange[0]), np.log10(args.prange[1]), N_INTERVALS, dtype=int)]
+      args.particles = [int(x) for x in np.unique(np.logspace(np.log10(args.prange[0]), np.log10(args.prange[1]), N_INTERVALS, dtype=int))]
 
       print(args.particles)
 
