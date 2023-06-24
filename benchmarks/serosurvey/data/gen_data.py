@@ -9,7 +9,7 @@ control_tp_result = 154
 control_fp_result = 0
 
 intercept = 2.162511
-sex = 0.4638138
+# sex = 0.4638138
 age_cat = 0.6693432
 # age_cat_5_10 = 0.050155
 # age_cat_10_20 = -0.0583128
@@ -20,7 +20,7 @@ week = 0.2492106
 # week3 = -0.2200088
 # week4 = -0.0593874
 # week5 = 0.3817401
-sigma_h = 0.9161439
+# sigma_h = 0.9161439
 sens = 0.808969
 spec = 0.9941081
 
@@ -28,7 +28,7 @@ fpr = 1 - spec
 
 b = np.array([
   intercept,
-  sex,
+  # sex,
   age_cat,
   week,
   # age_cat_5_10,
@@ -48,21 +48,21 @@ with open('original_processed_data.csv') as f:
   data = pd.read_csv(f)
 
 # renumber household ids
-household_ids = data["new_household_id"].unique()
-hh = household_ids.shape[0]
+# household_ids = data["new_household_id"].unique()
+# hh = household_ids.shape[0]
 
-print("hh: ", hh)
+# print("hh: ", hh)
 
-new_household_ids = np.arange(hh, dtype=int)
-mapper = dict(zip(household_ids, new_household_ids))
-data["new_household_id"] = data["new_household_id"].map(mapper)
-data["new_household_id"] = data["new_household_id"].astype(int)
+# new_household_ids = np.arange(hh, dtype=int)
+# mapper = dict(zip(household_ids, new_household_ids))
+# data["new_household_id"] = data["new_household_id"].map(mapper)
+# data["new_household_id"] = data["new_household_id"].astype(int)
 
-eta = np.random.normal(0, 1, hh)
+# eta = np.random.normal(0, 1, hh)
 
 # calculate new pos 
 for index, row in data.iterrows():
-  eta_h = eta[row["new_household_id"]]
+  # eta_h = eta[row["new_household_id"]]
 
   # turn one-hot encoded age cat to single value
   row_age_cat = 2
@@ -88,13 +88,13 @@ for index, row in data.iterrows():
 
   x = np.array([
     1,
-    row["sex"],
+    # row["sex"],
     row_age_cat,
     row_week,
   ])
 
   # calculate probability of being positive
-  p = sigmoid(np.dot(b, x) + sigma_h*eta_h)
+  p = sigmoid(np.dot(b, x)) # + sigma_h*eta_h
 
   true_pos = np.random.random() < p 
   survey_res = np.random.random() < sens if true_pos else np.random.random() < fpr
@@ -103,7 +103,7 @@ for index, row in data.iterrows():
   data.at[index, "age_cat"] = row_age_cat
   data.at[index, "week"] = row_week
 
-data.drop(columns=["age_cat[5,10)", "age_cat[10,20)", "age_cat[50,65)", "age_cat[65,105)", "week_1", "week_3", "week_4", "week_5"], inplace=True)
+data.drop(columns=["new_household_id", "sex", "age_cat[5,10)", "age_cat[10,20)", "age_cat[50,65)", "age_cat[65,105)", "week_1", "week_3", "week_4", "week_5"], inplace=True)
 # write to file
 data.to_csv("processed_data.csv", index=False)
 

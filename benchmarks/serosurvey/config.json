@@ -2,17 +2,15 @@
   "benchmark": "serosurvey",
   "true_vars": [
     ["intercept", [2.162511]],
-    ["sex", [0.4638138]],
     ["age", [0.6693432]],
     ["week", [0.2492106]],
-    ["sigma_h", [0.9161439]],
     ["sens", [0.808969]],
     ["spec", [0.9941081]]
   ],
   "base_y": 4,
   "base_x": 5,
   "n_y": 2,
-  "n_x": 4,
+  "n_x": 3,
   "legend_width": 3,
   "error_func": "se"
 }
