@@ -1,9 +1,18 @@
 open Mufextern
+
+let string_of_ident : identifier -> string =
+fun id ->
+  match id.modul with
+  | None -> id.name
+  | Some m -> m ^ "." ^ id.name
+
 (* Abstract *)
 module RandomVar = struct
   type t = identifier
 
   let compare = compare
+
+  let to_string = string_of_ident
 end
 
 module RVSet = Set.Make (RandomVar)
@@ -61,12 +70,6 @@ let get_obs () =
   v_n := !v_n + 1;
   {modul=None; name="obs" ^ (string_of_int (!v_n))}
 
-let string_of_ident : identifier -> string =
-fun id ->
-  match id.modul with
-  | None -> id.name
-  | Some m -> m ^ "." ^ id.name
-
 let string_of_constant : abs_constant -> string =
 fun c ->
   match c with
@@ -75,7 +78,7 @@ fun c ->
   | Cfloat f -> string_of_float f
   | Cstring s -> s
   | Cunit -> "()"
-  | Cunk -> "Unknown"
+  | Cunk -> "Const Unknown"
 
 let string_of_unop : abs_unop -> string =
 fun op ->
@@ -377,6 +380,27 @@ module SymState = struct
         Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (string_of_distribution !d)) g ""   
 end
 
+(* Returns true if expression evaluates to a constant *)
+let rec is_const : abs_expr -> SymState.t -> bool =
+fun e g ->
+  match e with
+  | Econst _ -> true
+  | Eunk -> false
+  | Erandomvar rv' ->
+    begin match !(SymState.find rv' g) with
+    | Ddelta _ | Ddelta_observed | Ddelta_sampled -> true
+    | _ -> false
+    end
+  | Etuple es | Elist es ->
+    List.for_all (fun e -> is_const e g) es
+  | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
+    is_const e1 g && is_const e2 g
+  | Eunop (_, e1) ->
+    is_const e1 g
+  | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
+    is_const e1 g && is_const e2 g && is_const e3 g
+  | Edistr _ -> false
+
 module AbstractSSI = struct
 
   let intervene : RandomVar.t -> abs_distribution -> SymState.t -> SymState.t =
@@ -385,6 +409,14 @@ module AbstractSSI = struct
     let dref = SymState.find rv g in
     dref := d;
     g
+
+  let is_member_list : RandomVar.t -> RandomVar.t list -> SymState.t -> bool =
+  fun rv rvs g ->
+    List.exists (fun rv' -> SymState.find rv g == SymState.find rv' g) rvs
+
+  let is_member_set : RandomVar.t -> RVSet.t -> SymState.t -> bool =
+  fun rv rvs g ->
+    RVSet.exists (fun rv' -> SymState.find rv g == SymState.find rv' g) rvs
 
   (* Returns true if expression e depends on random variable rv *)
   let rec depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool -> bool =
@@ -395,12 +427,15 @@ module AbstractSSI = struct
       (* Conservatively assume it depends on rv *)
       true
     | Erandomvar rv' ->
-      if SymState.find rv g == SymState.find rv' g then true
+      if is_const e g then false
       else
-        if transitive then
-          let d = SymState.find rv' g in
-          depends_on_distribution !d rv g transitive
-        else false
+        if SymState.find rv g == SymState.find rv' g then 
+          true
+        else
+          if transitive then
+            let d = SymState.find rv' g in
+            depends_on_distribution !d rv g transitive
+          else false
     | Etuple es | Elist es ->
       List.exists (fun e -> depends_on e rv g transitive) es
     | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
@@ -440,11 +475,13 @@ module AbstractSSI = struct
       (* Conservatively assume it depends on rv *)
       true
     | Erandomvar rv' ->
-      if SymState.find rv g != SymState.find rv' g then 
-        let d = SymState.find rv' g in
-        indirectly_depends_on_distribution !d rv g
+      if is_const e g then false
       else
-        false
+        if not (SymState.find rv g == SymState.find rv' g) then 
+          let d = SymState.find rv' g in
+          indirectly_depends_on_distribution !d rv g
+        else
+          false
     | Etuple es | Elist es ->
       List.exists (fun e -> indirectly_depends_on e rv g) es
     | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
@@ -483,10 +520,12 @@ module AbstractSSI = struct
     match e with
     | Econst c -> Some (Econst (Cfloat 0.), Econst c)
     | Erandomvar rv' ->
-      if SymState.find rv g == SymState.find rv' g then 
-        Some(Econst (Cfloat 1.), Econst (Cfloat 0.))
+      if is_const e g then Some (Econst (Cfloat 0.), e)
       else
-        Some (Econst (Cfloat 0.), Erandomvar rv')
+        if SymState.find rv g == SymState.find rv' g then 
+          Some(Econst (Cfloat 1.), Econst (Cfloat 0.))
+        else
+          Some (Econst (Cfloat 0.), Erandomvar rv')
     | Eadd (e1, e2) ->
       begin match is_affine e1 rv g, is_affine e2 rv g with
       | Some (a1, b1), Some(a2, b2) ->
@@ -536,11 +575,7 @@ module AbstractSSI = struct
     let rec get_parents_expr : abs_expr -> RandomVar.t list =
     fun e ->
       match e with
-      | Erandomvar rv -> 
-        begin match !(SymState.find rv g) with
-        | Ddelta _ | Ddelta_sampled | Ddelta_observed -> []
-        | _ -> [rv]
-        end
+      | Erandomvar rv -> if is_const e g then [] else [rv]
       | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) -> 
         List.append (get_parents_expr e1) (get_parents_expr e2)
       | Eunop (_, e1) -> get_parents_expr e1
@@ -579,7 +614,7 @@ module AbstractSSI = struct
           visit_parents rvs
       in
       visit_parents parents;
-      if (not (List.mem rv !sorted_nodes)) then
+      if (not (is_member_list rv !sorted_nodes g)) then
         sorted_nodes := rv :: !sorted_nodes
     in
 
@@ -594,9 +629,7 @@ module AbstractSSI = struct
     do_visits rvs;
 
     (* Dedup *)
-    List.fold_left (fun acc rv ->
-      if (List.mem rv acc) then acc else rv :: acc
-    ) [] !sorted_nodes
+    List.filter (fun rv -> is_member_list rv rvs g) !sorted_nodes
 
   (* Returns whether rv_parent and rv_child can be swapped without creating a cycle *)
   let can_swap : RandomVar.t -> RandomVar.t -> SymState.t -> bool =
@@ -653,25 +686,25 @@ module AbstractSSI = struct
     | (Dgaussian(mu_0, var_0), Dgaussian(mu, var)) ->
       begin match is_affine mu rv1 g with
       | Some(a, b) ->
-          if (not (depends_on mu_0 rv2 g true)) &&
-            (not (depends_on var_0 rv2 g true)) &&
-            (not (depends_on var rv1 g true)) then
+        if (not (depends_on mu_0 rv2 g true)) &&
+          (not (depends_on var_0 rv2 g true)) &&
+          (not (depends_on var rv1 g true)) then
 
-            (* Apply the linear transformation *)
-            let mu_0' = Eadd (Emul(a, mu_0), b) in
-            let var_0' = Emul(Eunop (Squared, a), var_0) in
+          (* Apply the linear transformation *)
+          let mu_0' = Eadd (Emul(a, mu_0), b) in
+          let var_0' = Emul(Eunop (Squared, a), var_0) in
 
-            (* Perform the conjugate update *)
-            let inv_var'' = Eadd (Ediv (Econst (Cfloat 1.), var_0'), Ediv(Econst (Cfloat 1.), var)) in
-            let mu'' = Emul(Ediv(Econst (Cfloat 1.), inv_var''), Eadd(Ediv(mu_0', var_0'), Ediv (Erandomvar rv2, var))) in
-            let var'' = Ediv(Econst (Cfloat 1.), inv_var'') in
+          (* Perform the conjugate update *)
+          let inv_var'' = Eadd (Ediv (Econst (Cfloat 1.), var_0'), Ediv(Econst (Cfloat 1.), var)) in
+          let mu'' = Emul(Ediv(Econst (Cfloat 1.), inv_var''), Eadd(Ediv(mu_0', var_0'), Ediv (Erandomvar rv2, var))) in
+          let var'' = Ediv(Econst (Cfloat 1.), inv_var'') in
 
-            (* Apply the inverse linear transformation *)
-            let mu''' = Ediv (Eadd (mu'', (Emul (Econst (Cfloat (-1.)), b))), a) in
-            let var''' = Ediv (var'', (Eunop (Squared, a))) in
-            Some(Dgaussian(mu''', var'''))
-          else
-            None
+          (* Apply the inverse linear transformation *)
+          let mu''' = Ediv (Eadd (mu'', (Emul (Econst (Cfloat (-1.)), b))), a) in
+          let var''' = Ediv (var'', (Eunop (Squared, a))) in
+          Some(Dgaussian(mu''', var'''))
+        else
+          None
       | None -> None
       end
     | _ -> None
@@ -772,13 +805,19 @@ module AbstractSSI = struct
     fun rv_child ghost_roots g ->
       let parents = List.rev (topo_sort (get_parents rv_child g) g) in
 
+      (* Format.printf "Hoisting %s with ghost roots [%s] and parents [%s]\n" (RandomVar.to_string rv_child)
+        (String.concat ", " (List.map RandomVar.to_string (RVSet.elements ghost_roots)))
+        (String.concat ", " (List.map RandomVar.to_string parents)); *)
+
       let rec hoist_parents : RandomVar.t list -> RVSet.t -> SymState.t -> SymState.t =
       fun parents ghost_roots g ->
         match parents with
         | [] -> g
         | rv_parent :: rvs ->
+          (* Format.printf "Got parent: %s\n" (RandomVar.to_string rv_parent); *)
           let g = 
-            if not (RVSet.mem rv_parent ghost_roots) then
+            if not (is_member_set rv_parent ghost_roots g) then
+              (* let _ = Format.printf "Recursing into %s\n" (RandomVar.to_string rv_parent) in *)
               hoist_inner rv_parent ghost_roots g
             else g
           in
@@ -790,24 +829,44 @@ module AbstractSSI = struct
         match parents with
         | [] -> g
         | rv_parent :: rvs ->
-          if not (RVSet.mem rv_parent ghost_roots) then
+          if not (is_member_set rv_parent ghost_roots g) then
             begin 
+            (* let () = Format.printf "Swapping %s with %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child) in *)
             (if not (can_swap rv_parent rv_child g) then
-              failwith "Cannot swap");
+              (* TODO: bug  *)
+              (* let () = 
+                Format.printf "parent %s; parent's parents: [%s]\n" (RandomVar.to_string rv_parent)
+                  (String.concat ", " (List.map RandomVar.to_string (get_parents rv_parent g)))
+              in *)
+              (* let () = 
+                Format.printf "child %s; child's parents: [%s]\n" (RandomVar.to_string rv_child)
+                  (String.concat ", " (List.map RandomVar.to_string (get_parents rv_child g)))
+              in *)
+              failwith (Format.sprintf "Cannot swap parent %s and child %s" 
+                (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child) ));
             
             let did_swap, g = swap rv_parent rv_child g in
             if did_swap then
+              (* let _ = 
+                Format.printf "Swapped %s and %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child)
+              in *)
               swap_with_parents rvs g
             else 
               raise (NonConjugate rv_parent)
             end
           else
+            (* let _ = Format.printf "Parent %s is a ghost root\n" (RandomVar.to_string rv_parent) in *)
             swap_with_parents rvs g
       in
 
       let g = hoist_parents parents ghost_roots g in
+      (* Format.printf "Dont hoisting parents for %s\n" (RandomVar.to_string rv_child); *)
       let parents = List.rev parents in
-      swap_with_parents parents g
+      (* Format.printf "Begin swapping child %s with parents [%s]\n" (RandomVar.to_string rv_child)
+        (String.concat ", " (List.map RandomVar.to_string parents)); *)
+      let g = swap_with_parents parents g in
+      (* Format.printf "Done hoisting %s\n" (RandomVar.to_string rv_child); *)
+      g
     in
 
     hoist_inner rv RVSet.empty g
@@ -829,6 +888,7 @@ module AbstractSSI = struct
       let g = hoist rv g in
       intervene rv Ddelta_sampled g
     with NonConjugate rv_parent ->
+      Format.printf "Value Non-conjugate: %s\n" (RandomVar.to_string rv_parent);
       let g' = value rv_parent g in
       value rv g'
 
@@ -836,7 +896,7 @@ module AbstractSSI = struct
   fun e g ->
     match e with 
     | Econst _ | Eunk -> g
-    | Erandomvar rv -> value rv g
+    | Erandomvar rv -> if is_const e g then g else value rv g
     | Etuple es | Elist es ->
       List.fold_left (fun g e -> value_expr e g) g es
     | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
@@ -885,6 +945,7 @@ module AbstractSSI = struct
       let g = hoist rv g in
       intervene rv Ddelta_observed g
     with NonConjugate rv_parent ->
+      Format.printf "Observe Non-conjugate: %s\n" (RandomVar.to_string rv_parent);
       let g' = value rv_parent g in
       observe rv g'
 
@@ -947,11 +1008,7 @@ end
 
 let rec has_randomvar g e =
   match e with 
-  | Erandomvar rv -> 
-    begin match !(SymState.find rv g) with
-    | Ddelta_sampled | Ddelta_observed -> false
-    | _ -> true
-    end
+  | Erandomvar _ -> not (is_const e g)
   | Eadd (e1, e2) | Emul (e1, e2)
   | Ediv (e1, e2) -> 
     has_randomvar g e1 || has_randomvar g e2
@@ -988,7 +1045,7 @@ fun e1 e2 g ->
   let e2 = eval_expr e2 in
   match e1, e2 with
   | Econst c1, Econst c2 ->
-    let e = if c1 = c2 then Econst c1 else Eunk in
+    let e = if c1 = c2 then Econst c1 else Econst Cunk in
     e, g
   | Etuple es1, Etuple es2 ->
     let es, g = List.fold_left2 (fun (es, g) e1 e2 ->
