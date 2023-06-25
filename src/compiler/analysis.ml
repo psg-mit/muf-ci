@@ -105,7 +105,7 @@ fun e ->
   | Eifeval (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Elist es -> Printf.sprintf "[%s]" (String.concat ", " (List.map string_of_expr es))
   | Edistr d -> string_of_distribution d
-  | Erandomvar rv -> string_of_ident rv
+  | Erandomvar rv -> Printf.sprintf "%s" (string_of_ident rv)
   | Eunk -> "Unknown"
 
 and string_of_distribution : abs_distribution -> string =
@@ -202,38 +202,6 @@ end
 exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
 exception Inference_Strategy_Error
 
-let rec has_randomvar ctx e =
-  match e with 
-  | Erandomvar _ -> true
-  | Eadd (e1, e2) | Emul (e1, e2)
-  | Ediv (e1, e2) -> 
-    (has_randomvar ctx e1) || (has_randomvar ctx e2)
-  | Eunop (_, e1) -> has_randomvar ctx e1
-  | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
-    (has_randomvar ctx e1) || (has_randomvar ctx e2) || (has_randomvar ctx e3)
-  | Elist es | Etuple es ->
-    List.exists (has_randomvar ctx) es
-  | Edistr d -> has_randomvar_distr ctx d
-  | Econst _ -> false
-  | Eunk -> 
-    (* Overapproximation by conservatively assuming it has a random variable *)
-    true
-and has_randomvar_distr ctx d =
-  match d with
-  | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2)
-  | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) -> 
-    has_randomvar ctx e1 || has_randomvar ctx e2
-  (* | DmvNormal (e1, e2) -> has_randomvar ctx e1 || has_randomvar ctx e2 *)
-  | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
-    has_randomvar ctx e1 || has_randomvar ctx e2 || has_randomvar ctx e3
-  | Dbernoulli e1 | Dexponential e1 
-  | Dpoisson e1 | Ddelta e1 -> has_randomvar ctx e1
-  | Ddelta_sampled -> false
-  | Ddelta_observed -> false
-  | Dunk -> 
-    (* Overapproximation by conservatively assuming it has a random variable *)
-    true
-
 let rec eval_add e1 e2 =
   match e1, e2 with
   | Econst (Cfloat c1), Econst (Cfloat c2) -> Econst (Cfloat (c1 +. c2))
@@ -272,6 +240,12 @@ let eval_unop op e =
   | Exp, Econst (Cfloat c) -> Econst (Cfloat (Float.exp c))
   | _ -> Eunop (op, e)
 
+let eval_if ~eval e1 e2 e3 =
+  match e1 with
+  | Econst (Cbool true) -> e2
+  | Econst (Cbool false) -> e3
+  | _ -> if eval then Eifeval (e1, e2, e3) else Eif (e1, e2, e3)
+
 let rec eval_expr : abs_expr -> abs_expr =
 fun e ->
   match e with
@@ -296,20 +270,12 @@ fun e ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
     let e3 = eval_expr e3 in
-    begin match e1 with
-    | Econst (Cbool true) -> e2
-    | Econst (Cbool false) -> e3
-    | _ -> Eif (e1, e2, e3)
-    end
+    eval_if ~eval:false e1 e2 e3
   | Eifeval (e1, e2, e3) ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
     let e3 = eval_expr e3 in
-    begin match e1 with
-    | Econst (Cbool true) -> e2
-    | Econst (Cbool false) -> e3
-    | _ -> Eifeval (e1, e2, e3)
-    end
+    eval_if ~eval:true e1 e2 e3
   | Elist es ->
     let es = List.map eval_expr es in
     Elist es
@@ -363,88 +329,25 @@ fun d ->
     Ddelta e
   | Ddelta_sampled | Ddelta_observed | Dunk -> d
 
-let rec join_expr e1 e2 =
-  let e1 = eval_expr e1 in
-  let e2 = eval_expr e2 in
-  match e1, e2 with
-  | Econst c1, Econst c2 ->
-    let e = if c1 = c2 then Econst c1 else Eunk in
-    e
-  | Etuple es1, Etuple es2 ->
-    let es = List.map2 join_expr es1 es2 in
-    Etuple es
-  | Eadd (e11, e12), Eadd (e21, e22) ->
-    Eadd (join_expr e11 e21, join_expr e12 e22)
-  | Emul (e11, e12), Emul (e21, e22) ->
-    Emul (join_expr e11 e21, join_expr e12 e22)
-  | Ediv (e11, e12), Ediv (e21, e22) ->
-    Ediv (join_expr e11 e21, join_expr e12 e22)
-  | Eunop (u1, e1), Eunop (u2, e2) ->
-    if u1 = u2 then Eunop (u1, join_expr e1 e2) else Eunk
-  | Eif (e11, e12, e13), Eif (e21, e22, e23) ->
-    Eif (join_expr e11 e21, join_expr e12 e22, join_expr e13 e23)
-  | Eifeval (e11, e12, e13), Eifeval (e21, e22, e23) ->
-    Eifeval (join_expr e11 e21, join_expr e12 e22, join_expr e13 e23)
-  | Elist es1, Elist es2 ->
-    let es = List.map2 join_expr es1 es2 in
-    Elist es
-  | Edistr d1, Edistr d2 ->
-    Edistr (join_distribution d1 d2)
-  | Erandomvar rv1, Erandomvar rv2 ->
-    if rv1 = rv2 then Erandomvar rv1 else Eunk
-    (* TODO: Widen: can merge them if distribution is the same *)
-  | _ -> Eunk
-and join_distribution : abs_distribution -> abs_distribution -> abs_distribution =
-fun d1 d2 ->
-  match d1, d2 with
-  | Dgaussian (e1, e2), Dgaussian (e1', e2') -> 
-    Dgaussian (join_expr e1 e1', join_expr e2 e2')
-  | Dcategorical (e1, e2, e3), Dcategorical (e1', e2', e3') ->
-    Dcategorical (join_expr e1 e1', join_expr e2 e2', join_expr e3 e3')
-  | Dbeta (e1, e2), Dbeta (e1', e2') ->
-    Dbeta (join_expr e1 e1', join_expr e2 e2')
-  | Dbernoulli e1, Dbernoulli e2 ->
-    Dbernoulli (join_expr e1 e2)
-  | Dbinomial (e1, e2), Dbinomial (e1', e2') ->
-    Dbinomial (join_expr e1 e1', join_expr e2 e2')
-  | Dbetabinomial (e1, e2, e3), Dbetabinomial (e1', e2', e3') ->
-    Dbetabinomial (join_expr e1 e1', join_expr e2 e2', join_expr e3 e3')
-  | Dnegativebinomial (e1, e2), Dnegativebinomial (e1', e2') ->
-    Dnegativebinomial (join_expr e1 e1', join_expr e2 e2')
-  | Dexponential e1, Dexponential e2 ->
-    Dexponential (join_expr e1 e2)
-  | Dgamma (e1, e2), Dgamma (e1', e2') ->
-    Dgamma (join_expr e1 e1', join_expr e2 e2')
-  | Dpoisson e1, Dpoisson e2 ->
-    Dpoisson (join_expr e1 e2)
-  | Ddelta e1, Ddelta e2 ->
-    Ddelta (join_expr e1 e2)
-  | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled
-  | _ -> Dunk
-
 exception NonConjugate of RandomVar.t
 
 module SymState = struct
-  type t = abs_distribution RVMap.t
+  type t = (abs_distribution ref) RVMap.t
+  (* abs_distribution RVMap.t *)
   let empty : t = RVMap.empty
 
-  let find : RandomVar.t -> t -> abs_distribution =
-  fun rv s ->
-    RVMap.find rv s
-
+  let find : RandomVar.t -> t -> abs_distribution ref = RVMap.find
+  
   let remove : RandomVar.t -> t -> t =
   fun rv s ->
     RVMap.remove rv s
 
-  (* replaces the binding of rv in g if it already exists *)
-  let add : RandomVar.t -> abs_distribution -> t -> t =
+  let add : RandomVar.t -> abs_distribution ref -> t -> t =
   fun rv d g ->
-    let d' = eval_distribution d in
-    let g = remove rv g in
-    RVMap.add rv d' g
-  
+    RVMap.add rv d g
+
   (* Helper functions *)
-  let join : t -> t -> t =
+  (* let join : t -> t -> t =
     fun g1 g2 ->
       RVMap.merge (fun _ d1 d2 ->
         match d1, d2 with
@@ -452,18 +355,18 @@ module SymState = struct
         | Some d1, None -> Some d1
         | None, Some d2 -> Some d2
         | None, None -> None
-      ) g1 g2
+      ) g1 g2 *)
 
-  let eval : RandomVar.t -> t -> t =
+  (* let eval : RandomVar.t -> t -> t =
   fun rv g ->
     let d = find rv g in
     let d = eval_distribution d in
-    add rv d g
+    add rv d g *)
 
   let clean : t -> t =
   fun g ->
     RVMap.filter (fun _ d ->
-      match d with
+      match !d with
       | Ddelta_observed -> false
       | _ -> true
     ) g
@@ -471,10 +374,20 @@ module SymState = struct
   let to_string : t -> string =
     fun g ->
       RVMap.fold (fun rv d acc ->
-        Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (string_of_distribution d)) g ""
+        Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (string_of_distribution !d)) g ""   
+end
+
+module AbstractSSI = struct
+
+  let intervene : RandomVar.t -> abs_distribution -> SymState.t -> SymState.t =
+  fun rv d g ->
+    let d = eval_distribution d in
+    let dref = SymState.find rv g in
+    dref := d;
+    g
 
   (* Returns true if expression e depends on random variable rv *)
-  let rec depends_on : abs_expr -> RandomVar.t -> t -> bool -> bool =
+  let rec depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool -> bool =
   fun e rv g transitive ->
     match e with
     | Econst _ -> false
@@ -482,11 +395,11 @@ module SymState = struct
       (* Conservatively assume it depends on rv *)
       true
     | Erandomvar rv' ->
-      if rv = rv' then true
+      if SymState.find rv g == SymState.find rv' g then true
       else
         if transitive then
-          let d = find rv' g in
-          depends_on_distribution d rv g transitive
+          let d = SymState.find rv' g in
+          depends_on_distribution !d rv g transitive
         else false
     | Etuple es | Elist es ->
       List.exists (fun e -> depends_on e rv g transitive) es
@@ -500,7 +413,7 @@ module SymState = struct
       depends_on e3 rv g transitive
     | Edistr d ->
       depends_on_distribution d rv g transitive
-  and depends_on_distribution : abs_distribution -> RandomVar.t -> t -> bool -> bool =
+  and depends_on_distribution : abs_distribution -> RandomVar.t -> SymState.t -> bool -> bool =
   fun d rv g transitive ->
     match d with
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
@@ -519,7 +432,7 @@ module SymState = struct
       (* Conservatively assume it depends on rv *)
       true
 
-  let rec indirectly_depends_on : abs_expr -> RandomVar.t -> t -> bool =
+  let rec indirectly_depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool =
   fun e rv g ->
     match e with
     | Econst _ -> false
@@ -527,9 +440,9 @@ module SymState = struct
       (* Conservatively assume it depends on rv *)
       true
     | Erandomvar rv' ->
-      if rv != rv' then 
-        let d = find rv' g in
-        indirectly_depends_on_distribution d rv g
+      if SymState.find rv g != SymState.find rv' g then 
+        let d = SymState.find rv' g in
+        indirectly_depends_on_distribution !d rv g
       else
         false
     | Etuple es | Elist es ->
@@ -544,7 +457,7 @@ module SymState = struct
       indirectly_depends_on e3 rv g
     | Edistr d ->
       indirectly_depends_on_distribution d rv g
-  and indirectly_depends_on_distribution : abs_distribution -> RandomVar.t -> t -> bool =
+  and indirectly_depends_on_distribution : abs_distribution -> RandomVar.t -> SymState.t -> bool =
   fun d rv g ->
     match d with 
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
@@ -565,23 +478,23 @@ module SymState = struct
   
   (* Returns Some(a,b) if e can be written as an affine function of
    * rv (e = a * rv + b) *)
-  let rec is_affine : abs_expr -> RandomVar.t -> (abs_expr * abs_expr) option =
-  fun e rv ->
+  let rec is_affine : abs_expr -> RandomVar.t -> SymState.t -> (abs_expr * abs_expr) option =
+  fun e rv g ->
     match e with
     | Econst c -> Some (Econst (Cfloat 0.), Econst c)
     | Erandomvar rv' ->
-      if rv = rv' then 
+      if SymState.find rv g == SymState.find rv' g then 
         Some(Econst (Cfloat 1.), Econst (Cfloat 0.))
       else
         Some (Econst (Cfloat 0.), Erandomvar rv')
     | Eadd (e1, e2) ->
-      begin match is_affine e1 rv, is_affine e2 rv with
+      begin match is_affine e1 rv g, is_affine e2 rv g with
       | Some (a1, b1), Some(a2, b2) ->
         Some (Eadd (a1, a2), Eadd (b1, b2))
       | _ -> None
       end
     | Emul (e1, e2) ->
-      begin match is_affine e1 rv, is_affine e2 rv with
+      begin match is_affine e1 rv g, is_affine e2 rv g with
       | Some (a1, b1), Some(a2, b2) ->
         begin match eval_expr a1, eval_expr a2 with
         | Econst (Cfloat 0.), Econst (Cfloat 0.) ->
@@ -595,7 +508,7 @@ module SymState = struct
       | _ -> None
       end
     | Ediv (e1, e2) ->
-      begin match is_affine e1 rv, is_affine e2 rv with
+      begin match is_affine e1 rv g, is_affine e2 rv g with
       | Some (a1, b1), Some (a2, b2) ->
         begin match eval_expr a2 with
         | Econst (Cfloat 0.) -> Some(Ediv(a1, b2), Ediv(b1, b2))
@@ -604,7 +517,7 @@ module SymState = struct
       | _ -> None
       end
     | Eunop (op, e1) ->
-      begin match is_affine e1 rv with
+      begin match is_affine e1 rv g with
       | Some(a, b) ->
         begin match eval_expr a with
         | Econst (Cfloat 0.) -> Some (Econst (Cfloat 0.), Eunop (op, b))
@@ -618,13 +531,13 @@ module SymState = struct
       (* Conservatively assume it is not affine wrt rv *)
       None
 
-  let get_parents : RandomVar.t -> t -> RandomVar.t list =
+  let get_parents : RandomVar.t -> SymState.t -> RandomVar.t list =
   fun rv g ->
     let rec get_parents_expr : abs_expr -> RandomVar.t list =
     fun e ->
       match e with
       | Erandomvar rv -> 
-        begin match find rv g with
+        begin match !(SymState.find rv g) with
         | Ddelta _ | Ddelta_sampled | Ddelta_observed -> []
         | _ -> [rv]
         end
@@ -639,7 +552,7 @@ module SymState = struct
       | Edistr _ -> failwith "get_parents_expr: unexpected expression"
     in
 
-    match find rv g with
+    match !(SymState.find rv g) with
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) | Dnegativebinomial (e1, e2) 
     | Dgamma (e1, e2) ->
       List.append (get_parents_expr e1) (get_parents_expr e2)
@@ -648,9 +561,9 @@ module SymState = struct
       List.append (List.append (get_parents_expr e1) (get_parents_expr e2)) (get_parents_expr e3)
     | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
       get_parents_expr e
-    | Ddelta_sampled | Ddelta_observed | Dunk -> []
+    | Ddelta_sampled | Ddelta_observed | Dunk -> [] 
 
-  let topo_sort : RandomVar.t list -> t -> RandomVar.t list =
+  let topo_sort : RandomVar.t list -> SymState.t -> RandomVar.t list =
   fun rvs g ->
     let sorted_nodes = ref [] in
 
@@ -686,9 +599,9 @@ module SymState = struct
     ) [] !sorted_nodes
 
   (* Returns whether rv_parent and rv_child can be swapped without creating a cycle *)
-  let can_swap : RandomVar.t -> RandomVar.t -> t -> bool =
+  let can_swap : RandomVar.t -> RandomVar.t -> SymState.t -> bool =
   fun rv_parent rv_child g ->
-    match find rv_child g with
+    match !(SymState.find rv_child g) with
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
       ((depends_on e1 rv_parent g false) ||
@@ -714,12 +627,12 @@ module SymState = struct
       (* Overapproximating by assuming it doesn't create a cycle *)
       true
 
-  let gaussian_marginal : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
+  let gaussian_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
   fun rv1 rv2 g ->
-    let prior, likelihood = find rv1 g, find rv2 g in
-    match prior, likelihood with
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match !prior, !likelihood with
     | (Dgaussian(mu_0, var_0), Dgaussian(mu, var)) ->
-      begin match is_affine mu rv1 with
+      begin match is_affine mu rv1 g with
       | Some(a, b) ->
         if (not (depends_on mu_0 rv2 g true)) &&
             (not (depends_on var_0 rv2 g true)) &&
@@ -733,12 +646,12 @@ module SymState = struct
       end
     | _ -> None
 
-  let gaussian_posterior : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
+  let gaussian_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
   fun rv1 rv2 g ->
-    let prior, likelihood = find rv1 g, find rv2 g in
-    match prior, likelihood with
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match !prior, !likelihood with
     | (Dgaussian(mu_0, var_0), Dgaussian(mu, var)) ->
-      begin match is_affine mu rv1 with
+      begin match is_affine mu rv1 g with
       | Some(a, b) ->
           if (not (depends_on mu_0 rv2 g true)) &&
             (not (depends_on var_0 rv2 g true)) &&
@@ -763,10 +676,10 @@ module SymState = struct
       end
     | _ -> None
 
-  let beta_bernoulli_marginal : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
+  let beta_bernoulli_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
   fun rv1 rv2 g ->
-    let prior, likelihood = find rv1 g, find rv2 g in
-    match prior, likelihood with
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match !prior, !likelihood with
     | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
       if rv = rv1 &&
         (not (depends_on a rv2 g true)) &&
@@ -777,37 +690,37 @@ module SymState = struct
         None
   | _ -> None
 
-  let beta_bernoulli_posterior : RandomVar.t -> RandomVar.t -> t -> abs_distribution option =
-    fun rv1 rv2 g ->
-      let prior, likelihood = find rv1 g, find rv2 g in
-      match prior, likelihood with
-      | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
-        if rv = rv1 &&
-          (not (depends_on a rv2 g true)) &&
-          (not (depends_on b rv2 g true)) 
-        then
-          Some(Dbeta(Eadd(a, Eif(Erandomvar rv2, Econst(Cfloat 1.), Econst(Cfloat 0.))),
-            Eadd(b, Eif(Erandomvar(rv2), Econst(Cfloat 0.), Econst(Cfloat 1.)))))
-        else
-          None
+  let beta_bernoulli_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match !prior, !likelihood with
+    | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
+      if rv = rv1 &&
+        (not (depends_on a rv2 g true)) &&
+        (not (depends_on b rv2 g true)) 
+      then
+        Some(Dbeta(Eadd(a, Eif(Erandomvar rv2, Econst(Cfloat 1.), Econst(Cfloat 0.))),
+          Eadd(b, Eif(Erandomvar(rv2), Econst(Cfloat 0.), Econst(Cfloat 1.)))))
+      else
+        None
     | _ -> None
 
-  let swap : RandomVar.t -> RandomVar.t -> t -> bool * t =
+  let swap : RandomVar.t -> RandomVar.t -> SymState.t -> bool * SymState.t =
   fun rv1 rv2 g ->
-    match (find rv1 g, find rv2 g) with
+    match !(SymState.find rv1 g), !(SymState.find rv2 g) with
     | Dgaussian (_, _), Dgaussian (_, _) ->
       begin match gaussian_marginal rv1 rv2 g, gaussian_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
+        let g = intervene rv2 dist_marg g in
+        let g = intervene rv1 dist_post g in
         true, g
       | _ -> false, g
       end
     | Dbeta(_, _), Dbernoulli(_) ->
       begin match beta_bernoulli_marginal rv1 rv2 g, beta_bernoulli_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
+        let g = intervene rv2 dist_marg g in
+        let g = intervene rv1 dist_post g in
         true, g
       | _ -> false, g
       end
@@ -853,19 +766,73 @@ module SymState = struct
       end *)
     | _ -> false, g
 
+  let hoist : RandomVar.t -> SymState.t -> SymState.t =
+  fun rv g ->
+    let rec hoist_inner : RandomVar.t -> RVSet.t -> SymState.t -> SymState.t =
+    fun rv_child ghost_roots g ->
+      let parents = List.rev (topo_sort (get_parents rv_child g) g) in
+
+      let rec hoist_parents : RandomVar.t list -> RVSet.t -> SymState.t -> SymState.t =
+      fun parents ghost_roots g ->
+        match parents with
+        | [] -> g
+        | rv_parent :: rvs ->
+          let g = 
+            if not (RVSet.mem rv_parent ghost_roots) then
+              hoist_inner rv_parent ghost_roots g
+            else g
+          in
+          hoist_parents rvs (RVSet.add rv_parent ghost_roots) g
+      in
+
+      let rec swap_with_parents : RandomVar.t list -> SymState.t -> SymState.t =
+      fun parents g ->
+        match parents with
+        | [] -> g
+        | rv_parent :: rvs ->
+          if not (RVSet.mem rv_parent ghost_roots) then
+            begin 
+            (if not (can_swap rv_parent rv_child g) then
+              failwith "Cannot swap");
+            
+            let did_swap, g = swap rv_parent rv_child g in
+            if did_swap then
+              swap_with_parents rvs g
+            else 
+              raise (NonConjugate rv_parent)
+            end
+          else
+            swap_with_parents rvs g
+      in
+
+      let g = hoist_parents parents ghost_roots g in
+      let parents = List.rev parents in
+      swap_with_parents parents g
+    in
+
+    hoist_inner rv RVSet.empty g
+  
   (* Abstract Semi-symbolic inference interface *)
 
-  let assume : RandomVar.t -> abs_expr -> t -> t =
-    fun rv e g ->
-      match e with
-      | Edistr d -> add rv d g
-      | _ -> failwith "SymState.add: Not a distribution"
+  let assume : RandomVar.t -> abs_expr -> SymState.t -> SymState.t =
+  fun x e g ->
+    match e with
+    | Edistr d -> 
+      let d = eval_distribution d in
+      let d = ref d in
+      SymState.add x d g
+    | _ -> failwith "SymState.add: Not a distribution"
 
-  let value : RandomVar.t -> t -> t =
+  let rec value : identifier -> SymState.t -> SymState.t =
   fun rv g ->
-    add rv Ddelta_sampled g
+    try 
+      let g = hoist rv g in
+      intervene rv Ddelta_sampled g
+    with NonConjugate rv_parent ->
+      let g' = value rv_parent g in
+      value rv g'
 
-  let rec value_expr : abs_expr -> t -> t =
+  let rec value_expr : abs_expr -> SymState.t -> SymState.t =
   fun e g ->
     match e with 
     | Econst _ | Eunk -> g
@@ -880,9 +847,9 @@ module SymState = struct
     | Edistr _ -> 
       failwith "SymState.value_expr: not a random variable"
 
-  let assume_patt : pattern -> annotation -> abs_expr -> t -> t * abs_expr =
+  let assume_patt : pattern -> annotation -> abs_expr -> SymState.t -> SymState.t * abs_expr =
     fun patt a es g ->
-    let rec add_patt : pattern -> abs_expr -> t * RandomVar.t list -> t * RandomVar.t list =
+    let rec add_patt : pattern -> abs_expr -> SymState.t * RandomVar.t list -> SymState.t * RandomVar.t list =
       fun patt es (g, xs) ->
         match patt, es with
         | Pid id, es -> 
@@ -912,67 +879,15 @@ module SymState = struct
     in
     g, e
 
-  let rec hoist : RandomVar.t -> t -> t =
+  let rec observe : RandomVar.t -> SymState.t -> SymState.t =
   fun rv g ->
-    let rec hoist_inner : RandomVar.t -> RVSet.t -> t -> t =
-    fun rv_child ghost_roots g ->
-      let parents = List.rev (topo_sort (get_parents rv_child g) g) in
-
-      let rec hoist_parents : RandomVar.t list -> RVSet.t -> t -> t =
-      fun parents ghost_roots g ->
-        match parents with
-        | [] -> g
-        | rv_parent :: rvs ->
-          let g = 
-            if not (RVSet.mem rv_parent ghost_roots) then
-              hoist_inner rv_parent ghost_roots g
-            else g
-          in
-          hoist_parents rvs (RVSet.add rv_parent ghost_roots) g
-      in
-
-      let rec swap_with_parents : RandomVar.t list -> t -> t =
-      fun parents g ->
-        match parents with
-        | [] -> g
-        | rv_parent :: rvs ->
-          if not (RVSet.mem rv_parent ghost_roots) then
-            begin 
-            (if not (can_swap rv_parent rv_child g) then
-              failwith "Cannot swap");
-            
-            let did_swap, g = swap rv_parent rv_child g in
-            if did_swap then
-              swap_with_parents rvs g
-            else 
-              raise (NonConjugate rv_parent)
-            end
-          else
-            swap_with_parents rvs g
-      in
-
-      let g = hoist_parents parents ghost_roots g in
-      let parents = List.rev parents in
-      swap_with_parents parents g
-    in
-
     try 
-      hoist_inner rv RVSet.empty g
+      let g = hoist rv g in
+      intervene rv Ddelta_observed g
     with NonConjugate rv_parent ->
       let g' = value rv_parent g in
-      hoist rv g'
-      
-  let intervene : RandomVar.t -> t -> t =
-  fun rv g ->
-    match find rv g with
-    | Ddelta_sampled -> g
-    | _ -> add rv Ddelta_observed g
+      observe rv g'
 
-  let observe : RandomVar.t -> t -> t =
-  fun rv g ->
-    let g = hoist rv g in
-    intervene rv g
-    
 end
 
 module InferenceStrategy = struct
@@ -1009,7 +924,7 @@ module InferenceStrategy = struct
   let from_symstate : SymState.t -> t =
   fun g ->
     RVMap.map (fun d ->
-      match d with
+      match !d with
       | Ddelta_sampled -> ApproximationStatus.Approx
       | Dunk -> ApproximationStatus.Dynamic
       | _ -> ApproximationStatus.Exact
@@ -1029,6 +944,156 @@ module InferenceStrategy = struct
         raise (Approximation_Status_Error (rv, ann_status, inferred_status)));
     ) ann
 end
+
+let rec has_randomvar g e =
+  match e with 
+  | Erandomvar rv -> 
+    begin match !(SymState.find rv g) with
+    | Ddelta_sampled | Ddelta_observed -> false
+    | _ -> true
+    end
+  | Eadd (e1, e2) | Emul (e1, e2)
+  | Ediv (e1, e2) -> 
+    has_randomvar g e1 || has_randomvar g e2
+  | Eunop (_, e1) -> has_randomvar g e1
+  | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
+    has_randomvar g e1 || has_randomvar g e2 || has_randomvar g e3
+  | Elist es | Etuple es ->
+    List.exists (has_randomvar g) es
+  | Edistr d -> has_randomvar_distr g d
+  | Econst _ -> false
+  | Eunk -> 
+    (* Overapproximation by conservatively assuming it has a random variable *)
+    true
+and has_randomvar_distr g d =
+  match d with
+  | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2)
+  | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) -> 
+    has_randomvar g e1 || has_randomvar g e2
+  (* | DmvNormal (e1, e2) -> has_randomvar ctx e1 || has_randomvar ctx e2 *)
+  | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
+    has_randomvar g e1 || has_randomvar g e2 || has_randomvar g e3
+  | Dbernoulli e1 | Dexponential e1 
+  | Dpoisson e1 | Ddelta e1 -> has_randomvar g e1
+  | Ddelta_sampled -> false
+  | Ddelta_observed -> false
+  | Dunk -> 
+    (* Overapproximation by conservatively assuming it has a random variable *)
+    true
+
+(* TODO: This widening can be even smarter... curently has alias *)
+let rec join_expr : abs_expr -> abs_expr -> SymState.t -> abs_expr * SymState.t =
+fun e1 e2 g ->
+  let e1 = eval_expr e1 in
+  let e2 = eval_expr e2 in
+  match e1, e2 with
+  | Econst c1, Econst c2 ->
+    let e = if c1 = c2 then Econst c1 else Eunk in
+    e, g
+  | Etuple es1, Etuple es2 ->
+    let es, g = List.fold_left2 (fun (es, g) e1 e2 ->
+      let e, g = join_expr e1 e2 g in
+      e :: es, g
+    ) ([], g) es1 es2 in
+    Etuple (List.rev es), g
+  | Eadd (e11, e12), Eadd (e21, e22) ->
+    let e1, g = join_expr e11 e21 g in
+    let e2, g = join_expr e12 e22 g in
+    eval_add e1 e2, g
+  | Emul (e11, e12), Emul (e21, e22) ->
+    let e1, g = join_expr e11 e21 g in
+    let e2, g = join_expr e12 e22 g in
+    eval_mul e1 e2, g
+  | Ediv (e11, e12), Ediv (e21, e22) ->
+    let e1, g = join_expr e11 e21 g in
+    let e2, g = join_expr e12 e22 g in
+    eval_div e1 e2, g
+  | Eunop (u1, e1), Eunop (u2, e2) ->
+    if u1 = u2 then 
+      let e, g = join_expr e1 e2 g in
+      eval_unop u1 e, g
+    else Eunk, g
+  | Eif (e11, e12, e13), Eif (e21, e22, e23) ->
+    let e1, g = join_expr e11 e21 g in
+    let e2, g = join_expr e12 e22 g in
+    let e3, g = join_expr e13 e23 g in
+    eval_if ~eval:false e1 e2 e3, g
+  | Eifeval (e11, e12, e13), Eifeval (e21, e22, e23) ->
+    let e1, g = join_expr e11 e21 g in
+    let e2, g = join_expr e12 e22 g in
+    let e3, g = join_expr e13 e23 g in
+    eval_if ~eval:true e1 e2 e3, g
+  | Elist es1, Elist es2 ->
+    let es, g = List.fold_left2 (fun (es, g) e1 e2 ->
+      let e, g = join_expr e1 e2 g in
+      e :: es, g
+    ) ([], g) es1 es2 in
+    Elist (List.rev es), g
+  | Edistr d1, Edistr d2 ->
+    let d, g = join_distribution d1 d2 g in
+    Edistr d, g
+  | Erandomvar rv1, Erandomvar rv2 ->
+    if rv1 = rv2 then
+      Erandomvar rv1, g
+    else 
+      let d1 = SymState.find rv1 g in
+      let d2 = SymState.find rv2 g in
+      let d, g = join_distribution !d1 !d2 g in
+      let g = AbstractSSI.intervene rv1 d g in
+      (* Map rv2 to rv1 *)
+      (* let g = SymState.remove rv2 g in *)
+      let g = SymState.add rv2 d1 g in
+      Erandomvar rv1, g
+  | _ -> Eunk, g
+
+and join_distribution : abs_distribution -> abs_distribution -> SymState.t 
+  -> abs_distribution * SymState.t =
+fun d1 d2 g ->
+  match d1, d2 with
+  | Dgaussian (e1, e2), Dgaussian (e1', e2') -> 
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    Dgaussian (e1, e2), g
+  | Dcategorical (e1, e2, e3), Dcategorical (e1', e2', e3') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    let e3, g = join_expr e3 e3' g in
+    Dcategorical (e1, e2, e3), g
+  | Dbeta (e1, e2), Dbeta (e1', e2') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    Dbeta (e1, e2), g
+  | Dbernoulli e1, Dbernoulli e2 ->
+    let e, g = join_expr e1 e2 g in
+    Dbernoulli e, g
+  | Dbinomial (e1, e2), Dbinomial (e1', e2') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    Dbinomial (e1, e2), g
+  | Dbetabinomial (e1, e2, e3), Dbetabinomial (e1', e2', e3') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    let e3, g = join_expr e3 e3' g in
+    Dbetabinomial (e1, e2, e3), g
+  | Dnegativebinomial (e1, e2), Dnegativebinomial (e1', e2') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    Dnegativebinomial (e1, e2), g
+  | Dexponential e1, Dexponential e2 ->
+    let e, g = join_expr e1 e2 g in
+    Dexponential e, g
+  | Dgamma (e1, e2), Dgamma (e1', e2') ->
+    let e1, g = join_expr e1 e1' g in
+    let e2, g = join_expr e2 e2' g in
+    Dgamma (e1, e2), g
+  | Dpoisson e1, Dpoisson e2 ->
+    let e, g = join_expr e1 e2 g in
+    Dpoisson e, g
+  | Ddelta e1, Ddelta e2 ->
+    let e, g = join_expr e1 e2 g in
+    Ddelta e, g
+  | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled, g
+  | _ -> Dunk, g
 
 let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
 fun (decls, e) ->
@@ -1132,10 +1197,10 @@ fun p ->
       let ctx, g, e2 = infer' ctx g e2 in
       let ctx, g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      if has_randomvar ctx e1 then
+      if has_randomvar g e1 then
         ctx, g, Eif (e1, e2, e3)
       else
-        let es23 = join_expr e2 e3 in
+        let es23, g = join_expr e2 e3 g in
         let es = 
           match es23 with
           | Eunk -> Eif (e1, e2, e3)
@@ -1147,10 +1212,10 @@ fun p ->
       let ctx, g, e2 = infer' ctx g e2 in
       let ctx, g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      if has_randomvar ctx e1 then
+      if has_randomvar g e1 then
         ctx, g, Eifeval (e1, e2, e3)
       else
-        let es23 = join_expr e2 e3 in
+        let es23, g = join_expr e2 e3 g in
         let es = 
           match es23 with
           | Eunk -> Eifeval (e1, e2, e3)
@@ -1163,18 +1228,19 @@ fun p ->
       ctx, g, e2
     | Esample (p, a, e1) ->
       let ctx, g, e1 = infer' ctx g e1 in
-      let g, xs = SymState.assume_patt p a e1 g in
+      let g, xs = AbstractSSI.assume_patt p a e1 g in
       ctx, g, xs
     | Eobserve (e1, e2) ->
       let ctx, g, e1 = infer' ctx g e1 in
       let ctx, g, _ = infer' ctx g e2 in
       let rv = get_obs () in
-      let g = SymState.assume rv e1 g in
-      let g = SymState.observe rv g in
+      (* TODO: widen e1 (if it has ifs) here instead? *)
+      let g = AbstractSSI.assume rv e1 g in
+      let g = AbstractSSI.observe rv g in
       ctx, g, Econst Cunit
     | Evalue e1 ->
       let ctx, g, e1 = infer' ctx g e1 in
-      let g = SymState.value_expr e1 g in
+      let g = AbstractSSI.value_expr e1 g in
       ctx, g, e1
     | Edistr d ->
       begin match d with
