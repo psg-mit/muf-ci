@@ -888,7 +888,7 @@ module AbstractSSI = struct
       let g = hoist rv g in
       intervene rv Ddelta_sampled g
     with NonConjugate rv_parent ->
-      Format.printf "Value Non-conjugate: %s\n" (RandomVar.to_string rv_parent);
+      (* Format.printf "Value Non-conjugate: %s\n" (RandomVar.to_string rv_parent); *)
       let g' = value rv_parent g in
       value rv g'
 
@@ -945,7 +945,7 @@ module AbstractSSI = struct
       let g = hoist rv g in
       intervene rv Ddelta_observed g
     with NonConjugate rv_parent ->
-      Format.printf "Observe Non-conjugate: %s\n" (RandomVar.to_string rv_parent);
+      (* Format.printf "Observe Non-conjugate: %s\n" (RandomVar.to_string rv_parent); *)
       let g' = value rv_parent g in
       observe rv g'
 
@@ -1038,7 +1038,6 @@ and has_randomvar_distr g d =
     (* Overapproximation by conservatively assuming it has a random variable *)
     true
 
-(* TODO: This widening can be even smarter... curently has alias *)
 let rec join_expr : abs_expr -> abs_expr -> SymState.t -> abs_expr * SymState.t =
 fun e1 e2 g ->
   let e1 = eval_expr e1 in
@@ -1152,6 +1151,35 @@ fun d1 d2 g ->
   | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled, g
   | _ -> Dunk, g
 
+(* 
+  TODO: Widening can be even smarter... 
+  curently has imprecision due to alias 
+*)
+let widen : abs_expr -> SymState.t -> abs_expr * SymState.t =
+fun e g ->
+  let e1, e2, e3, return = 
+    match e with 
+    | Eif (e1, e2, e3) -> e1, e2, e3, (fun e1 e2 e3 -> Eif(e1, e2, e3))
+    | Eifeval (e1, e2, e3) -> e1, e2, e3, (fun e1 e2 e3 -> Eifeval(e1, e2, e3))
+    | _ -> failwith "widen: not implemented"
+  in
+
+  if not (is_const e1 g) then
+    e, g
+  else if is_const e2 g && not (is_const e3 g) then
+    (* Only care about the side that's not const *)
+    e3, g
+  else if not (is_const e2 g) && is_const e3 g then
+    e2, g
+  else
+    let es23, g = join_expr e2 e3 g in
+    let es = 
+      match es23 with
+      | Eunk -> return e1 e2 e3
+      | _ -> es23
+    in
+    es, g
+
 let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
 fun (decls, e) ->
 
@@ -1254,31 +1282,15 @@ fun p ->
       let ctx, g, e2 = infer' ctx g e2 in
       let ctx, g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      if has_randomvar g e1 then
-        ctx, g, Eif (e1, e2, e3)
-      else
-        let es23, g = join_expr e2 e3 g in
-        let es = 
-          match es23 with
-          | Eunk -> Eif (e1, e2, e3)
-          | _ -> es23
-        in
-        ctx, g, es
+      let es, g = widen (Eif (e1, e2, e3)) g in
+      ctx, g, es
     | Eifeval (e1, e2, e3) ->
       let ctx, g, e1 = infer' ctx g e1 in
       let ctx, g, e2 = infer' ctx g e2 in
       let ctx, g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      if has_randomvar g e1 then
-        ctx, g, Eifeval (e1, e2, e3)
-      else
-        let es23, g = join_expr e2 e3 g in
-        let es = 
-          match es23 with
-          | Eunk -> Eifeval (e1, e2, e3)
-          | _ -> es23
-        in
-        ctx, g, es
+      let es, g = widen (Eifeval (e1, e2, e3)) g in
+      ctx, g, es
     | Elet (p, e1, e2) ->
       let ctx1, g, e1 = infer' ctx g e1 in
       let _, g, e2 = infer' (ctx_add p e1 ctx1) g e2 in
