@@ -97,11 +97,19 @@ let get_const e =
   | ExConst v -> v
   | _ -> raise (InternalError "not a constant")
 
-let split p = 
+let rec split p = 
   let p = eval p in
   match p with
   | ExPair(a, b) -> (a, b)
   | ExConst((a, b)) -> (ExConst a, ExConst b)
+  | ExRand {distr = Mixture l; name} ->
+    let s1, s2 =
+      List.fold_left (fun (acc1, acc2) (d, p) ->
+        let d1, d2 = split d in
+        ((d1, p)::acc1), ((d2, p)::acc2)
+      ) ([], []) l
+    in
+    (ExRand {distr = Mixture s1; name = name ^ "split1"}, ExRand {distr = Mixture s2; name = name ^ "split2"})
   | _ -> raise (InternalError "not a pair")
 
 let get_array a =
