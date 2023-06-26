@@ -17,7 +17,7 @@ in
 
 val preprocess_data = fun entry ->
   (* pos,new_household_id,sex,"age_cat[5,10)","age_cat[10,20)","age_cat[50,65)","age_cat[65,105)",week_1,week_3,week_4,week_5 *)
-  let survey_res = eq_det(List.hd(entry), 1.) in
+  let survey_res = eq(List.hd(entry), 1.) in
   let h = int_of_float_det(List.hd(List.tl(entry))) in
   let x = List.cons(1., List.tl(List.tl(entry))) in
   (x, h, survey_res)

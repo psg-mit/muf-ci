@@ -11,6 +11,10 @@ let sub (a, b) =
 let mul (a, b) = SSI.mul a b
 let div (a, b) = SSI.div a b
 let int_add (x, y) = SSI.int_add x y
+let sub_int (x, y) = 
+  let x = Utils.get_const x in
+  let y = Utils.get_const y in
+  const (x - y)
 let exp = SSI.exp
 let eq (a, b) = SSI.eq a b
 let lt (a, b) = SSI.lt a b
@@ -141,12 +145,6 @@ let bool_of_float_det f =
   const (Utils.get_const f > 0.)
 let float_of_bool_det b =
   const (if Utils.get_const b then 1. else 0.)
-let eq_det (a, b) = 
-  const (Utils.get_const a = Utils.get_const b)
-let sub_int (x, y) = 
-  let x = Utils.get_const x in
-  let y = Utils.get_const y in
-  const (x - y)
 let exit code = exit code
 let concat (a, b) = a ^ b
 
