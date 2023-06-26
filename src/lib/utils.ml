@@ -71,7 +71,7 @@ fun e ->
       try hoist_and_eval rv
       with NonConjugate rv_nc ->
         (* (Printf.printf "NonConjugate %s\n" rv_nc.name); *)
-        let _ = SSI.value rv_nc in
+        let _ = SSI.value rv_nc ~record:false in
         marginalize ()
     in
     marginalize ();
@@ -119,41 +119,23 @@ let get_array a =
   | ExConst l -> Array.map ((fun x -> ExConst x)) l
   | _ -> raise (InternalError "not an array")
 
-let get_lst l =
+let rec lst_map2 f1 f2 f12 l1 l2 =
+  match l1, l2 with
+  | l1, [] -> List.map f1 l1
+  | [], l2 -> List.map f2 l2
+  | x1::l1, x2::l2 -> f12 x1 x2 :: (lst_map2 f1 f2 f12 l1 l2)
+
+let rec get_lst l =
   let l = eval l in
   match l with
   | ExList l -> l
   | ExConst l -> List.map ((fun x -> ExConst x)) l
+  | ExRand {distr = Mixture l; name} ->
+    let l =
+      List.fold_left (fun accs (d, w) ->
+        let l = get_lst d in
+        lst_map2 (fun acc -> acc) (fun d -> [(d, w)]) (fun acc d -> (d, w)::acc) accs l
+      ) [] l
+    in
+    List.mapi (fun i l -> ExRand {distr = Mixture l; name = name ^ (string_of_int i)}) l
   | _ -> raise (InternalError "not a list")
-
-let mean_float_d : float distribution -> float =
-  fun d ->
-    begin match d with
-    | Normal (ExConst(mu), ExConst(_)) -> mu
-    | Beta (ExConst(a), ExConst(b)) -> Distr_operations.beta_mean a b
-    | Gamma (ExConst(a), ExConst(b)) -> Distr_operations.gamma_mean a b
-    | Delta (ExConst v) -> v
-    | Sampler _ -> raise (InternalError "not implemented")
-    | _ -> raise (InternalError "not marginal")
-    end
-    
-  let mean_int_d : int distribution -> float =
-  fun d ->
-    match d with
-    | Binomial (ExConst(n), ExConst(p)) -> Distr_operations.binomial_mean n p
-    | BetaBinomial (ExConst(n), ExConst(a), ExConst(b)) ->
-      Distr_operations.beta_binomial_mean n a b
-    | NegativeBinomial (ExConst(n), ExConst(p)) ->
-      Distr_operations.negative_binomial_mean n p
-    | Poisson (ExConst(l)) -> Distr_operations.poisson_mean l
-    | Delta (ExConst v) -> float_of_int v
-    | Sampler _ | Categorical _ -> raise (InternalError "not implemented")
-    | _ -> raise (InternalError "not marginal")
-  
-  let mean_bool_d : bool distribution -> float =
-  fun d ->
-    match d with
-    | Bernoulli (ExConst p) -> Distr_operations.bernoulli_mean p
-    | Delta (ExConst v) -> if v then 1. else 0.
-    | Sampler _ -> raise (InternalError "not implemented")
-    | _ -> raise (InternalError "not marginal")
