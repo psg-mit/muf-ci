@@ -50,7 +50,7 @@ let to_distribution values scores =
       if value = v then
         ((v, p +. prob) :: acc', i + 1)
       else
-        ((value, prob) :: acc', i + 1)
+        ((value, prob) :: acc_d, i + 1)
     ) ([], 0) values 
   in
 
