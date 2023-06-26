@@ -229,7 +229,19 @@ fun e ->
   fun e ->
     match e with
     | ExConst c -> float_of_int c
-    | ExRand rv -> Utils.mean_int_d rv.distr
+    | ExRand rv ->
+      begin match rv.distr with
+      | Binomial (ExConst(n), ExConst(p)) -> Distr_operations.binomial_mean n p
+      | BetaBinomial (ExConst(n), ExConst(a), ExConst(b)) ->
+        Distr_operations.beta_binomial_mean n a b
+      | NegativeBinomial (ExConst(n), ExConst(p)) ->
+        Distr_operations.negative_binomial_mean n p
+      | Poisson (ExConst(l)) -> Distr_operations.poisson_mean l
+      | Delta (ExConst v) -> float_of_int v
+      | Mixture l -> List.fold_left (fun acc (d, p) -> acc +. (mean_int' d) *. p) 0. l
+      | Sampler _ | Categorical _ -> failwith "mean_int: not implemented"
+      | _ -> failwith "mean_int: not marginal"
+      end
     | ExIte (i, t, e) -> if Utils.get_const (value i) then (mean_int' t) else (mean_int' e)
     | _ -> failwith "mean_int: not marginal"
   in
@@ -243,7 +255,16 @@ let mean_float : float expr -> float expr =
     fun e ->
       match e with
       | ExConst c -> c
-      | ExRand rv -> Utils.mean_float_d rv.distr
+      | ExRand rv -> 
+        begin match rv.distr with
+        | Normal (ExConst(mu), ExConst(_)) -> mu
+        | Beta (ExConst(a), ExConst(b)) -> Distr_operations.beta_mean a b
+        | Gamma (ExConst(a), ExConst(b)) -> Distr_operations.gamma_mean a b
+        | Delta (ExConst v) -> v
+        | Mixture l -> List.fold_left (fun acc (d, p) -> acc +. (mean_float' d) *. p) 0. l
+        | Sampler _ -> failwith "mean_float: not implemented"
+        | _ -> failwith "mean_float: not marginal"
+        end
       | ExAdd (e1, e2) -> mean_float' e1 +. mean_float' e2
       | ExMul (e1, e2) -> mean_float' e1 *. mean_float' e2
       | ExDiv (e1, e2) -> mean_float' e1 /. mean_float' e2
@@ -265,7 +286,14 @@ let mean_bool : bool expr -> float expr =
     fun e ->
       match e with
       | ExConst c -> if c then 1. else 0.
-      | ExRand rv -> Utils.mean_bool_d rv.distr
+      | ExRand rv ->
+        begin match rv.distr with
+        | Bernoulli (ExConst p) -> Distr_operations.bernoulli_mean p
+        | Delta (ExConst v) -> if v then 1. else 0.
+        | Mixture l -> List.fold_left (fun acc (d, p) -> acc +. (mean_bool' d) *. p) 0. l
+        | Sampler _ -> failwith "mean_bool: not implemented"
+        | _ -> failwith "mean_bool: not marginal"
+        end
       | ExIte (i, t, e) -> 
         if Utils.get_const (value i) then (mean_bool' t) else (mean_bool' e)
       | _ -> failwith "mean_bool: not marginal"
