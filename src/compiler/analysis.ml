@@ -31,6 +31,10 @@ type abs_unop =
 | SquareRoot
 | Exp
 
+type abs_cmpop =
+| Eq
+| Lt
+
 type abs_expr =
 | Econst of abs_constant
 | Etuple of abs_expr list
@@ -38,7 +42,10 @@ type abs_expr =
 | Eadd of abs_expr * abs_expr
 | Emul of abs_expr * abs_expr
 | Ediv of abs_expr * abs_expr
+| Eintadd of abs_expr * abs_expr
+| Eintmul of abs_expr * abs_expr
 | Eunop of abs_unop * abs_expr
+| Ecmp of abs_cmpop * abs_expr * abs_expr
 | Eif of abs_expr * abs_expr * abs_expr
 | Eifeval of abs_expr * abs_expr * abs_expr
 | Elist of abs_expr list
@@ -87,6 +94,12 @@ fun op ->
   | SquareRoot -> "sqrt"
   | Exp -> "exp"
 
+let string_of_cmpop : abs_cmpop -> string =
+fun op ->
+  match op with
+  | Eq -> "="
+  | Lt -> "<"
+
 let rec string_of_pattern : pattern -> string =
 fun p ->
   match p with
@@ -103,7 +116,10 @@ fun e ->
   | Eadd (e1, e2) -> Printf.sprintf "%s + %s" (string_of_expr e1) (string_of_expr e2)
   | Emul (e1, e2) -> Printf.sprintf "%s * %s" (string_of_expr e1) (string_of_expr e2)
   | Ediv (e1, e2) -> Printf.sprintf "%s / %s" (string_of_expr e1) (string_of_expr e2)
+  | Eintadd (e1, e2) -> Printf.sprintf "%s + %s" (string_of_expr e1) (string_of_expr e2)
+  | Eintmul (e1, e2) -> Printf.sprintf "%s * %s" (string_of_expr e1) (string_of_expr e2)
   | Eunop (op, e) -> Printf.sprintf "%s(%s)" (string_of_unop op) (string_of_expr e)
+  | Ecmp (op, e1, e2) -> Printf.sprintf "%s %s %s" (string_of_expr e1) (string_of_cmpop op) (string_of_expr e2)
   | Eif (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Eifeval (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Elist es -> Printf.sprintf "[%s]" (String.concat ", " (List.map string_of_expr es))
@@ -230,11 +246,62 @@ let rec eval_mul e1 e2 =
   | Econst (Cfloat 0.), _ | _, Econst (Cfloat 0.) -> Econst (Cfloat 0.)
   | _ -> Emul (e1, e2)
 
+let rec eval_sub e1 e2 =
+  match e1, e2 with
+  | Econst (Cfloat c1), Econst (Cfloat c2) -> Econst (Cfloat (c1 -. c2))
+  (* c1 - (c2 + e3) *)
+  | Econst (Cfloat c1), Eadd(Econst(Cfloat c2), e3) ->
+    eval_sub (Econst (Cfloat (c1 -. c2))) e3
+  (* c1 - (e2 + c3) *)
+  | Econst (Cfloat c1), Eadd(e2, Econst (Cfloat c3)) ->
+    eval_sub (Econst (Cfloat (c1 -. c3))) e2
+  | Econst (Cfloat 0.), e2 -> eval_mul (Econst (Cfloat (-1.))) e2
+  | e1, Econst (Cfloat 0.) -> e1
+  | _ -> eval_add e1 (eval_mul (Econst (Cfloat (-1.))) e2)
+
 let eval_div e1 e2 =
   match e1, e2 with
   | Econst (Cfloat c1), Econst (Cfloat c2) -> Econst (Cfloat (c1 /. c2))
   | e1, Econst (Cfloat 1.) -> e1
   | _ -> Ediv (e1, e2)
+
+let rec eval_int_add e1 e2 =
+  match e1, e2 with
+  | Econst (Cint c1), Econst (Cint c2) -> Econst (Cint (c1 + c2))
+  | Econst (Cint c1), Eadd(Econst (Cint c2), e3) -> 
+    eval_int_add (Econst (Cint (c1 + c2))) e3
+  | Econst (Cint c1), Eadd(e2, Econst (Cint c3)) ->
+    eval_int_add (Econst (Cint (c1 + c3))) e2
+  | Eadd(Econst (Cint c1), e2), e3 -> 
+    eval_int_add (Econst (Cint c1)) (eval_int_add e2 e3)
+  | Econst (Cint 0), e2 -> e2
+  | e1, Econst (Cint 0) -> e1
+  | _ -> Eintadd (e1, e2)
+
+let rec eval_int_mul e1 e2 =
+  match e1, e2 with
+  | Econst (Cint c1), Econst (Cint c2) -> Econst (Cint (c1 * c2))
+  | Econst (Cint c1), Emul(Econst (Cint c2), e3) -> 
+    eval_int_mul (Econst (Cint (c1 * c2))) e3
+  | Econst (Cint c1), Emul(e2, Econst (Cint c3)) ->
+    eval_int_mul (Econst (Cint (c1 * c3))) e2
+  | Econst (Cint c1), Eadd(Econst (Cint c2), e3) -> 
+    eval_int_add (Econst (Cint (c1 * c2))) (eval_int_mul (Econst (Cint c1)) e3)
+  | Econst (Cint 0), _ | _, Econst (Cint 0) -> Econst (Cint 0)
+  | _ -> Eintmul (e1, e2)
+
+let rec eval_sub_int e1 e2 =
+  match e1, e2 with
+  | Econst (Cint c1), Econst (Cint c2) -> Econst (Cint (c1 - c2))
+  (* c1 - (c2 + e3) *)
+  | Econst (Cint c1), Eadd(Econst(Cint c2), e3) ->
+    eval_sub_int (Econst (Cint (c1 - c2))) e3
+  (* c1 - (e2 + c3) *)
+  | Econst (Cint c1), Eadd(e2, Econst (Cint c3)) ->
+    eval_sub_int (Econst (Cint (c1 - c3))) e2
+  | Econst (Cint 0), e2 -> eval_int_mul (Econst (Cint (-1))) e2
+  | e1, Econst (Cint 0) -> e1
+  | _ -> eval_int_add e1 (eval_int_mul (Econst (Cint (-1))) e2)
 
 let eval_unop op e =
   match op, e with
@@ -242,6 +309,12 @@ let eval_unop op e =
   | SquareRoot, Econst (Cfloat c) -> Econst (Cfloat (Float.sqrt c))
   | Exp, Econst (Cfloat c) -> Econst (Cfloat (Float.exp c))
   | _ -> Eunop (op, e)
+
+let eval_cmp op e1 e2 =
+  match op, e1, e2 with
+  | Eq, Econst c1, Econst c2 -> Econst (Cbool (c1 = c2))
+  | Lt, Econst c1, Econst c2 -> Econst (Cbool (c1 < c2))
+  | _ -> Ecmp (op, e1, e2)
 
 let eval_if ~eval e1 e2 e3 =
   match e1 with
@@ -266,9 +339,21 @@ fun e ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
     eval_div e1 e2
+  | Eintadd (e1, e2) ->
+    let e1 = eval_expr e1 in
+    let e2 = eval_expr e2 in
+    eval_int_add e1 e2
+  | Eintmul (e1, e2) ->
+    let e1 = eval_expr e1 in
+    let e2 = eval_expr e2 in
+    eval_int_mul e1 e2
   | Eunop (op, e1) ->
     let e1 = eval_expr e1 in
     eval_unop op e1
+  | Ecmp (op, e1, e2) ->
+    let e1 = eval_expr e1 in
+    let e2 = eval_expr e2 in
+    eval_cmp op e1 e2
   | Eif (e1, e2, e3) ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
@@ -393,7 +478,8 @@ fun e g ->
     end
   | Etuple es | Elist es ->
     List.for_all (fun e -> is_const e g) es
-  | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
+  | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) 
+  | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
     is_const e1 g && is_const e2 g
   | Eunop (_, e1) ->
     is_const e1 g
@@ -419,13 +505,11 @@ module AbstractSSI = struct
     RVSet.exists (fun rv' -> SymState.find rv g == SymState.find rv' g) rvs
 
   (* Returns true if expression e depends on random variable rv *)
-  let rec depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool -> bool =
-  fun e rv g transitive ->
+  let rec depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool -> bool -> bool =
+  fun e rv g transitive conservative ->
     match e with
     | Econst _ -> false
-    | Eunk -> 
-      (* Conservatively assume it depends on rv *)
-      true
+    | Eunk -> conservative
     | Erandomvar rv' ->
       if is_const e g then false
       else
@@ -434,57 +518,57 @@ module AbstractSSI = struct
         else
           if transitive then
             let d = SymState.find rv' g in
-            depends_on_distribution !d rv g transitive
+            depends_on_distribution !d rv g transitive conservative
           else false
     | Etuple es | Elist es ->
-      List.exists (fun e -> depends_on e rv g transitive) es
-    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
-      depends_on e1 rv g transitive || depends_on e2 rv g transitive
+      List.exists (fun e -> depends_on e rv g transitive conservative) es
+    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
+    | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
+      depends_on e1 rv g transitive conservative || depends_on e2 rv g transitive conservative
     | Eunop (_, e1) ->
-      depends_on e1 rv g transitive
+      depends_on e1 rv g transitive conservative
     | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
-      depends_on e1 rv g transitive || 
-      depends_on e2 rv g transitive || 
-      depends_on e3 rv g transitive
+      depends_on e1 rv g transitive conservative || 
+      depends_on e2 rv g transitive conservative || 
+      depends_on e3 rv g transitive conservative
     | Edistr d ->
-      depends_on_distribution d rv g transitive
-  and depends_on_distribution : abs_distribution -> RandomVar.t -> SymState.t -> bool -> bool =
-  fun d rv g transitive ->
+      depends_on_distribution d rv g transitive conservative
+  and depends_on_distribution : abs_distribution -> RandomVar.t -> SymState.t -> bool -> bool -> bool =
+  fun d rv g transitive conservative ->
     match d with
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
-      depends_on e1 rv g transitive || depends_on e2 rv g transitive
+      depends_on e1 rv g transitive conservative || depends_on e2 rv g transitive conservative
     (* | DmvNormal of expr * expr *)
     | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
-      depends_on e1 rv g transitive || 
-      depends_on e2 rv g transitive || 
-      depends_on e3 rv g transitive
+      depends_on e1 rv g transitive conservative || 
+      depends_on e2 rv g transitive conservative || 
+      depends_on e3 rv g transitive conservative
     | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
-      depends_on e rv g transitive
+      depends_on e rv g transitive conservative
     | Ddelta_sampled -> false
     | Ddelta_observed -> false
-    | Dunk -> 
-      (* Conservatively assume it depends on rv *)
-      true
+    | Dunk -> conservative
 
   let rec indirectly_depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool =
   fun e rv g ->
+    let () = Format.printf "indirectly_depends_on e:%s rv:%s\n" (string_of_expr e) (string_of_ident rv) in
     match e with
     | Econst _ -> false
-    | Eunk -> 
-      (* Conservatively assume it depends on rv *)
-      true
+    | Eunk -> false
     | Erandomvar rv' ->
       if is_const e g then false
       else
         if not (SymState.find rv g == SymState.find rv' g) then 
+          let () = Format.printf "not equal\n" in
           let d = SymState.find rv' g in
           indirectly_depends_on_distribution !d rv g
         else
           false
     | Etuple es | Elist es ->
       List.exists (fun e -> indirectly_depends_on e rv g) es
-    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
+    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
+    | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
       indirectly_depends_on e1 rv g || indirectly_depends_on e2 rv g
     | Eunop (_, e1) ->
       indirectly_depends_on e1 rv g
@@ -499,19 +583,17 @@ module AbstractSSI = struct
     match d with 
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
-      depends_on e1 rv g true || depends_on e2 rv g true
+      depends_on e1 rv g true false || depends_on e2 rv g true false
     (* | DmvNormal of expr * expr *)
     | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
-      depends_on e1 rv g true || 
-      depends_on e2 rv g true || 
-      depends_on e3 rv g true
+      depends_on e1 rv g true false || 
+      depends_on e2 rv g true false || 
+      depends_on e3 rv g true false
     | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
-      depends_on e rv g true
+      depends_on e rv g true false
     | Ddelta_sampled -> false
     | Ddelta_observed -> false
-    | Dunk -> 
-      (* Conservatively assume it depends on rv *)
-      true
+    | Dunk -> false
   
   (* Returns Some(a,b) if e can be written as an affine function of
    * rv (e = a * rv + b) *)
@@ -564,6 +646,7 @@ module AbstractSSI = struct
         end
       | _ -> None
       end
+    | Ecmp _ | Eintadd _ | Eintmul _ -> None
     | Eif _ | Eifeval _ -> None
     | Etuple _ | Elist _ | Edistr _ -> None
     | Eunk -> 
@@ -576,7 +659,8 @@ module AbstractSSI = struct
     fun e ->
       match e with
       | Erandomvar rv -> if is_const e g then [] else [rv]
-      | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) -> 
+      | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
+      | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) -> 
         List.append (get_parents_expr e1) (get_parents_expr e2)
       | Eunop (_, e1) -> get_parents_expr e1
       | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
@@ -637,20 +721,21 @@ module AbstractSSI = struct
     match !(SymState.find rv_child g) with
     | Dgaussian (e1, e2) | Dbeta (e1, e2) | Dbinomial (e1, e2) 
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
-      ((depends_on e1 rv_parent g false) ||
-      (depends_on e2 rv_parent g false)) &&
+      ((depends_on e1 rv_parent g false false) ||
+      (depends_on e2 rv_parent g false false)) &&
       (not (indirectly_depends_on e1 rv_parent g)) &&
       (not (indirectly_depends_on e2 rv_parent g))
     (* | DmvNormal of expr * expr *)
     | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
-      ((depends_on e1 rv_parent g false) ||
-      (depends_on e2 rv_parent g false) ||
-      (depends_on e3 rv_parent g false)) &&
+      ((depends_on e1 rv_parent g false false) ||
+      (depends_on e2 rv_parent g false false) ||
+      (depends_on e3 rv_parent g false false)) &&
       (not (indirectly_depends_on e1 rv_parent g)) &&
       (not (indirectly_depends_on e2 rv_parent g)) &&
       (not (indirectly_depends_on e3 rv_parent g))
     | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
-      (depends_on e rv_parent g false) &&
+      (depends_on e rv_parent g false false) 
+      &&
       (not (indirectly_depends_on e rv_parent g))
     | Ddelta_sampled | Ddelta_observed -> 
       (* Never needs to do this, but technically swapping with a constant
@@ -667,9 +752,9 @@ module AbstractSSI = struct
     | (Dgaussian(mu_0, var_0), Dgaussian(mu, var)) ->
       begin match is_affine mu rv1 g with
       | Some(a, b) ->
-        if (not (depends_on mu_0 rv2 g true)) &&
-            (not (depends_on var_0 rv2 g true)) &&
-            (not (depends_on var rv1 g true)) then
+        if (not (depends_on mu_0 rv2 g true true)) &&
+            (not (depends_on var_0 rv2 g true true)) &&
+            (not (depends_on var rv1 g true true)) then
           let mu' = Eadd ((Emul (a, mu_0)), b) in
           let var' = Eadd ((Emul(Eunop (Squared, a), var_0)), var) in
           Some(Dgaussian(mu', var'))
@@ -686,9 +771,9 @@ module AbstractSSI = struct
     | (Dgaussian(mu_0, var_0), Dgaussian(mu, var)) ->
       begin match is_affine mu rv1 g with
       | Some(a, b) ->
-        if (not (depends_on mu_0 rv2 g true)) &&
-          (not (depends_on var_0 rv2 g true)) &&
-          (not (depends_on var rv1 g true)) then
+        if (not (depends_on mu_0 rv2 g true true)) &&
+          (not (depends_on var_0 rv2 g true true)) &&
+          (not (depends_on var rv1 g true true)) then
 
           (* Apply the linear transformation *)
           let mu_0' = Eadd (Emul(a, mu_0), b) in
@@ -715,8 +800,8 @@ module AbstractSSI = struct
     match !prior, !likelihood with
     | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
       if rv = rv1 &&
-        (not (depends_on a rv2 g true)) &&
-        (not (depends_on b rv2 g true)) 
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true)) 
       then
         Some(Dbernoulli(Ediv(a, Eadd(a, b))))
       else
@@ -729,8 +814,8 @@ module AbstractSSI = struct
     match !prior, !likelihood with
     | Dbeta(a, b), Dbernoulli(Erandomvar rv) ->
       if rv = rv1 &&
-        (not (depends_on a rv2 g true)) &&
-        (not (depends_on b rv2 g true)) 
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true)) 
       then
         Some(Dbeta(Eadd(a, Eif(Erandomvar rv2, Econst(Cfloat 1.), Econst(Cfloat 0.))),
           Eadd(b, Eif(Erandomvar(rv2), Econst(Cfloat 0.), Econst(Cfloat 1.)))))
@@ -832,8 +917,11 @@ module AbstractSSI = struct
           if not (is_member_set rv_parent ghost_roots g) then
             begin 
             (* let () = Format.printf "Swapping %s with %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child) in *)
+
+            (* Behavior is be less conservative on whether a swap is illegal
+               and be more conservative on whether a swap is possible
+               when encountering unknown expressions and distributions *)
             (if not (can_swap rv_parent rv_child g) then
-              (* TODO: bug  *)
               (* let () = 
                 Format.printf "parent %s; parent's parents: [%s]\n" (RandomVar.to_string rv_parent)
                   (String.concat ", " (List.map RandomVar.to_string (get_parents rv_parent g)))
@@ -842,6 +930,8 @@ module AbstractSSI = struct
                 Format.printf "child %s; child's parents: [%s]\n" (RandomVar.to_string rv_child)
                   (String.concat ", " (List.map RandomVar.to_string (get_parents rv_child g)))
               in *)
+              (* let sym_state_s = SymState.to_string g in
+              Format.printf "%s\n" sym_state_s; *)
               failwith (Format.sprintf "Cannot swap parent %s and child %s" 
                 (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child) ));
             
@@ -899,11 +989,14 @@ module AbstractSSI = struct
     | Erandomvar rv -> if is_const e g then g else value rv g
     | Etuple es | Elist es ->
       List.fold_left (fun g e -> value_expr e g) g es
-    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) ->
-      value_expr e1 (value_expr e2 g)
+    | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) 
+    | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
+      value_expr e1 g |> value_expr e2
     | Eunop (_, e1) -> value_expr e1 g
     | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
-      value_expr e1 (value_expr e2 (value_expr e3 g))
+      value_expr e1 g |>
+      value_expr e2 |>
+      value_expr e3
     | Edistr _ -> 
       failwith "SymState.value_expr: not a random variable"
 
@@ -1009,8 +1102,8 @@ end
 let rec has_randomvar g e =
   match e with 
   | Erandomvar _ -> not (is_const e g)
-  | Eadd (e1, e2) | Emul (e1, e2)
-  | Ediv (e1, e2) -> 
+  | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
+  | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) -> 
     has_randomvar g e1 || has_randomvar g e2
   | Eunop (_, e1) -> has_randomvar g e1
   | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
@@ -1243,7 +1336,6 @@ let ops = [
   "split";
   "int_of_float_det";
   "float_of_int_det";
-  "eq_det";
   "sub_int";
   "read";
   "mean_int";
@@ -1472,16 +1564,83 @@ fun p ->
     | Eapp (e1, e2) ->
       (* Assuming e1 is an identifier *)
       begin match e1 with
-      | Evar _f ->
-        let ctx, g, _es2 = infer' ctx g e2 in
-        (* begin match f with
-        | "" *)
-        (* TODO: match on primitive names *)
+      | Evar f ->
+        let ctx, g, e2 = infer' ctx g e2 in
+        begin match f with
+        | {modul=None; name="add"} -> 
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_add e1 e2
+          | _ -> failwith "infer: invalid add"
+          end
+        | {modul=None; name="mul"} -> 
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_mul e1 e2
+          | _ -> failwith "infer: invalid mul"
+          end
+        | {modul=None; name="sub"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_sub e1 e2
+          | _ -> failwith "infer: invalid sub"
+          end
+        | {modul=None; name="div"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_div e1 e2
+          | _ -> failwith "infer: invalid div"
+          end
+        | {modul=None; name="int_add"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_int_add e1 e2
+          | _ -> failwith "infer: invalid int_add"
+          end
+        | {modul=None; name="exp"} ->
+          begin match e2 with
+          | Etuple([e1]) -> ctx, g, eval_unop Exp e1
+          | _ -> failwith "infer: invalid exp"
+          end
+        | {modul=None; name="eq"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_cmp Eq e1 e2
+          | _ -> failwith "infer: invalid eq"
+          end
+        | {modul=None; name="lt"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_cmp Lt e1 e2
+          | _ -> failwith "infer: invalid lt"
+          end
+        | {modul=None; name="split"} ->
+          begin match e2 with
+          | Etuple e_inner -> ctx, g, Etuple e_inner
+          | _ -> ctx, g, Eunk
+          end
+        | {modul=None; name="int_of_float_det"} ->
+          begin match e2 with
+          | Econst Cfloat f -> ctx, g, Econst (Cint (int_of_float f))
+          | Etuple _ -> failwith "infer: invalid int_of_float_det"
+          | _ -> ctx, g, Econst Cunk
+          end
+        | {modul=None; name="float_of_int_det"} ->
+          begin match e2 with
+          | Econst Cint i -> ctx, g, Econst (Cfloat (float_of_int i))
+          | Etuple _ -> failwith "infer: invalid float_of_int_det"
+          | _ -> ctx, g, Econst Cunk
+          end
+        | {modul=None; name="sub_int"} ->
+          begin match e2 with
+          | Etuple(e1::[e2]) -> ctx, g, eval_sub_int e1 e2
+          | _ -> failwith "infer: invalid sub_int"
+          end
+        | {modul=None; name="read"} -> ctx, g, Elist [Eunk]
+        | {modul=None; name="mean_int"} 
+        | {modul=None; name="mean_float"}
+        | {modul=None; name="mean_bool"} -> ctx, g, Econst Cunk
+        (* TODO: return distribution and abstract expr from primitive function calls 
+        (List/Array only) *)
         (* TODO: all custom functions are inlined, so there shouldn't be unidentified
           function calls *)
-        (* TODO: return distribution and abstract expr from primitive function calls 
-          (List/Array only) *)
-        ctx, g, Eunk
+        | _ -> ctx, g, Eunk
+        end
+        
+        
       | _ -> failwith "infer: invalid function call"
       end
     | Eif (e1, e2, e3) ->
@@ -1527,13 +1686,19 @@ fun p ->
         let ctx, g, e1 = infer' ctx g e1 in
         let ctx, g, e2 = infer' ctx g e2 in
         let ctx, g, e3 = infer' ctx g e3 in
+        (* TODO: e3 is really a function *)
         ctx, g, Edistr (Dcategorical (e1, e2, e3))
       | Duniformint (e1, e2) ->
         (* Uniform int is a wrapper for categorical *)
         let ctx, g, e1 = infer' ctx g e1 in
         let ctx, g, e2 = infer' ctx g e2 in
-        (* TODO: if e1 and e2 are constant, we know what each probability is *)
-        ctx, g, Edistr (Dcategorical (e1, e2, Eunk))
+        let prob = match e1, e2 with
+        | Econst Cint i1, Econst Cint i2 ->
+          let range = i2 - i1 + 1 in
+          Econst (Cfloat (1.0 /. (float_of_int range)))
+        | _ -> Eunk
+        in
+        ctx, g, Edistr (Dcategorical (e1, e2, prob))
       | Dbeta (e1, e2) ->
         let ctx, g, e1 = infer' ctx g e1 in
         let ctx, g, e2 = infer' ctx g e2 in
