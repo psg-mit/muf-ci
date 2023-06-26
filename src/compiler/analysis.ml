@@ -1231,7 +1231,212 @@ fun (decls, e) ->
 
   annotated_inference_strategy' inf e
 
-let infer : Mufextern.program -> InferenceStrategy.t =
+let ops = [
+  "add";
+  "mul";
+  "sub";
+  "div";
+  "int_add";
+  "exp";
+  "eq";
+  "lt";
+  "split";
+  "int_of_float_det";
+  "float_of_int_det";
+  "eq_det";
+  "sub_int";
+  "read";
+  "mean_int";
+  "mean_float";
+  "mean_bool";
+]
+
+
+let inline_function : declaration list -> string -> expr -> expr =
+fun functions name arguments ->
+  let rec get_mapping : (identifier * expr) list -> pattern -> expr -> (identifier * expr) list =
+  fun m p e ->
+    match p, e with
+    | Ptuple [], Etuple [] -> m
+    | Ptuple (p::ps), Etuple (e::es) ->
+      let m = get_mapping m p e in
+      get_mapping m (Ptuple ps) (Etuple es)
+    | Pid id, e -> (id, e)::m
+    | Punit, _ -> m
+    | Pany, _ -> m
+    | _ -> failwith "get_mapping: impossible"
+  in
+
+  let rec subst : (identifier * expr) list -> expr -> expr =
+  fun mapping e ->
+    match e with
+    | Econst _ | Eresample -> e
+    | Evar id -> 
+      begin match List.assoc_opt id mapping with
+      | Some param -> param
+      | None -> e
+      end
+    | Etuple es ->
+      let es = List.map (subst mapping) es in
+      Etuple es
+    | Epair es ->
+      let es = List.map (subst mapping) es in
+      Epair es
+    | Elist es ->
+      let es = List.map (subst mapping) es in
+      Elist es
+    | Eapp (e1, e2) -> 
+      let e2 = subst mapping e2 in
+      Eapp (e1, e2)
+    | Eif (e1, e2, e3) ->
+      let e1 = subst mapping e1 in
+      let e2 = subst mapping e2 in
+      let e3 = subst mapping e3 in
+      Eif (e1, e2, e3)
+    | Eifeval (e1, e2, e3) ->
+      let e1 = subst mapping e1 in
+      let e2 = subst mapping e2 in
+      let e3 = subst mapping e3 in
+      Eifeval (e1, e2, e3)
+    | Elet (p, e1, e2) ->
+      let e1 = subst mapping e1 in
+      let e2 = subst mapping e2 in
+      Elet (p, e1, e2)
+    | Esample (p, a, e1) ->
+      let e1 = subst mapping e1 in
+      Esample (p, a, e1)
+    | Eobserve (e1, e2) ->
+      let e1 = subst mapping e1 in
+      let e2 = subst mapping e2 in
+      Eobserve (e1, e2)
+    | Evalue e1 ->
+      let e1 = subst mapping e1 in
+      Evalue e1
+    | Edistr d -> Edistr(subst_distribution mapping d)
+    | Efun _ -> failwith "infer: fun is internal"
+  and subst_distribution : (identifier * expr) list -> distribution -> distribution =
+  fun mapping d ->
+    match d with 
+    | Dgaussian (e1, e2) -> 
+      Dgaussian (subst mapping e1, subst mapping e2)
+    | Dcategorical (e1, e2, e3) -> 
+      Dcategorical (subst mapping e1, subst mapping e2, subst mapping e3)
+    | Duniformint (e1, e2) -> 
+      Duniformint (subst mapping e1, subst mapping e2)
+    | Dbeta (e1, e2) -> 
+      Dbeta (subst mapping e1, subst mapping e2)
+    | Dbernoulli e -> 
+      Dbernoulli (subst mapping e)
+    | Dbinomial (e1, e2) ->
+      Dbinomial (subst mapping e1, subst mapping e2) 
+    | Dbetabinomial (e1, e2, e3) -> 
+      Dbetabinomial (subst mapping e1, subst mapping e2, subst mapping e3)
+    | Dnegativebinomial (e1, e2) -> 
+      Dnegativebinomial (subst mapping e1, subst mapping e2)
+    | Dexponential e -> 
+      Dexponential (subst mapping e)
+    | Dgamma (e1, e2) -> 
+      Dgamma (subst mapping e1, subst mapping e2)
+    | Dpoisson e -> 
+      Dpoisson (subst mapping e)
+    | Ddelta e -> 
+      Ddelta (subst mapping e)
+  in
+
+  let func = List.find_opt (fun d ->
+    match d with
+    | Ddecl _ | Dopen _ -> false
+    | Dfun (s, _, _) -> s = name
+  ) functions in
+  match func with
+  | Some d ->
+    begin match d with
+    | Dfun (s, p, e_body) ->
+      assert (s = name);
+      (* create mapping of parameters to arguments *)
+      let mapping = get_mapping [] p arguments in
+      subst mapping e_body
+    | Ddecl _ | Dopen _ -> failwith "inline_function: impossible"
+    end
+  | None -> Eapp (Evar {modul=None;name}, arguments)
+  
+let rec inline_pass : declaration list -> expr -> expr =
+fun functions e ->
+  match e with
+  | Econst _ | Eresample | Evar _ -> e 
+  | Etuple es ->
+    let es = List.map (inline_pass functions) es in
+    Etuple es
+  | Epair es ->
+    let es = List.map (inline_pass functions) es in
+    Epair es
+  | Elist es ->
+    let es = List.map (inline_pass functions) es in
+    Elist es
+  | Eapp (e1, e2) -> 
+    let e2 = inline_pass functions e2 in
+    begin match e1 with
+    | Evar {modul=None;name} ->
+      (* ops cannot be overwritten so these must be user-defined *)
+      let e = inline_function functions name e2 in
+      e
+    | _ -> Eapp (e1, e2)
+    end
+  | Eif (e1, e2, e3) ->
+    let e1 = inline_pass functions e1 in
+    let e2 = inline_pass functions e2 in
+    let e3 = inline_pass functions e3 in
+    Eif (e1, e2, e3)
+  | Eifeval (e1, e2, e3) ->
+    let e1 = inline_pass functions e1 in
+    let e2 = inline_pass functions e2 in
+    let e3 = inline_pass functions e3 in
+    Eifeval (e1, e2, e3)
+  | Elet (p, e1, e2) ->
+    let e1 = inline_pass functions e1 in
+    let e2 = inline_pass functions e2 in
+    Elet (p, e1, e2)
+  | Esample (p, a, e1) ->
+    let e1 = inline_pass functions e1 in
+    Esample (p, a, e1)
+  | Eobserve (e1, e2) ->
+    let e1 = inline_pass functions e1 in
+    let e2 = inline_pass functions e2 in
+    Eobserve (e1, e2)
+  | Evalue e1 ->
+    let e1 = inline_pass functions e1 in
+    Evalue e1
+  | Edistr d -> Edistr(inline_distributions functions d)
+  | Efun _ -> failwith "infer: fun is internal"
+and inline_distributions : declaration list -> distribution -> distribution =
+fun functions d ->
+  match d with 
+  | Dgaussian (e1, e2) -> 
+    Dgaussian (inline_pass functions e1, inline_pass functions e2)
+  | Dcategorical (e1, e2, e3) -> 
+    Dcategorical (inline_pass functions e1, inline_pass functions e2, inline_pass functions e3)
+  | Duniformint (e1, e2) -> 
+    Duniformint (inline_pass functions e1, inline_pass functions e2)
+  | Dbeta (e1, e2) -> 
+    Dbeta (inline_pass functions e1, inline_pass functions e2)
+  | Dbernoulli e -> 
+    Dbernoulli (inline_pass functions e)
+  | Dbinomial (e1, e2) ->
+    Dbinomial (inline_pass functions e1, inline_pass functions e2) 
+  | Dbetabinomial (e1, e2, e3) -> 
+    Dbetabinomial (inline_pass functions e1, inline_pass functions e2, inline_pass functions e3)
+  | Dnegativebinomial (e1, e2) -> 
+    Dnegativebinomial (inline_pass functions e1, inline_pass functions e2)
+  | Dexponential e -> 
+    Dexponential (inline_pass functions e)
+  | Dgamma (e1, e2) -> 
+    Dgamma (inline_pass functions e1, inline_pass functions e2)
+  | Dpoisson e -> 
+    Dpoisson (inline_pass functions e)
+  | Ddelta e -> 
+    Ddelta (inline_pass functions e)
+
+let infer : program -> InferenceStrategy.t =
 fun p ->
   let rec infer' : ctx -> SymState.t -> expr -> 
     ctx * SymState.t * abs_expr =
@@ -1269,6 +1474,8 @@ fun p ->
       begin match e1 with
       | Evar _f ->
         let ctx, g, _es2 = infer' ctx g e2 in
+        (* begin match f with
+        | "" *)
         (* TODO: match on primitive names *)
         (* TODO: all custom functions are inlined, so there shouldn't be unidentified
           function calls *)
@@ -1303,7 +1510,6 @@ fun p ->
       let ctx, g, e1 = infer' ctx g e1 in
       let ctx, g, _ = infer' ctx g e2 in
       let rv = get_obs () in
-      (* TODO: widen e1 (if it has ifs) here instead? *)
       let g = AbstractSSI.assume rv e1 g in
       let g = AbstractSSI.observe rv g in
       ctx, g, Econst Cunit
@@ -1367,9 +1573,24 @@ fun p ->
 
   let ctx = VarMap.empty in
   let g = SymState.empty in
-  let _decls, e = p in
+  let decls, e = p in
 
-  (* TODO: inline functions *)
+  let user_functions = List.filter (fun d ->
+    match d with
+    | Dfun (s, _, _) -> 
+      if List.mem s ops then failwith "infer: function name is reserved";
+      true
+    | _ -> false
+  ) decls in
+
+  (* Format.printf "user functions: %s\n\n" (String.concat ", " (List.map (fun d ->
+    match d with
+    | Dfun (s, _, _) -> s
+    | _ -> failwith "infer: invalid function"
+  ) user_functions)); *)
+
+  let e = inline_pass user_functions e in
+
   (* TODO: list fold fixpoint *)
 
   let _, g', _ = infer' ctx g e in
