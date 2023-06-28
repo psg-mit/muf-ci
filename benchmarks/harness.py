@@ -78,7 +78,7 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
 
     # Compile muf
     # mufc -- --particles 1 --output output test.muf
-    cmd = 'mufc --particles {} --output output {}'.format(p, filename)
+    cmd = 'dune exec mufc -- --particles {} --output output {}'.format(p, filename)
     if verbose:
       print('>', cmd)
 
@@ -287,7 +287,8 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       # axes4[plot_j][plot_i].set_xticks(p)
 
       # min non-zero value
-      thresh = min([x for x in mses['lower'] if x > 0])
+      nonzero = [x for x in mses['lower'] if x > 0]
+      thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
 
       for ax in [axes1, axes2, axes3, axes4]:
         ax[plot_j][plot_i].set_yscale('symlog', linthresh=thresh)
