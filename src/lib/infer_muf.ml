@@ -11,10 +11,9 @@ let sub (a, b) =
 let mul (a, b) = SSI.mul a b
 let div (a, b) = SSI.div a b
 let int_add (x, y) = SSI.int_add x y
+let int_mul (x, y) = SSI.int_mul x y
 let sub_int (x, y) = 
-  let x = Utils.get_const x in
-  let y = Utils.get_const y in
-  const (x - y)
+  SSI.int_add x (SSI.int_mul y (SSI.const (-1)))
 let exp = SSI.exp
 let eq (a, b) = SSI.eq a b
 let lt (a, b) = SSI.lt a b
@@ -302,7 +301,6 @@ let mean_bool : bool expr -> float expr =
 
 module List = struct
   let length l k = k (const(List.length (Utils.get_lst l)))
-  let nil () k = k (lst([]))
   let hd l k =
     let l = Utils.get_lst l in
     k (List.hd l)
@@ -312,20 +310,9 @@ module List = struct
   let cons (x, l) k = 
     let l = Utils.get_lst l in
     k (lst(x :: l))
-  let empty l k = 
-    let l = Utils.get_lst l in
-    k (const(List.length l = 0))
   let rev l k = 
     let l = Utils.get_lst l in
     k (lst(List.rev_append l []))
-  let filter (f, l) k = 
-    let l = Utils.get_lst l in
-    let rec traversal f l acc k =
-      match l with
-      | [] -> k (lst(List.rev acc))
-      | h :: t -> (f h) (fun a -> if Utils.get_const a then traversal f t (h :: acc) k else traversal f t acc k)
-    in
-    traversal f l [] k
   let init (n, f) k = 
     let n = Utils.get_const n in
     let rec traversal n f acc k =
@@ -333,10 +320,6 @@ module List = struct
       else (f (const n)) (fun a -> traversal (n - 1) f (a :: acc) k)
     in
     traversal n f [] k
-  let append (a, b) k = 
-    let a = Utils.get_lst a in
-    let b = Utils.get_lst b in
-    k (lst(List.append a b))
   let map (f, l) k = 
     let l = Utils.get_lst l in
     let rec traversal l acc k =
