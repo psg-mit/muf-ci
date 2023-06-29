@@ -99,84 +99,85 @@ let temp_var () =
   {modul=None; name=get_v ()}
 
 let unique_rv_pass (p: program) : program =
-  let rec make_rv_unique (p: pattern) : pattern =
+  let rec make_rv_unique (prefix: string) (p: pattern) : pattern =
     match p with
     | Pid { name = x; modul } -> 
+      let x = prefix ^ x in
       let x = if List.mem x !used_rv_names then get_rv x else x in
       used_rv_names := x :: !used_rv_names;
       Pid { modul; name = x }
-    | Ptuple ps -> Ptuple (List.map make_rv_unique ps)
+    | Ptuple ps -> Ptuple (List.map (make_rv_unique prefix) ps)
     (* | Ptype (p, t) -> mk_expression (M.Etype (convert_pattern p, t)) *)
     | Pany -> Pany
     | Punit -> failwith "RV cannot be unit"
   in
 
-  let rec unique_rv_pass_expr (e: expr) : expr =
+  let rec unique_rv_pass_expr (prefix: string) (e: expr) : expr =
     match e with
     | Econst _ | Evar _ | Eresample -> e
     | Etuple es -> 
-      Etuple (List.map unique_rv_pass_expr es)
+      Etuple (List.map (unique_rv_pass_expr prefix) es)
     | Eapp (e1, e2) -> 
-      Eapp (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Eapp (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Eif (e1, e2, e3) -> 
-      Eif (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+      Eif (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2, unique_rv_pass_expr prefix e3)
     | Eifeval (e1, e2, e3) ->
-      Eifeval (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+      Eifeval (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2, unique_rv_pass_expr prefix e3)
     | Elet (p, e1, e2) -> 
-      Elet (p, unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Elet (p, unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Esample (p, a, e) ->
-      Esample (make_rv_unique p, a, unique_rv_pass_expr e)
+      Esample (make_rv_unique prefix p, a, unique_rv_pass_expr prefix e)
     | Eobserve (e1, e2) -> 
-      Eobserve (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Eobserve (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Elist es ->
-      Elist (List.map unique_rv_pass_expr es)
+      Elist (List.map (unique_rv_pass_expr prefix) es)
     | Epair es ->
-      Epair (List.map unique_rv_pass_expr es)
+      Epair (List.map (unique_rv_pass_expr prefix) es)
     | Evalue e ->
-      Evalue (unique_rv_pass_expr e)
+      Evalue (unique_rv_pass_expr prefix e)
     | Efun (p, e) ->
-      Efun (p, unique_rv_pass_expr e)
+      Efun (p, unique_rv_pass_expr prefix e)
     | Edistr d -> 
-      Edistr (unique_rv_pass_distr d)
-  and unique_rv_pass_distr (d: distribution) : distribution =
+      Edistr (unique_rv_pass_distr prefix d)
+  and unique_rv_pass_distr (prefix: string) (d: distribution) : distribution =
     match d with
     | Dgaussian (e1, e2) -> 
-      Dgaussian (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Dgaussian (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dcategorical (e1, e2, e3) -> 
-      Dcategorical (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+      Dcategorical (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2, unique_rv_pass_expr prefix e3)
     | Duniformint (e1, e2) -> 
-      Duniformint (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Duniformint (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dbeta (e1, e2) -> 
-      Dbeta (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Dbeta (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dbernoulli e -> 
-      Dbernoulli (unique_rv_pass_expr e)
+      Dbernoulli (unique_rv_pass_expr prefix e)
     | Dbinomial (e1, e2) -> 
-      Dbinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Dbinomial (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dbetabinomial (e1, e2, e3) -> 
-      Dbetabinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2, unique_rv_pass_expr e3)
+      Dbetabinomial (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2, unique_rv_pass_expr prefix e3)
     | Dnegativebinomial (e1, e2) -> 
-      Dnegativebinomial (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Dnegativebinomial (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dexponential e -> 
-      Dexponential (unique_rv_pass_expr e)
+      Dexponential (unique_rv_pass_expr prefix e)
     | Dgamma (e1, e2) -> 
-      Dgamma (unique_rv_pass_expr e1, unique_rv_pass_expr e2)
+      Dgamma (unique_rv_pass_expr prefix e1, unique_rv_pass_expr prefix e2)
     | Dpoisson e -> 
-      Dpoisson (unique_rv_pass_expr e)
+      Dpoisson (unique_rv_pass_expr prefix e)
     | Ddelta e -> 
-      Ddelta (unique_rv_pass_expr e)
+      Ddelta (unique_rv_pass_expr prefix e)
   in
   
   let (decls, e) = p in
 
   let decls = List.map (fun d -> 
     match d with
-    | Ddecl (p, e) -> Ddecl (p, unique_rv_pass_expr e)
+    | Ddecl (p, e) -> Ddecl (p, unique_rv_pass_expr "" e)
     | Dfun (f, p, e) -> 
-      Dfun (f, p, unique_rv_pass_expr e)
+      Dfun (f, p, unique_rv_pass_expr (f ^ "_") e)
     | Dopen s -> Dopen s
   ) decls in
 
-  let e = unique_rv_pass_expr e in
+  let e = unique_rv_pass_expr "" e in
   (decls, e)
 
 (* If body has resample/observe, turn into regular if then else *)
