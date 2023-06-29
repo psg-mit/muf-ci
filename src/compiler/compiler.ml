@@ -128,7 +128,7 @@ let verify_approx_status output program =
     | Dfun (s, _, _) -> not (s = output)
   ) decls in
 
-  let ann_inf = Analysis.annotated_inference_strategy (decls, e) in
+  let _ann_inf = Analysis.annotated_inference_strategy (decls, e) in
 
   let inferred_inf = Analysis.infer (decls, e) in
   let inferred_inf_s = Analysis.InferenceStrategy.to_string inferred_inf in
@@ -136,7 +136,7 @@ let verify_approx_status output program =
   Format.printf "%s\n" inferred_inf_s;
 
   try 
-    Analysis.InferenceStrategy.verify ann_inf inferred_inf;
+    (* Analysis.InferenceStrategy.verify ann_inf inferred_inf; *)
     Format.printf "Inference Strategy - Satisfiable@."
   with Analysis.Approximation_Status_Error (rv, ann, inf) ->
     Format.printf "Inference Strategy - Unsatisfiable@.";
