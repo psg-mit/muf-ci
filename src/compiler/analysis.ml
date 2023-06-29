@@ -262,10 +262,6 @@ fun p ctx ->
   | None -> Eunk 
     (* failwith (Format.sprintf "ctx_find: %s not found" (string_of_ident p)) *)
 
-let ctx_rename : RandomVar.t -> RandomVar.t -> ctx -> ctx =
-fun rv1 rv2 ctx ->
-  VarMap.map (rename_expr rv1 rv2) ctx
-
 module ApproximationStatus = struct
   type t = 
   | Approx
@@ -1217,9 +1213,9 @@ end
 
 (* Joins two expressions, and also joins symbolic state if necessary
    returns the second state if not joins  *)
-let join_expr : ctx -> abs_expr -> abs_expr -> SymState.t -> SymState.t 
-  -> ctx * abs_expr * SymState.t =
-fun ctx e1 e2 g1 g2 ->
+let join_expr : abs_expr -> abs_expr -> SymState.t -> SymState.t 
+  -> abs_expr * SymState.t =
+fun e1 e2 g1 g2 ->
 
   (* Maps renamings *)
   let mapping_old_names = Hashtbl.create 10 in
@@ -1344,29 +1340,28 @@ fun ctx e1 e2 g1 g2 ->
   let e, g = join_expr e1 e2 g1 g2 in
 
   (* Capture avoiding substitution *)
-  let rename old_name new_name (ctx, g, e) =
+  let rename old_name new_name (g, e) =
     let s = SymState.find old_name g in
-    let ctx = ctx_rename old_name new_name ctx in
     let e = rename_expr old_name new_name e in
     let g = SymState.remove old_name g in
     let g = SymState.add new_name s g in
-    ctx, g, e
+    g, e
   in
 
   (* Rename old vars to their new names to free up their name *)
-  let ctx, g, e = Hashtbl.fold rename mapping_old_names (ctx, g, e) in
+  let g, e = Hashtbl.fold rename mapping_old_names (g, e) in
 
   (* Rename temp vars to the new (now freed up) names *)
-  let ctx, g, e = Hashtbl.fold rename mapping_new_names (ctx, g, e) in
+  let g, e = Hashtbl.fold rename mapping_new_names (g, e) in
 
-  ctx, e, g
+  e, g
   
 (* 
   TODO: Widening can be even smarter... 
   curently has imprecision due to alias 
 *)
-let widen : ctx -> abs_expr -> SymState.t -> ctx * abs_expr * SymState.t =
-fun ctx e g ->
+let widen : abs_expr -> SymState.t -> abs_expr * SymState.t =
+fun e g ->
   let e1, e2, e3, return = 
     match e with 
     | Eif (e1, e2, e3) -> e1, e2, e3, (fun e1 e2 e3 -> Eif(e1, e2, e3))
@@ -1375,20 +1370,20 @@ fun ctx e g ->
   in
 
   if not (is_const e1 g) then
-    ctx, e, g
+    e, g
   else if is_const e2 g && not (is_const e3 g) then
     (* Only care about the side that's not const *)
-    ctx, e3, g
+    e3, g
   else if not (is_const e2 g) && is_const e3 g then
-    ctx, e2, g
+    e2, g
   else
-    let ctx, es23, g = join_expr ctx e2 e3 g g in
+    let es23, g = join_expr e2 e3 g g in
     let es = 
       match es23 with
       | Eunk -> return e1 e2 e3
       | _ -> es23
     in
-    ctx, es, g
+    es, g
 
 let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
 fun (decls, e) ->
@@ -1493,7 +1488,7 @@ fun p ->
   ) user_functions)); *)
 
   let rec infer' : ctx -> SymState.t -> expr -> 
-    ctx * SymState.t * abs_expr =
+    SymState.t * abs_expr =
   fun ctx g e ->
     match e with
     | Econst c ->
@@ -1505,118 +1500,117 @@ fun p ->
         | Cstring s -> Cstring s
         | Cunit -> Cunit
       in 
-      ctx, g, Econst c
-    | Eresample -> ctx, g, Econst Cunit
-    | Evar x -> 
-      ctx, g, ctx_find x ctx
+      g, Econst c
+    | Eresample -> g, Econst Cunit
+    | Evar x -> g, ctx_find x ctx
     | Etuple es  | Epair es ->
-      let ctx, g, es = 
-        List.fold_left (fun (ctx, g, es) e ->
-          let ctx, g, es' = infer' ctx g e in
-          ctx, g, es @ [es']
-        ) (ctx, g,[]) es in
-      ctx, g, Etuple es
+      let g, es = 
+        List.fold_left (fun (g, es) e ->
+          let g, es' = infer' ctx g e in
+          g, es @ [es']
+        ) (g,[]) es in
+      g, Etuple es
     | Elist es ->
-      let ctx, g, es = 
-        List.fold_left (fun (ctx, g, es) e ->
-          let ctx, g, es' = infer' ctx g e in
-          ctx, g, es @ [es']
-        ) (ctx, g,[]) es in
-      ctx, g, Elist es
+      let g, es = 
+        List.fold_left (fun (g, es) e ->
+          let g, es' = infer' ctx g e in
+          g, es @ [es']
+        ) (g,[]) es in
+      g, Elist es
     | Eapp (e1, e2) -> infer_app ctx g e1 e2
     | Eif (e1, e2, e3) ->
-      let ctx, g, e1 = infer' ctx g e1 in
-      let ctx, g, e2 = infer' ctx g e2 in
-      let ctx, g, e3 = infer' ctx g e3 in
+      let g, e1 = infer' ctx g e1 in
+      let g, e2 = infer' ctx g e2 in
+      let g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      let ctx, es, g = widen ctx (Eif (e1, e2, e3)) g in
-      ctx, g, es
+      let es, g = widen (Eif (e1, e2, e3)) g in
+      g, es
     | Eifeval (e1, e2, e3) ->
-      let ctx, g, e1 = infer' ctx g e1 in
-      let ctx, g, e2 = infer' ctx g e2 in
-      let ctx, g, e3 = infer' ctx g e3 in
+      let g, e1 = infer' ctx g e1 in
+      let g, e2 = infer' ctx g e2 in
+      let g, e3 = infer' ctx g e3 in
       (* Widen distribution *)
-      let ctx, es, g = widen ctx (Eifeval (e1, e2, e3)) g in
-      ctx, g, es
+      let es, g = widen (Eifeval (e1, e2, e3)) g in
+      g, es
     | Elet (p, e1, e2) ->
-      let ctx1, g, e1 = infer' ctx g e1 in
-      let _, g, e2 = infer' (ctx_add p e1 ctx1) g e2 in
+      let g, e1 = infer' ctx g e1 in
+      let g, e2 = infer' (ctx_add p e1 ctx) g e2 in
       let g = SymState.clean g e2 in
-      ctx, g, e2
+      g, e2
     | Esample (p, a, e1) ->
-      let ctx, g, e1 = infer' ctx g e1 in
+      let g, e1 = infer' ctx g e1 in
       let g, xs = AbstractSSI.assume_patt p a e1 g in
-      ctx, g, xs
+      g, xs
     | Eobserve (e1, e2) ->
-      let ctx, g, e1 = infer' ctx g e1 in
-      let ctx, g, _ = infer' ctx g e2 in
+      let g, e1 = infer' ctx g e1 in
+      let g, _ = infer' ctx g e2 in
       let rv = get_obs () in
       let x, g = AbstractSSI.assume rv e1 g in
       let g = AbstractSSI.observe x g in
-      ctx, g, Econst Cunit
+      g, Econst Cunit
     | Evalue e1 ->
-      let ctx, g, e1 = infer' ctx g e1 in
+      let g, e1 = infer' ctx g e1 in
       let g = AbstractSSI.value_expr e1 g in
-      ctx, g, e1
+      g, e1
     | Edistr d ->
       begin match d with
       | Dgaussian (e1, e2) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        ctx, g, Edistr (Dgaussian (e1, e2))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        g, Edistr (Dgaussian (e1, e2))
       | Dcategorical (e1, e2, e3) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        let ctx, g, e3 = infer' ctx g e3 in
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        let g, e3 = infer' ctx g e3 in
         (* TODO: e3 is really a function *)
-        ctx, g, Edistr (Dcategorical (e1, e2, e3))
+        g, Edistr (Dcategorical (e1, e2, e3))
       | Duniformint (e1, e2) ->
         (* Uniform int is a wrapper for categorical *)
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
         let prob = match e1, e2 with
         | Econst Cint i1, Econst Cint i2 ->
           let range = i2 - i1 + 1 in
           Econst (Cfloat (1.0 /. (float_of_int range)))
         | _ -> Econst Cunk
         in
-        ctx, g, Edistr (Dcategorical (e1, e2, prob))
+        g, Edistr (Dcategorical (e1, e2, prob))
       | Dbeta (e1, e2) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        ctx, g, Edistr (Dbeta (e1, e2))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        g, Edistr (Dbeta (e1, e2))
       | Dbernoulli e1 ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        ctx, g, Edistr (Dbernoulli e1)
+        let g, e1 = infer' ctx g e1 in
+        g, Edistr (Dbernoulli e1)
       | Dbinomial (e1, e2) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        ctx, g, Edistr (Dbinomial (e1, e2))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        g, Edistr (Dbinomial (e1, e2))
       | Dbetabinomial (e1, e2, e3) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        let ctx, g, e3 = infer' ctx g e3 in
-        ctx, g, Edistr (Dbetabinomial (e1, e2, e3))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        let g, e3 = infer' ctx g e3 in
+        g, Edistr (Dbetabinomial (e1, e2, e3))
       | Dnegativebinomial (e1, e2) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        ctx, g, Edistr (Dnegativebinomial (e1, e2))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        g, Edistr (Dnegativebinomial (e1, e2))
       | Dexponential e1 ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        ctx, g, Edistr (Dexponential e1)
+        let g, e1 = infer' ctx g e1 in
+        g, Edistr (Dexponential e1)
       | Dgamma (e1, e2) ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        let ctx, g, e2 = infer' ctx g e2 in
-        ctx, g, Edistr (Dgamma (e1, e2))
+        let g, e1 = infer' ctx g e1 in
+        let g, e2 = infer' ctx g e2 in
+        g, Edistr (Dgamma (e1, e2))
       | Dpoisson e1 ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        ctx, g, Edistr (Dpoisson e1)
+        let g, e1 = infer' ctx g e1 in
+        g, Edistr (Dpoisson e1)
       | Ddelta e1 ->
-        let ctx, g, e1 = infer' ctx g e1 in
-        ctx, g, Edistr (Ddelta e1)
+        let g, e1 = infer' ctx g e1 in
+        g, Edistr (Ddelta e1)
       end
     | Efun _ -> failwith "infer: fun is internal"
-  and infer_no_func : ctx -> SymState.t -> expr -> abs_expr -> ctx * SymState.t * abs_expr =
+  and infer_no_func : ctx -> SymState.t -> expr -> abs_expr -> SymState.t * abs_expr =
   fun ctx g e1 e2 ->
     (* Assuming e1 is an identifier *)
     match e1 with
@@ -1624,131 +1618,131 @@ fun p ->
       begin match f with
       | {modul=None; name="add"} -> 
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_add e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_add e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid add"
         end
       | {modul=None; name="mul"} -> 
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_mul e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_mul e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid mul"
         end
       | {modul=None; name="sub"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_sub e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_sub e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid sub"
         end
       | {modul=None; name="div"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_div e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_div e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid div"
         end
       | {modul=None; name="int_add"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_int_add e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_int_add e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid int_add"
         end
       | {modul=None; name="exp"} ->
         begin match e2 with
-        | Etuple([e1]) -> ctx, g, eval_unop Exp e1
-        | Eunk -> ctx, g, Eunk
+        | Etuple([e1]) -> g, eval_unop Exp e1
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid exp"
         end
       | {modul=None; name="eq"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_cmp Eq e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_cmp Eq e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid eq"
         end
       | {modul=None; name="lt"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_cmp Lt e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_cmp Lt e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid lt"
         end
       | {modul=None; name="split"} ->
         begin match e2 with
-        | Etuple e_inner -> ctx, g, Etuple e_inner
-        | Eunk -> ctx, g, Etuple [Eunk; Eunk]
+        | Etuple e_inner -> g, Etuple e_inner
+        | Eunk -> g, Etuple [Eunk; Eunk]
         | _ -> failwith "infer: invalid split"
         end
       | {modul=None; name="int_to_float"} ->
         begin match e2 with
-        | Econst Cint i -> ctx, g, Econst (Cfloat (float_of_int i))
-        | Econst Cunk -> ctx, g, Econst Cunk
+        | Econst Cint i -> g, Econst (Cfloat (float_of_int i))
+        | Econst Cunk -> g, Econst Cunk
         | Etuple _ -> failwith "infer: invalid int_to_float"
-        | Eunk -> ctx, g, Eunk
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid int_to_float"
         end
       | {modul=None; name="int_of_float_det"} ->
         begin match e2 with
-        | Econst Cfloat f -> ctx, g, Econst (Cint (int_of_float f))
-        | Econst Cunk -> ctx, g, Econst Cunk
+        | Econst Cfloat f -> g, Econst (Cint (int_of_float f))
+        | Econst Cunk -> g, Econst Cunk
         | Etuple _ -> failwith "infer: invalid int_of_float_det"
-        | Eunk -> ctx, g, Eunk
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid int_of_float_det"
         end
       | {modul=None; name="float_of_int_det"} ->
         begin match e2 with
-        | Econst Cint i -> ctx, g, Econst (Cfloat (float_of_int i))
-        | Econst Cunk -> ctx, g, Econst Cunk
+        | Econst Cint i -> g, Econst (Cfloat (float_of_int i))
+        | Econst Cunk -> g, Econst Cunk
         | Etuple _ -> failwith "infer: invalid float_of_int_det"
-        | Eunk -> ctx, g, Econst Cunk
+        | Eunk -> g, Econst Cunk
         | _ -> failwith "infer: invalid float_of_int_det"
         end
       | {modul=None; name="sub_int"} ->
         begin match e2 with
-        | Etuple(e1::[e2]) -> ctx, g, eval_sub_int e1 e2
-        | Eunk -> ctx, g, Eunk
+        | Etuple(e1::[e2]) -> g, eval_sub_int e1 e2
+        | Eunk -> g, Eunk
         | _ -> failwith "infer: invalid sub_int"
         end
-      | {modul=None; name="read"} -> ctx, g, Eunk
+      | {modul=None; name="read"} -> g, Eunk
       | {modul=None; name="mean_int"} 
       | {modul=None; name="mean_float"}
-      | {modul=None; name="mean_bool"} -> ctx, g, Econst Cunk
+      | {modul=None; name="mean_bool"} -> g, Econst Cunk
       | {modul=None; name} ->
         (* User defined functions just get inlined *)
         let func = get_func name user_functions in
         begin match func with
         | Some (p, e_body) ->
           (* create mapping of parameters to arguments *)
-          let _, g, e_body = infer' (ctx_add p e2 ctx) g e_body in
-          ctx, g, e_body
+          let g, e_body = infer' (ctx_add p e2 ctx) g e_body in
+          g, e_body
         | None -> failwith "infer_ops: invalid function call"
         end
       | {modul=Some "List"; name="length"} -> 
         begin match e2 with
-        | Elist es -> ctx, g, Econst (Cint (List.length es))
-        | Eunk -> ctx, g, Econst Cunk
+        | Elist es -> g, Econst (Cint (List.length es))
+        | Eunk -> g, Econst Cunk
         | _ -> failwith "infer_ops: invalid List.length"
         end
       | {modul=Some "List"; name="hd"} -> 
         begin match e2 with
-        | Elist (e::_) -> ctx, g, e
-        | Eunk -> ctx, g, Eunk
+        | Elist (e::_) -> g, e
+        | Eunk -> g, Eunk
         | _ -> failwith "infer_ops: invalid List.hd"
         end
       | {modul=Some "List"; name="tl"} ->
         begin match e2 with
-        | Elist (_::es) -> ctx, g, Elist es
-        | Eunk -> ctx, g, Eunk
+        | Elist (_::es) -> g, Elist es
+        | Eunk -> g, Eunk
         | _ -> failwith "infer_ops: invalid List.tl"
         end
       | {modul=Some "List"; name="cons"} ->
         begin match e2 with
-        | Etuple (e1::[Elist es]) -> ctx, g, Elist (e1::es)
-        | Etuple (e1::[Eunk]) -> ctx, g, Elist [e1; Eunk]
-        | Eunk -> ctx, g, Eunk
+        | Etuple (e1::[Elist es]) -> g, Elist (e1::es)
+        | Etuple (e1::[Eunk]) -> g, Elist [e1; Eunk]
+        | Eunk -> g, Eunk
         | _ -> failwith "infer_ops: invalid List.cons"
         end
       | {modul=Some "List"; name="rev"} ->
         begin match e2 with
-        | Elist es -> ctx, g, Elist (List.rev es)
-        | Eunk -> ctx, g, Eunk
+        | Elist es -> g, Elist (List.rev es)
+        | Eunk -> g, Eunk
         | _ -> failwith "infer_ops: invalid List.rev"
         end
       (* TODO: list functions passing around list functions *)
@@ -1757,7 +1751,7 @@ fun p ->
       | _ -> failwith "infer_ops: invalid function call"
       end
     | _ -> failwith "infer_ops: invalid function call"
-  and infer_app : ctx -> SymState.t -> expr -> expr -> ctx * SymState.t * abs_expr =
+  and infer_app : ctx -> SymState.t -> expr -> expr -> SymState.t * abs_expr =
   fun ctx g e1 e2 ->
     (* Can't pass a function around except to List/Array functions
        so we can't run infer' on function arguments *)
@@ -1767,7 +1761,7 @@ fun p ->
       | {modul=Some "List"; name="init"} ->
         begin match e2 with
         | Etuple (n::[f]) ->
-          let ctx, g, n = infer' ctx g n in
+          let g, n = infer' ctx g n in
           begin match n with
           | Econst Cint n ->
             let init = List.init n (fun i -> (Econst (Cint i) : expr)) in
@@ -1775,8 +1769,8 @@ fun p ->
               (Evar {modul=Some "List";name="map"})
               (Etuple [f; Elist init])
           | Eunk -> 
-            let ctx, g, _ = infer_no_func ctx g f Eunk in
-            ctx, g, Eunk
+            let g, _ = infer_no_func ctx g f Eunk in
+            g, Eunk
           | _ -> failwith "infer_app: invalid List.init"
           end
         | _ -> failwith "infer_app: invalid List.init"
@@ -1784,26 +1778,26 @@ fun p ->
       | {modul=Some "List"; name="iter"} ->
         begin match e2 with
         | Etuple (f::[l]) ->
-          let ctx, g, _ = infer_app ctx g 
+          let g, _ = infer_app ctx g 
               (Evar {modul=Some "List";name="map"})
               (Etuple [f; l]) in
-          ctx, g, Econst Cunit
+          g, Econst Cunit
         | _ -> failwith "infer_app: invalid List.iter"
         end
       | {modul=Some "List"; name="map"} ->
         begin match e2 with
         | Etuple (f::[l]) ->
-          let ctx, g, l = infer' ctx g l in
+          let g, l = infer' ctx g l in
           begin match l with
           | Elist args ->
-            let ctx, g, e_inner = List.fold_left (fun (ctx, g, es) arg ->
-              let ctx, g, e_res = infer_no_func ctx g f arg in
-              ctx, g, e_res::es
-            ) (ctx, g, []) args in
-            ctx, g, Elist (List.rev e_inner)
+            let g, e_inner = List.fold_left (fun (g, es) arg ->
+              let g, e_res = infer_no_func ctx g f arg in
+              g, e_res::es
+            ) (g, []) args in
+            g, Elist (List.rev e_inner)
           | Eunk -> 
-            let ctx, g, e_inner = infer_no_func ctx g f Eunk in
-            ctx, g, e_inner
+            let g, e_inner = infer_no_func ctx g f Eunk in
+            g, e_inner
           | _ -> failwith "infer_app: invalid List.map"
           end
         | _ -> failwith "infer_app: invalid List.map"
@@ -1812,70 +1806,71 @@ fun p ->
       | {modul=Some "List"; name="fold_resample"} ->
         begin match e2 with
         | Etuple (f::[l; acc]) ->
-          let ctx, g, l = infer' ctx g l in
-          let ctx, g, acc = infer' ctx g acc in
+          let g, l = infer' ctx g l in
+          let g, acc = infer' ctx g acc in
 
           begin match l with
           | Elist args ->
-            let rec iter ctx g_pre acc args =
+            let rec iter g_pre acc args =
               match args with
-              | [] -> ctx, g_pre, acc
+              | [] ->  g_pre, acc
               | [arg] -> 
-                let ctx, g, res = infer_no_func ctx g_pre f (Etuple [acc; arg]) in
+                let g, res = infer_no_func (VarMap.empty) g_pre f (Etuple [acc; arg]) in
                 let g = SymState.clean g res in
                 (* Format.printf "Ret: %s\n" (string_of_expr res); *)
-                ctx, g, res
+                g, res
               | arg::args ->
                 (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
 
-                let _, g, res = infer_no_func ctx g_pre f (Etuple [acc; arg]) in
+                let g, res = infer_no_func (VarMap.empty) g_pre f (Etuple [acc; arg]) in
 
                 (* Format.printf "Step:\n%s\n" (SymState.to_string g); *)
 
-                let ctx_post, res_post, g_post = join_expr ctx acc res g_pre g in
+                let res_post, g_post = join_expr acc res g_pre g in
                 let g_post = SymState.clean g_post res_post in
 
                 (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
                 (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
                 (* Format.printf "-----------------\n"; *)
                 
-                iter ctx_post g_post res_post args
+                iter g_post res_post args
             in
-            iter ctx g acc args 
+            let g, res = iter g acc args in
+            g, res
           | Eunk -> 
             (* Compute fixpoint *)
-            let rec iter ctx g_pre acc =
+            let rec iter g_pre acc =
               (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
 
-              let _, g, res = infer_no_func ctx g_pre f (Etuple [acc; Eunk]) in
+              let g, res = infer_no_func (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
 
               (* Format.printf "Step:\n%s\n" (SymState.to_string g); *)
 
-              let ctx_post, res_post, g_post = join_expr ctx acc res g_pre g in
+              let res_post, g_post = join_expr acc res g_pre g in
               let g_post = SymState.clean g_post res_post in
 
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
               (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
-              if SymState.equal g_pre g_post && acc = res_post then ctx, g, res
-              else iter ctx_post g_post res_post
+              if SymState.equal g_pre g_post && acc = res_post then g, res
+              else iter g_post res_post
             in
-            let ctx, g, res = iter ctx g acc in
+            let g, res = iter g acc in
             let g = SymState.clean g res in
-            ctx, g, res
+            g, res
           | _ -> failwith "infer_app: invalid List.fold"
           end
         | _ -> failwith "infer_app: invalid List.fold"
         end
       | _ -> 
-        let ctx, g, e2 = infer' ctx g e2 in
+        let g, e2 = infer' ctx g e2 in
         infer_no_func ctx g e1 e2
       end
     | _ -> failwith "infer_app: invalid function"
   in
 
-  let _, g', _ = infer' ctx g e in
+  let g', _ = infer' ctx g e in
   
   (* TODO: debug. delete later *)
   let sym_state_s = SymState.to_string g' in
