@@ -1823,21 +1823,21 @@ fun p ->
               | [arg] -> 
                 let ctx, g, res = infer_no_func ctx g_pre f (Etuple [acc; arg]) in
                 let g = SymState.clean g res in
-                Format.printf "Ret: %s\n" (string_of_expr res);
+                (* Format.printf "Ret: %s\n" (string_of_expr res); *)
                 ctx, g, res
               | arg::args ->
-                Format.printf "Pre:\n%s\n" (SymState.to_string g_pre);
+                (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
 
                 let _, g, res = infer_no_func ctx g_pre f (Etuple [acc; arg]) in
 
-                Format.printf "Step:\n%s\n" (SymState.to_string g);
+                (* Format.printf "Step:\n%s\n" (SymState.to_string g); *)
 
                 let ctx_post, res_post, g_post = join_expr ctx acc res g_pre g in
                 let g_post = SymState.clean g_post res_post in
 
-                Format.printf "Post:\n%s\n" (SymState.to_string g_post);
-                Format.printf "Ret: %s\n" (string_of_expr res_post);
-                Format.printf "-----------------\n";
+                (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
+                (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
+                (* Format.printf "-----------------\n"; *)
                 
                 iter ctx_post g_post res_post args
             in
@@ -1845,17 +1845,17 @@ fun p ->
           | Eunk -> 
             (* Compute fixpoint *)
             let rec iter ctx g_pre acc =
-              Format.printf "Pre:\n%s\n" (SymState.to_string g_pre);
+              (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
 
               let _, g, res = infer_no_func ctx g_pre f (Etuple [acc; Eunk]) in
 
-              Format.printf "Step:\n%s\n" (SymState.to_string g);
+              (* Format.printf "Step:\n%s\n" (SymState.to_string g); *)
 
               let ctx_post, res_post, g_post = join_expr ctx acc res g_pre g in
               let g_post = SymState.clean g_post res_post in
 
-              Format.printf "Post:\n%s\n" (SymState.to_string g_post);
-              Format.printf "-----------------\n";
+              (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
+              (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
               if SymState.equal g_pre g_post && acc = res_post then ctx, g, res
