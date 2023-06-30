@@ -55,6 +55,7 @@ type abs_expr =
 | Ediv of abs_expr * abs_expr
 | Eintadd of abs_expr * abs_expr
 | Eintmul of abs_expr * abs_expr
+| Einttofloat of abs_expr
 | Eunop of abs_unop * abs_expr
 | Ecmp of abs_cmpop * abs_expr * abs_expr
 | Eif of abs_expr * abs_expr * abs_expr
@@ -77,6 +78,7 @@ and abs_distribution =
 | Dexponential of abs_expr
 | Dgamma of abs_expr * abs_expr
 | Dpoisson of abs_expr
+| Dstudentt of abs_expr * abs_expr * abs_expr
 | Ddelta of abs_expr
 | Ddelta_sampled 
 | Ddelta_observed
@@ -133,6 +135,7 @@ fun e ->
   | Ediv (e1, e2) -> Printf.sprintf "%s / %s" (string_of_expr e1) (string_of_expr e2)
   | Eintadd (e1, e2) -> Printf.sprintf "%s + %s" (string_of_expr e1) (string_of_expr e2)
   | Eintmul (e1, e2) -> Printf.sprintf "%s * %s" (string_of_expr e1) (string_of_expr e2)
+  | Einttofloat e -> Printf.sprintf "float(%s)" (string_of_expr e)
   | Eunop (op, e) -> Printf.sprintf "%s(%s)" (string_of_unop op) (string_of_expr e)
   | Ecmp (op, e1, e2) -> Printf.sprintf "%s %s %s" (string_of_expr e1) (string_of_cmpop op) (string_of_expr e2)
   | Eif (e1, e2, e3) -> Printf.sprintf "if %s then %s else %s" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
@@ -166,6 +169,8 @@ fun d ->
     Printf.sprintf "Gamma(%s, %s)" (string_of_expr e1) (string_of_expr e2)
   | Dpoisson e1 ->
     Printf.sprintf "Poisson(%s)" (string_of_expr e1)
+  | Dstudentt (e1, e2, e3) ->
+    Printf.sprintf "StudentT(%s, %s, %s)" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Ddelta e1 ->
     Printf.sprintf "Delta(%s)" (string_of_expr e1)
   | Ddelta_observed -> "Delta-Observed"
@@ -189,6 +194,8 @@ fun rv1 rv2 e ->
     Eintadd (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2)
   | Eintmul (e1, e2) -> 
     Eintmul (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2)
+  | Einttofloat e -> 
+    Einttofloat (rename_expr rv1 rv2 e)
   | Eunop (op, e) -> 
     Eunop (op, rename_expr rv1 rv2 e)
   | Ecmp (op, e1, e2) -> 
@@ -224,6 +231,8 @@ fun rv1 rv2 d ->
     Dgamma (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2)
   | Dpoisson e1 -> 
     Dpoisson (rename_expr rv1 rv2 e1)
+  | Dstudentt (e1, e2, e3) -> 
+    Dstudentt (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2, rename_expr rv1 rv2 e3)
   | Ddelta e1 -> 
     Ddelta (rename_expr rv1 rv2 e1)
   | Ddelta_observed | Ddelta_sampled -> d
@@ -244,6 +253,7 @@ fun p e ctx ->
   match p, e with
   | Pid name, _ -> VarMap.add name e ctx
   | Ptuple [], Etuple [] | Ptuple [], Eunk -> ctx
+  | Ptuple [p], _ -> ctx_add p e ctx
   | Ptuple (p :: ps), Etuple (e :: es) ->
     ctx_add (Ptuple ps) (Etuple es) (ctx_add p e ctx)
   | Ptuple (p :: ps), Eunk ->
@@ -420,6 +430,12 @@ fun e ->
     let e1 = eval_expr e1 in
     let e2 = eval_expr e2 in
     eval_int_mul e1 e2
+  | Einttofloat e1 ->
+    let e1 = eval_expr e1 in
+    begin match e1 with
+    | Econst (Cint c) -> Econst (Cfloat (float_of_int c))
+    | _ -> Einttofloat e1
+    end
   | Eunop (op, e1) ->
     let e1 = eval_expr e1 in
     eval_unop op e1
@@ -485,10 +501,120 @@ fun d ->
   | Dpoisson e -> 
     let e = eval_expr e in
     Dpoisson e
+  | Dstudentt (e1, e2, e3) -> 
+    let e1 = eval_expr e1 in
+    let e2 = eval_expr e2 in
+    let e3 = eval_expr e3 in
+    Dstudentt (e1, e2, e3)
   | Ddelta e ->
     let e = eval_expr e in
     Ddelta e
   | Ddelta_sampled | Ddelta_observed | Dunk -> d
+
+let rec subst_rv : abs_expr -> RandomVar.t -> abs_expr -> abs_expr =
+fun e rv e' ->
+  match e with
+  | Eunk | Econst _ -> e
+  | Erandomvar rv' -> if rv = rv' then e' else e
+  | Etuple es ->
+    Etuple (List.map (fun e -> subst_rv e rv e') es)
+  | Eadd (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Eadd (e1, e2)
+  | Emul (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Emul (e1, e2)
+  | Ediv (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Ediv (e1, e2)
+  | Eintadd (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Eintadd (e1, e2)
+  | Eintmul (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Eintmul (e1, e2)
+  | Einttofloat e1 ->
+    let e1 = subst_rv e1 rv e' in
+    Einttofloat e1
+  | Eunop (op, e1) ->
+    let e1 = subst_rv e1 rv e' in
+    Eunop (op, e1)
+  | Ecmp (op, e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Ecmp (op, e1, e2)
+  | Eif (e1, e2, e3) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    let e3 = subst_rv e3 rv e' in
+    Eif (e1, e2, e3)
+  | Eifeval (e1, e2, e3) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    let e3 = subst_rv e3 rv e' in
+    Eifeval (e1, e2, e3)
+  | Elist es ->
+    let es = List.map (fun e -> subst_rv e rv e') es in
+    Elist es
+  | Edistr d -> Edistr (subst_rv_distr d rv e')
+and subst_rv_distr : abs_distribution -> RandomVar.t -> abs_expr -> abs_distribution =
+fun d rv e' ->
+  match d with
+  | Dgaussian (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Dgaussian (e1, e2)
+  (* | DmvNormal of expr * expr *)
+  | Dcategorical (e1, e2, e3) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    let e3 = subst_rv e3 rv e' in
+    Dcategorical (e1, e2, e3)
+  | Dbeta (e1, e2) ->
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Dbeta (e1, e2)
+  | Dbernoulli e ->
+    let e = subst_rv e rv e' in
+    Dbernoulli e
+  | Dbinomial (e1, e2) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Dbinomial (e1, e2)
+  | Dbetabinomial (e1, e2, e3) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    let e3 = subst_rv e3 rv e' in
+    Dbetabinomial (e1, e2, e3)
+  | Dnegativebinomial (e1, e2) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Dnegativebinomial (e1, e2)
+  | Dexponential e -> 
+    let e = subst_rv e rv e' in
+    Dexponential e
+  | Dgamma (e1, e2) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    Dgamma (e1, e2)
+  | Dpoisson e -> 
+    let e = subst_rv e rv e' in
+    Dpoisson e
+  | Dstudentt (e1, e2, e3) -> 
+    let e1 = subst_rv e1 rv e' in
+    let e2 = subst_rv e2 rv e' in
+    let e3 = subst_rv e3 rv e' in
+    Dstudentt (e1, e2, e3)
+  | Ddelta e ->
+    let e = subst_rv e rv e' in
+    Ddelta e
+  | Ddelta_sampled | Ddelta_observed | Dunk -> d
+  
 
 exception NonConjugate of RandomVar.t
 
@@ -507,14 +633,11 @@ module InferenceStrategy = struct
 
   let empty = RVMap.empty
 
-  let add : RandomVar.t -> ApproximationStatus.t -> t -> t =
-  fun rv a inf ->
-    (* join with existing *)
-    RVMap.add rv a inf
+  let add : RandomVar.t -> ApproximationStatus.t -> t -> t = RVMap.add
 
-  let find : RandomVar.t -> t -> ApproximationStatus.t =
-  fun rv inf ->
-    RVMap.find rv inf
+  let find : RandomVar.t -> t -> ApproximationStatus.t = RVMap.find
+
+  let find_opt : RandomVar.t -> t -> ApproximationStatus.t option = RVMap.find_opt
 
   let rec add_patt : pattern -> ApproximationStatus.t -> t -> t =
   fun patt a inf ->
@@ -533,9 +656,11 @@ module InferenceStrategy = struct
   let verify : t -> t -> unit =
   fun ann inferred ->
     RVMap.iter (fun rv ann_status ->
-      let inferred_status = find rv inferred in
-      (if not (ApproximationStatus.verify ann_status inferred_status) then
-        raise (Approximation_Status_Error (rv, ann_status, inferred_status)));
+      match find_opt rv inferred with
+      | Some inferred_status ->
+        if not (ApproximationStatus.verify ann_status inferred_status) then
+          raise (Approximation_Status_Error (rv, ann_status, inferred_status))
+      | None -> failwith (Format.sprintf "verify: can't find %s in inferred" (RandomVar.to_string rv))
     ) ann
 end
 
@@ -591,7 +716,7 @@ module SymState = struct
       | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) 
       | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) -> 
         RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Eunop (_, e) -> get_randomvars' g e rvs
+      | Eunop (_, e) | Einttofloat e -> get_randomvars' g e rvs
       | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
         RVSet.union (get_randomvars' g e1 rvs) 
           (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
@@ -606,7 +731,7 @@ module SymState = struct
       | Dbeta (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
       | Dbernoulli e1 -> get_randomvars' g e1 rvs
       | Dbinomial (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dbetabinomial (e1, e2, e3) -> 
+      | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
         RVSet.union (get_randomvars' g e1 rvs) 
           (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
       | Dnegativebinomial (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
@@ -653,7 +778,7 @@ fun e g ->
   | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2) 
   | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
     is_const e1 g && is_const e2 g
-  | Eunop (_, e1) ->
+  | Eunop (_, e1) | Einttofloat e1 ->
     is_const e1 g
   | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
     is_const e1 g && is_const e2 g && is_const e3 g
@@ -707,7 +832,7 @@ module AbstractSSI = struct
     | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
     | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
       depends_on e1 rv g transitive conservative || depends_on e2 rv g transitive conservative
-    | Eunop (_, e1) ->
+    | Eunop (_, e1) | Einttofloat e1 ->
       depends_on e1 rv g transitive conservative
     | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
       depends_on e1 rv g transitive conservative || 
@@ -722,7 +847,7 @@ module AbstractSSI = struct
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
       depends_on e1 rv g transitive conservative || depends_on e2 rv g transitive conservative
     (* | DmvNormal of expr * expr *)
-    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
+    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
       depends_on e1 rv g transitive conservative || 
       depends_on e2 rv g transitive conservative || 
       depends_on e3 rv g transitive conservative
@@ -750,7 +875,7 @@ module AbstractSSI = struct
     | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
     | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
       indirectly_depends_on e1 rv g || indirectly_depends_on e2 rv g
-    | Eunop (_, e1) ->
+    | Eunop (_, e1) | Einttofloat e1 ->
       indirectly_depends_on e1 rv g
     | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
       indirectly_depends_on e1 rv g || 
@@ -765,7 +890,7 @@ module AbstractSSI = struct
     | Dnegativebinomial (e1, e2) | Dgamma (e1, e2) ->
       depends_on e1 rv g true false || depends_on e2 rv g true false
     (* | DmvNormal of expr * expr *)
-    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
+    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
       depends_on e1 rv g true false || 
       depends_on e2 rv g true false || 
       depends_on e3 rv g true false
@@ -829,6 +954,7 @@ module AbstractSSI = struct
     | Ecmp _ | Eintadd _ | Eintmul _ -> None
     | Eif _ | Eifeval _ -> None
     | Etuple _ | Elist _ | Edistr _ -> None
+    | Einttofloat _ -> None
     | Eunk -> 
       (* Conservatively assume it is not affine wrt rv *)
       None
@@ -842,7 +968,7 @@ module AbstractSSI = struct
       | Eadd (e1, e2) | Emul (e1, e2) | Ediv (e1, e2)
       | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) -> 
         List.append (get_parents_expr e1) (get_parents_expr e2)
-      | Eunop (_, e1) -> get_parents_expr e1
+      | Eunop (_, e1) | Einttofloat e1 -> get_parents_expr e1
       | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) -> 
         List.append (List.append (get_parents_expr e1) (get_parents_expr e2)) (get_parents_expr e3)
       | Elist es | Etuple es ->
@@ -856,7 +982,7 @@ module AbstractSSI = struct
     | Dgamma (e1, e2) ->
       List.append (get_parents_expr e1) (get_parents_expr e2)
     (* | DmvNormal of expr * expr *)
-    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
+    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
       List.append (List.append (get_parents_expr e1) (get_parents_expr e2)) (get_parents_expr e3)
     | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
       get_parents_expr e
@@ -906,7 +1032,7 @@ module AbstractSSI = struct
       (not (indirectly_depends_on e1 rv_parent g)) &&
       (not (indirectly_depends_on e2 rv_parent g))
     (* | DmvNormal of expr * expr *)
-    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) -> 
+    | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
       ((depends_on e1 rv_parent g false false) ||
       (depends_on e2 rv_parent g false false) ||
       (depends_on e3 rv_parent g false false)) &&
@@ -1003,6 +1129,128 @@ module AbstractSSI = struct
         None
     | _ -> None
 
+  let beta_binomial_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dbeta(a, b), Dbinomial(Econst Cint n, Erandomvar rv) ->
+      if rv = rv1 &&
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true))
+      then
+        Some(Dbetabinomial(Econst (Cint n), a, b))
+      else
+        None
+    | _ -> None
+
+  let beta_binomial_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dbeta(a, b), Dbinomial(Econst Cint n, Erandomvar rv) ->
+      if rv = rv1 &&
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true))
+      then
+        Some(Dbeta(Eadd(a, Einttofloat(Erandomvar rv2)),
+          Eadd(b, Eadd(Einttofloat(Econst(Cint n)), Emul(Econst (Cfloat (-1.)), Einttofloat(Erandomvar rv2))))))
+      else
+        None
+  | _ -> None
+
+  let gamma_poisson_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dgamma(Econst(Cfloat a), b), Dpoisson(Erandomvar rv) ->
+      if rv = rv1 && 
+        classify_float (fst(modf a)) = FP_zero && (* a is an int *)
+        (not (depends_on b rv2 g true true)) 
+      then
+        Some(Dnegativebinomial(Econst (Cint (int_of_float a)), Ediv(b, Eadd(Econst(Cfloat 1.), b))))
+     else
+        None
+    | _ -> None
+  
+  let gamma_poisson_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dgamma(Econst(Cfloat a), b), Dpoisson(Erandomvar rv) ->
+      if rv = rv1 && 
+        classify_float (fst(modf a)) = FP_zero && (* a is an int *)
+        (not (depends_on b rv2 g true true))
+      then
+        Some(Dgamma(Eadd(Econst(Cfloat a), Einttofloat(Erandomvar rv2)), Eadd(b, Einttofloat(Econst(Cint 1)))))
+     else
+        None
+    | _ -> None
+
+  let gamma_normal_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dgamma(a, b), Dgaussian(Econst(Cfloat mu), Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
+      if rv == rv1 &&
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true))
+      then
+        Some(Dstudentt(Econst(Cfloat mu), Ediv(b, a), Emul(Econst(Cfloat 2.), a)))
+      else 
+        None
+    | _ -> None
+
+  let gamma_normal_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dgamma(a, b), Dgaussian(Econst(Cfloat mu), Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
+      if rv == rv1 &&
+        (not (depends_on a rv2 g true true)) &&
+        (not (depends_on b rv2 g true true))
+      then
+        let a' = Eadd(a, Econst (Cfloat 0.5)) in
+        let b' = Eadd(b, Emul(Econst (Cfloat 0.5),
+          Eunop(Squared, Eadd(Erandomvar(rv2), Econst (Cfloat (-. mu)))))) in
+        Some (Dgamma(a', b'))
+      else 
+        None
+    | _ -> None
+
+  let bernoulli_marginal : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dbernoulli p1, Dbernoulli p2 ->
+      if depends_on p2 rv1 g false true &&
+        (not (depends_on p1 rv2 g true true))
+      then
+        let p2' = Eadd(Emul(p1, subst_rv p2 rv1 (Econst (Cbool true))),
+          Emul(Eadd(Econst (Cfloat 1.), Emul(Econst(Cfloat (-1.)), p1)), subst_rv p2 rv1 (Econst (Cbool false)))) in
+        Some(Dbernoulli p2')
+      else
+        None
+    | _ -> None
+
+  let bernoulli_posterior : RandomVar.t -> RandomVar.t -> SymState.t -> abs_distribution option =
+  fun rv1 rv2 g ->
+    let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
+    match prior.distr, likelihood.distr with
+    | Dbernoulli p1, Dbernoulli p2 ->
+      if depends_on p2 rv1 g false true &&
+        (not (depends_on p1 rv2 g true true))
+      then
+        let p2' = Eadd(Emul(p1, subst_rv p2 rv1 (Econst (Cbool true))),
+          Emul(Eadd(Econst (Cfloat 1.), Emul(Econst(Cfloat (-1.)), p1)), subst_rv p2 rv1 (Econst (Cbool false)))) in
+        
+        let p1'_num_sub = Eif (Erandomvar rv2, p2, Eadd(Econst (Cfloat 1.), Emul(Econst(Cfloat (-1.)), p2))) in
+        let p1'_num = Emul(p1, subst_rv p1'_num_sub rv1 (Econst (Cbool true))) in
+        let p1'_denom = Eif (Erandomvar rv2, p2', Eadd(Econst (Cfloat 1.), Emul(Econst(Cfloat (-1.)), p2'))) in
+        Some(Dbernoulli (Ediv(p1'_num, p1'_denom)))
+      else
+        None
+    | _ -> None
+
   let swap : InferenceStrategy.t -> RandomVar.t -> RandomVar.t -> SymState.t 
     -> bool * InferenceStrategy.t * SymState.t =
   fun inf_strat rv1 rv2 g ->
@@ -1023,29 +1271,29 @@ module AbstractSSI = struct
         true, inf_strat, g
       | _ -> false, inf_strat, g
       end
-    (* | Dbeta(_, _), Dbinomial(_, _) ->
+    | Dbeta(_, _), Dbinomial(_, _) ->
       begin match beta_binomial_marginal rv1 rv2 g, beta_binomial_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
-        true, g
-      | _ -> false, g
+        let inf_strat, g = intervene inf_strat rv2 dist_marg g in
+        let inf_strat, g = intervene inf_strat rv1 dist_post g in
+        true, inf_strat, g
+      | _ -> false, inf_strat, g
       end
-    | Dgamma(_, _), Dpoisson(_, _) ->
+    | Dgamma(_, _), Dpoisson(_) ->
       begin match gamma_poisson_marginal rv1 rv2 g, gamma_poisson_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
-        true, g
-      | _ -> false, g
+        let inf_strat, g = intervene inf_strat rv2 dist_marg g in
+        let inf_strat, g = intervene inf_strat rv1 dist_post g in
+        true, inf_strat, g
+      | _ -> false, inf_strat, g
       end
     | Dgamma(_, _), Dgaussian(_, _) ->
       begin match gamma_normal_marginal rv1 rv2 g, gamma_normal_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
-        true, g
-      | _ -> false, g
+        let inf_strat, g = intervene inf_strat rv2 dist_marg g in
+        let inf_strat, g = intervene inf_strat rv1 dist_post g in
+        true, inf_strat, g
+      | _ -> false, inf_strat, g
       end
     (* | Dcategorical(_, _, _), Dcategorical(_, _, _) -> *)
       (* begin match categorical_marginal rv1 rv2 g, categorical_posterior rv1 rv2 g with
@@ -1058,11 +1306,11 @@ module AbstractSSI = struct
     | Dbernoulli _, Dbernoulli _ ->
       begin match bernoulli_marginal rv1 rv2 g, bernoulli_posterior rv1 rv2 g with
       | Some(dist_marg), Some(dist_post) ->
-        let g = add rv2 dist_marg g in
-        let g = add rv1 dist_post g in
-        true, g
-      | _ -> false, g
-      end *)
+        let inf_strat, g = intervene inf_strat rv2 dist_marg g in
+        let inf_strat, g = intervene inf_strat rv1 dist_post g in
+        true, inf_strat, g
+      | _ -> false, inf_strat, g
+      end
     | _ -> false, inf_strat, g
 
   let hoist : InferenceStrategy.t -> RandomVar.t -> SymState.t -> InferenceStrategy.t * SymState.t =
@@ -1185,7 +1433,7 @@ module AbstractSSI = struct
     | Eintadd (e1, e2) | Eintmul (e1, e2) | Ecmp (_, e1, e2) ->
       let inf_strat, g = value_expr inf_strat e1 g in
       value_expr inf_strat e2 g
-    | Eunop (_, e1) -> value_expr inf_strat e1 g
+    | Eunop (_, e1) | Einttofloat e1 -> value_expr inf_strat e1 g
     | Eif (e1, e2, e3) | Eifeval (e1, e2, e3) ->
       let inf_strat, g = value_expr inf_strat e1 g in
       let inf_strat, g = value_expr inf_strat e2 g in
@@ -1279,6 +1527,9 @@ fun e1 e2 g1 g2 ->
         let e, g = join_expr e1 e2 g1 g2 in
         eval_unop u1 e, g
       else Eunk, g2
+    | Einttofloat e1, Einttofloat e2 ->
+      let e, g = join_expr e1 e2 g1 g2 in
+      Einttofloat e, g
     | Eif (e11, e12, e13), Eif (e21, e22, e23) ->
       let e1, g2 = join_expr e11 e21 g1 g2 in
       let e2, g2 = join_expr e12 e22 g1 g2 in
@@ -1359,6 +1610,11 @@ fun e1 e2 g1 g2 ->
     | Dpoisson e1, Dpoisson e2 ->
       let e, g2 = join_expr e1 e2 g1 g2 in
       Dpoisson e, g2
+    | Dstudentt (e1, e2, e3), Dstudentt (e1', e2', e3') ->
+      let e1, g2 = join_expr e1 e1' g1 g2 in
+      let e2, g2 = join_expr e2 e2' g1 g2 in
+      let e3, g2 = join_expr e3 e3' g1 g2 in
+      Dstudentt (e1, e2, e3), g2
     (* Todo: get rid of deltas *)
     | Ddelta e1, Ddelta e2 ->
       let e, g2 = join_expr e1 e2 g1 g2 in
@@ -1886,10 +2142,10 @@ fun p ->
               (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
-              if SymState.equal g_pre g_post && acc = res_post then g, res
+              if SymState.equal g_pre g_post && acc = res_post then inf_strat, g, res
               else iter inf_strat g_post res_post
             in
-            let g, res = iter inf_strat g acc in
+            let inf_strat, g, res = iter inf_strat g acc in
             let g = SymState.clean g res in
             inf_strat, g, res
           | _ -> failwith "infer_app: invalid List.fold"
