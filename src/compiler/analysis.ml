@@ -286,9 +286,9 @@ module ApproximationStatus = struct
   let to_string : t -> string =
   fun status ->
     match status with
-    | Approx -> "Approx"
-    | Exact -> "Exact"
-    | Dynamic -> "Dynamic"
+    | Approx -> "APPROX"
+    | Exact -> "EXACT"
+    | Dynamic -> "DYNAMIC"
 end
 
 exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
@@ -1903,10 +1903,10 @@ fun p ->
     | _ -> failwith "infer_app: invalid function"
   in
 
-  let inf_strat, g', _ = infer' inf_strat ctx g e in
+  let inf_strat, _g', _ = infer' inf_strat ctx g e in
   
-  (* TODO: debug. delete later *)
-  let sym_state_s = SymState.to_string g' in
-  Format.printf "%s\n" sym_state_s;
+  (* For debug *)
+  (* let sym_state_s = SymState.to_string g' in
+  Format.printf "%s\n" sym_state_s; *)
 
   inf_strat
