@@ -688,13 +688,17 @@ module SymState = struct
   let equal : t -> t -> bool =
   fun g1 g2 ->
     RVMap.for_all (fun rv s ->
-      let s' = find rv g2 in
-      PVSet.equal s.name s'.name && s.distr = s'.distr
+      begin match find_opt rv g2 with
+      | Some s' -> PVSet.equal s.name s'.name && s.distr = s'.distr
+      | None -> false
+      end
     ) g1
     &&
     RVMap.for_all (fun rv s ->
-      let s' = find rv g1 in
-      PVSet.equal s.name s'.name && s.distr = s'.distr
+      begin match find_opt rv g1 with
+      | Some s' -> PVSet.equal s.name s'.name && s.distr = s'.distr
+      | None -> false
+      end
     ) g2
 
   let fold : (RandomVar.t -> state -> 'a -> 'a) -> t -> 'a -> 'a = RVMap.fold
@@ -1615,7 +1619,6 @@ fun e1 e2 g1 g2 ->
       let e2, g2 = join_expr e2 e2' g1 g2 in
       let e3, g2 = join_expr e3 e3' g1 g2 in
       Dstudentt (e1, e2, e3), g2
-    (* Todo: get rid of deltas *)
     | Ddelta e1, Ddelta e2 ->
       let e, g2 = join_expr e1 e2 g1 g2 in
       Ddelta e, g2
@@ -2130,6 +2133,7 @@ fun p ->
             (* Compute fixpoint *)
             let rec iter inf_strat g_pre acc =
               (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
+              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
 
               let inf_strat, g, res = infer_no_func inf_strat  (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
 
@@ -2139,6 +2143,8 @@ fun p ->
               let g_post = SymState.clean g_post res_post in
 
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
+              (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
+              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
               (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
