@@ -86,11 +86,11 @@ let v_n = ref 0
 
 let get_obs () =
   v_n := !v_n + 1;
-  {modul=None; name="obs" ^ (string_of_int (!v_n))}
+  {modul=Some "Temp"; name="obs" ^ (string_of_int (!v_n))}
 
 let get_temp () =
   v_n := !v_n + 1;
-  {modul=None; name="temp" ^ (string_of_int (!v_n))}
+  {modul=Some "Temp"; name="temp" ^ (string_of_int (!v_n))}
 
 let string_of_constant : abs_constant -> string =
 fun c ->
@@ -1154,7 +1154,12 @@ module AbstractSSI = struct
     | Edistr d -> 
       let varname = get_temp () in
       let g = SymState.add varname { name = PVSet.singleton x; distr = eval_distribution d } g in
-      let inf_strat = InferenceStrategy.add x Exact inf_strat in
+      let inf_strat = 
+        if not (x.modul = Some "Temp") then 
+          InferenceStrategy.add x Exact inf_strat
+        else
+          inf_strat
+      in
       varname, inf_strat, g
     | _ -> failwith "SymState.add: Not a distribution"
 
