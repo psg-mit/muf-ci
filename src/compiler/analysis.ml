@@ -550,7 +550,10 @@ module InferenceStrategy = struct
       | Some inferred_status ->
         if not (ApproximationStatus.verify ann_status inferred_status) then
           raise (Approximation_Status_Error (rv, ann_status, inferred_status))
-      | None -> failwith (Format.sprintf "verify: can't find %s in inferred" (RandomVar.to_string rv))
+      | None -> 
+        (* Not found means never used so don't bother verify *)
+        Format.printf "> Warning: %s is never used\n\n" (RandomVar.to_string rv);
+        (* failwith (Format.sprintf "verify: can't find %s in inferred" (RandomVar.to_string rv)) *)
     ) ann
 end
 
