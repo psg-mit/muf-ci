@@ -75,7 +75,6 @@ and abs_distribution =
 | Dbinomial of abs_expr * abs_expr
 | Dbetabinomial of abs_expr * abs_expr * abs_expr
 | Dnegativebinomial of abs_expr * abs_expr
-| Dexponential of abs_expr
 | Dgamma of abs_expr * abs_expr
 | Dpoisson of abs_expr
 | Dstudentt of abs_expr * abs_expr * abs_expr
@@ -163,8 +162,6 @@ fun d ->
     Printf.sprintf "BetaBinomial(%s, %s, %s)" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Dnegativebinomial (e1, e2) ->
     Printf.sprintf "NegativeBinomial(%s, %s)" (string_of_expr e1) (string_of_expr e2)
-  | Dexponential e1 ->
-    Printf.sprintf "Exponential(%s)" (string_of_expr e1)
   | Dgamma (e1, e2) ->
     Printf.sprintf "Gamma(%s, %s)" (string_of_expr e1) (string_of_expr e2)
   | Dpoisson e1 ->
@@ -225,8 +222,6 @@ fun rv1 rv2 d ->
     Dbetabinomial (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2, rename_expr rv1 rv2 e3)
   | Dnegativebinomial (e1, e2) -> 
     Dnegativebinomial (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2)
-  | Dexponential e1 -> 
-    Dexponential (rename_expr rv1 rv2 e1)
   | Dgamma (e1, e2) -> 
     Dgamma (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2)
   | Dpoisson e1 -> 
@@ -493,9 +488,6 @@ fun d rv e' ->
     let e1 = subst_rv e1 rv e' in
     let e2 = subst_rv e2 rv e' in
     Dnegativebinomial (e1, e2)
-  | Dexponential e -> 
-    let e = subst_rv e rv e' in
-    Dexponential e
   | Dgamma (e1, e2) -> 
     let e1 = subst_rv e1 rv e' in
     let e2 = subst_rv e2 rv e' in
@@ -637,7 +629,6 @@ module SymState = struct
         RVSet.union (get_randomvars' g e1 rvs) 
           (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
       | Dnegativebinomial (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dexponential e1 -> get_randomvars' g e1 rvs
       | Dgamma (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
       | Dpoisson e1 -> get_randomvars' g e1 rvs
       | Ddelta e1 -> get_randomvars' g e1 rvs
@@ -708,10 +699,6 @@ fun e g1 g2 g3 ->
     if not (is_const e1 g1) then
       (* e1 has a RV so need to return symbolic expression *)
       e, g
-    else if is_const e2 g2 && not (is_const e3 g3) then
-      e3, g3
-    else if not (is_const e2 g2) && is_const e3 g3 then
-      e2, g2
     else 
       (* e1 has no RV so can return the joined expression *)
       let es = 
@@ -761,6 +748,7 @@ fun g e ->
     let e1, g1 = eval_expr g e1 in
     begin match e1 with
     | Econst (Cint c) -> Econst (Cfloat (float_of_int c)), g1
+    | Econst Cunk -> Econst Cunk, g1
     | _ -> Einttofloat e1, g1
     end
   | Eunop (op, e1) ->
@@ -823,9 +811,6 @@ fun g d ->
     let e1, g1 = eval_expr g e1 in
     let e2, g2 = eval_expr g1 e2 in
     Dnegativebinomial (e1, e2), g2
-  | Dexponential e -> 
-    let e, g = eval_expr g e in
-    Dexponential e, g
   | Dgamma (e1, e2) -> 
     let e1, g1 = eval_expr g e1 in
     let e2, g2 = eval_expr g1 e2 in
@@ -965,9 +950,6 @@ fun e1 e2 g1 g2 ->
       let e1, g2 = join_expr e1 e1' g1 g2 in
       let e2, g2 = join_expr e2 e2' g1 g2 in
       Dnegativebinomial (e1, e2), g2
-    | Dexponential e1, Dexponential e2 ->
-      let e, g2 = join_expr e1 e2 g1 g2 in
-      Dexponential e, g2
     | Dgamma (e1, e2), Dgamma (e1', e2') ->
       let e1, g2 = join_expr e1 e1' g1 g2 in
       let e2, g2 = join_expr e2 e2' g1 g2 in
@@ -1072,7 +1054,7 @@ module AbstractSSI = struct
       depends_on e1 rv g transitive conservative || 
       depends_on e2 rv g transitive conservative || 
       depends_on e3 rv g transitive conservative
-    | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
+    | Dbernoulli e | Dpoisson e | Ddelta e ->
       depends_on e rv g transitive conservative
     | Ddelta_sampled -> false
     | Ddelta_observed -> false
@@ -1115,7 +1097,7 @@ module AbstractSSI = struct
       depends_on e1 rv g true false || 
       depends_on e2 rv g true false || 
       depends_on e3 rv g true false
-    | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
+    | Dbernoulli e | Dpoisson e | Ddelta e ->
       depends_on e rv g true false
     | Ddelta_sampled -> false
     | Ddelta_observed -> false
@@ -1209,7 +1191,7 @@ module AbstractSSI = struct
     (* | DmvNormal of expr * expr *)
     | Dcategorical (e1, e2, e3) | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
       List.append (List.append (get_parents_expr e1) (get_parents_expr e2)) (get_parents_expr e3)
-    | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
+    | Dbernoulli e | Dpoisson e | Ddelta e ->
       get_parents_expr e
     | Ddelta_sampled | Ddelta_observed | Dunk -> [] 
 
@@ -1264,7 +1246,7 @@ module AbstractSSI = struct
       (not (indirectly_depends_on e1 rv_parent g)) &&
       (not (indirectly_depends_on e2 rv_parent g)) &&
       (not (indirectly_depends_on e3 rv_parent g))
-    | Dbernoulli e | Dexponential e | Dpoisson e | Ddelta e ->
+    | Dbernoulli e | Dpoisson e | Ddelta e ->
       (depends_on e rv_parent g false false) 
       &&
       (not (indirectly_depends_on e rv_parent g))
@@ -1358,12 +1340,12 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dbeta(a, b), Dbinomial(Econst Cint n, Erandomvar rv) ->
+    | Dbeta(a, b), Dbinomial(Econst n, Erandomvar rv) ->
       if rv = rv1 &&
         (not (depends_on a rv2 g true true)) &&
         (not (depends_on b rv2 g true true))
       then
-        Some(Dbetabinomial(Econst (Cint n), a, b))
+        Some(Dbetabinomial(Econst n, a, b))
       else
         None
     | _ -> None
@@ -1372,13 +1354,13 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dbeta(a, b), Dbinomial(Econst Cint n, Erandomvar rv) ->
+    | Dbeta(a, b), Dbinomial(Econst n, Erandomvar rv) ->
       if rv = rv1 &&
         (not (depends_on a rv2 g true true)) &&
         (not (depends_on b rv2 g true true))
       then
         Some(Dbeta(Eadd(a, Einttofloat(Erandomvar rv2)),
-          Eadd(b, Eadd(Einttofloat(Econst(Cint n)), Emul(Econst (Cfloat (-1.)), Einttofloat(Erandomvar rv2))))))
+          Eadd(b, Eadd(Einttofloat(Econst n), Emul(Econst (Cfloat (-1.)), Einttofloat(Erandomvar rv2))))))
       else
         None
   | _ -> None
@@ -1387,12 +1369,17 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dgamma(Econst(Cfloat a), b), Dpoisson(Erandomvar rv) ->
+    | Dgamma(Econst a, b), Dpoisson(Erandomvar rv) ->
       if rv = rv1 && 
-        classify_float (fst(modf a)) = FP_zero && (* a is an int *)
         (not (depends_on b rv2 g true true)) 
       then
-        Some(Dnegativebinomial(Econst (Cint (int_of_float a)), Ediv(b, Eadd(Econst(Cfloat 1.), b))))
+        let a = 
+          match a with
+          | Cfloat a ->  Cint (int_of_float a)
+          | Cunk -> Cunk
+          | _ -> failwith "gamma_poisson_marginal: a is not a float"
+        in
+        Some(Dnegativebinomial(Econst a, Ediv(b, Eadd(Econst(Cfloat 1.), b))))
      else
         None
     | _ -> None
@@ -1401,12 +1388,17 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dgamma(Econst(Cfloat a), b), Dpoisson(Erandomvar rv) ->
+    | Dgamma(Econst a, b), Dpoisson(Erandomvar rv) ->
       if rv = rv1 && 
-        classify_float (fst(modf a)) = FP_zero && (* a is an int *)
         (not (depends_on b rv2 g true true))
       then
-        Some(Dgamma(Eadd(Econst(Cfloat a), Einttofloat(Erandomvar rv2)), Eadd(b, Einttofloat(Econst(Cint 1)))))
+        let a = 
+          match a with
+          | Cfloat a ->  Cint (int_of_float a)
+          | Cunk -> Cunk
+          | _ -> failwith "gamma_poisson_marginal: a is not a float"
+        in
+        Some(Dgamma(Eadd(Econst a, Einttofloat(Erandomvar rv2)), Eadd(b, Einttofloat(Econst(Cint 1)))))
      else
         None
     | _ -> None
@@ -1415,12 +1407,12 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dgamma(a, b), Dgaussian(Econst(Cfloat mu), Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
+    | Dgamma(a, b), Dgaussian(Econst mu, Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
       if rv == rv1 &&
         (not (depends_on a rv2 g true true)) &&
         (not (depends_on b rv2 g true true))
       then
-        Some(Dstudentt(Econst(Cfloat mu), Ediv(b, a), Emul(Econst(Cfloat 2.), a)))
+        Some(Dstudentt(Econst mu, Ediv(b, a), Emul(Econst(Cfloat 2.), a)))
       else 
         None
     | _ -> None
@@ -1429,14 +1421,14 @@ module AbstractSSI = struct
   fun rv1 rv2 g ->
     let prior, likelihood = SymState.find rv1 g, SymState.find rv2 g in
     match prior.distr, likelihood.distr with
-    | Dgamma(a, b), Dgaussian(Econst(Cfloat mu), Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
+    | Dgamma(a, b), Dgaussian(Econst mu, Ediv(Econst(Cfloat 1.), Erandomvar(rv))) ->
       if rv == rv1 &&
         (not (depends_on a rv2 g true true)) &&
         (not (depends_on b rv2 g true true))
       then
         let a' = Eadd(a, Econst (Cfloat 0.5)) in
         let b' = Eadd(b, Emul(Econst (Cfloat 0.5),
-          Eunop(Squared, Eadd(Erandomvar(rv2), Econst (Cfloat (-. mu)))))) in
+          Eunop(Squared, Eadd(Erandomvar(rv2), Emul(Econst(Cfloat (-1.)), Econst mu))))) in
         Some (Dgamma(a', b'))
       else 
         None
@@ -1928,7 +1920,7 @@ fun p ->
         inf_strat, g, Edistr (Dnegativebinomial (e1, e2))
       | Dexponential e1 ->
         let inf_strat, g, e1 = infer' inf_strat ctx g e1 in
-        inf_strat, g, Edistr (Dexponential e1)
+        inf_strat, g, Edistr (Dgamma(Econst (Cfloat 1.), e1))
       | Dgamma (e1, e2) ->
         let inf_strat, g, e1 = infer' inf_strat ctx g e1 in
         let inf_strat, g, e2 = infer' inf_strat ctx g e2 in
