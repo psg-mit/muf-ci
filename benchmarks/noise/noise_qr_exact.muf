@@ -9,9 +9,8 @@ val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
 
 val step = fun (acc, zobs) ->
   let (xs, acc) = split(acc) in
+  let (prev_x, acc) = split(acc) in
   let (q, r) = split(acc) in
-
-  let prev_x = List.hd(xs) in
 
   let h = 2. in
   let f = 1.001 in
@@ -21,7 +20,7 @@ val step = fun (acc, zobs) ->
   let approx x <- gaussian(mul(f, prev_x), div(1., q)) in
   let () = observe(gaussian(mul(h, prev_x), div(1., r)), zobs) in
   
-  (List.cons(x, xs), q, r)
+  (List.cons(x, xs), x, q, r)
 in
 
 val output = fun out ->
@@ -42,8 +41,9 @@ let exact q <- gamma (1., 1.) in
 let exact r <- gamma (1., 1.) in
 let x0 = 0. in
 
-let out = List.fold_resample(step, data, ([x0], q, r)) in
+let out = List.fold_resample(step, data, ([x0], x0, q, r)) in
 let (xs, out) = split(out) in
+let (_, out) = split(out) in
 let (q, r) = split(out) in
 
 let xs = List.rev(xs) in
