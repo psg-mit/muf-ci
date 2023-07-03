@@ -693,23 +693,20 @@ fun e g1 g2 g3 ->
     | _ -> failwith "eval_if: not implemented"
   in
 
-  let es23, g = join_expr_rename e2 e3 g2 g3 in
+  let e23, g = join_expr e2 e3 g2 g3 in
 
   match e1 with
   | Econst (Cbool true) -> e2, g2
   | Econst (Cbool false) -> e3, g3
   | _ ->
-    if not (is_const e1 g1) then
+    if not (is_const e1 g1) || e23 = Eunk then
       (* e1 has a RV so need to return symbolic expression *)
-      e, g
+      (* TODO; returns wrong sym state *)
+      let g = join_symstate g2 g3 in
+      return e1 e2 e3, g
     else 
       (* e1 has no RV so can return the joined expression *)
-      let es = 
-        match es23 with
-        | Eunk -> return e1 e2 e3
-        | _ -> es23
-      in
-      es, g
+      e23, g
 
 and eval_expr : SymState.t -> abs_expr -> abs_expr * SymState.t =
 fun g e ->
@@ -833,7 +830,7 @@ fun g d ->
 
 (* Joins two expressions, and also joins symbolic state if necessary
    returns the second state if not joins  *)
-and join_expr_rename : abs_expr -> abs_expr -> SymState.t -> SymState.t 
+and join_expr : abs_expr -> abs_expr -> SymState.t -> SymState.t 
   -> abs_expr * SymState.t =
 fun e1 e2 g1 g2 ->
 
@@ -921,55 +918,6 @@ fun e1 e2 g1 g2 ->
       let g = SymState.add new_rv { name; distr = d } g in
       Erandomvar new_rv, g
     | _ -> Eunk, g2
-  and join_distribution =
-  fun d1 d2 g1 g2 ->
-    match d1, d2 with
-    | Dgaussian (e1, e2), Dgaussian (e1', e2') -> 
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      Dgaussian (e1, e2), g2
-    | Dcategorical (e1, e2, e3), Dcategorical (e1', e2', e3') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      let e3, g2 = join_expr e3 e3' g1 g2 in
-      Dcategorical (e1, e2, e3), g2
-    | Dbeta (e1, e2), Dbeta (e1', e2') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      Dbeta (e1, e2), g2
-    | Dbernoulli e1, Dbernoulli e2 ->
-      let e, g2 = join_expr e1 e2 g1 g2 in
-      Dbernoulli e, g2
-    | Dbinomial (e1, e2), Dbinomial (e1', e2') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      Dbinomial (e1, e2), g2
-    | Dbetabinomial (e1, e2, e3), Dbetabinomial (e1', e2', e3') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      let e3, g2 = join_expr e3 e3' g1 g2 in
-      Dbetabinomial (e1, e2, e3), g2
-    | Dnegativebinomial (e1, e2), Dnegativebinomial (e1', e2') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      Dnegativebinomial (e1, e2), g2
-    | Dgamma (e1, e2), Dgamma (e1', e2') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      Dgamma (e1, e2), g2
-    | Dpoisson e1, Dpoisson e2 ->
-      let e, g2 = join_expr e1 e2 g1 g2 in
-      Dpoisson e, g2
-    | Dstudentt (e1, e2, e3), Dstudentt (e1', e2', e3') ->
-      let e1, g2 = join_expr e1 e1' g1 g2 in
-      let e2, g2 = join_expr e2 e2' g1 g2 in
-      let e3, g2 = join_expr e3 e3' g1 g2 in
-      Dstudentt (e1, e2, e3), g2
-    | Ddelta e1, Ddelta e2 ->
-      let e, g2 = join_expr e1 e2 g1 g2 in
-      Ddelta e, g2
-    | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled, g2
-    | _ -> Dunk, g2
   in
   let e, g = join_expr e1 e2 g1 g2 in
 
@@ -989,6 +937,70 @@ fun e1 e2 g1 g2 ->
   let g, e = Hashtbl.fold rename mapping_new_names (g, e) in
 
   e, g
+
+and join_distribution : abs_distribution -> abs_distribution -> SymState.t -> SymState.t -> abs_distribution * SymState.t =
+fun d1 d2 g1 g2 ->
+  match d1, d2 with
+  | Dgaussian (e1, e2), Dgaussian (e1', e2') -> 
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    Dgaussian (e1, e2), g2
+  | Dcategorical (e1, e2, e3), Dcategorical (e1', e2', e3') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    let e3, g2 = join_expr e3 e3' g1 g2 in
+    Dcategorical (e1, e2, e3), g2
+  | Dbeta (e1, e2), Dbeta (e1', e2') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    Dbeta (e1, e2), g2
+  | Dbernoulli e1, Dbernoulli e2 ->
+    let e, g2 = join_expr e1 e2 g1 g2 in
+    Dbernoulli e, g2
+  | Dbinomial (e1, e2), Dbinomial (e1', e2') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    Dbinomial (e1, e2), g2
+  | Dbetabinomial (e1, e2, e3), Dbetabinomial (e1', e2', e3') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    let e3, g2 = join_expr e3 e3' g1 g2 in
+    Dbetabinomial (e1, e2, e3), g2
+  | Dnegativebinomial (e1, e2), Dnegativebinomial (e1', e2') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    Dnegativebinomial (e1, e2), g2
+  | Dgamma (e1, e2), Dgamma (e1', e2') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    Dgamma (e1, e2), g2
+  | Dpoisson e1, Dpoisson e2 ->
+    let e, g2 = join_expr e1 e2 g1 g2 in
+    Dpoisson e, g2
+  | Dstudentt (e1, e2, e3), Dstudentt (e1', e2', e3') ->
+    let e1, g2 = join_expr e1 e1' g1 g2 in
+    let e2, g2 = join_expr e2 e2' g1 g2 in
+    let e3, g2 = join_expr e3 e3' g1 g2 in
+    Dstudentt (e1, e2, e3), g2
+  | Ddelta e1, Ddelta e2 ->
+    let e, g2 = join_expr e1 e2 g1 g2 in
+    Ddelta e, g2
+  | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled, g2
+  | _ -> Dunk, g2
+
+(* Joins g2 into g1 and e2 is the expression that uses things from g2 *)
+and join_symstate : SymState.t -> SymState.t -> SymState.t =
+fun g1 g2 ->
+  let g = SymState.fold (fun rv s g1 ->
+    match SymState.find_opt rv g1 with
+    | Some s' ->
+      let d, g1' = join_distribution s.distr s'.distr g1 g2 in
+      let names = PVSet.union s.name s'.name in
+      let s : SymState.state = {name = names; distr = d} in
+      SymState.add rv s g1'
+    | None -> SymState.add rv s g1
+  ) g2 g1 in
+  g
 
 module AbstractSSI = struct
 
@@ -2156,7 +2168,7 @@ fun p ->
                 (* Format.printf "Step:\n%s" (SymState.to_string g); *)
                 (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
 
-                let res_post, g_post = join_expr_rename acc res g_pre g in
+                let res_post, g_post = join_expr acc res g_pre g in
                 let g_post = SymState.clean g_post res_post in
 
                 (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
@@ -2179,7 +2191,7 @@ fun p ->
               (* Format.printf "Step:\n%s" (SymState.to_string g); *)
               (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
 
-              let res_post, g_post = join_expr_rename acc res g_pre g in
+              let res_post, g_post = join_expr acc res g_pre g in
               let g_post = SymState.clean g_post res_post in
 
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
