@@ -2216,23 +2216,23 @@ fun p ->
           | Eunk -> 
             (* Compute fixpoint *)
             let rec iter inf_strat g_pre acc =
-              Format.printf "Prev: %s\n" (string_of_expr acc);
-              Format.printf "Pre:\n%s\n" (SymState.to_string g_pre);
-              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat);
+              (* Format.printf "Prev: %s\n" (string_of_expr acc); *)
+              (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
+              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
 
               let inf_strat, g, res = infer_no_func inf_strat  (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
 
-              Format.printf "Step:\n%s" (SymState.to_string g);
-              Format.printf "Res: %s\n\n" (string_of_expr res);
-              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat);
+              (* Format.printf "Step:\n%s" (SymState.to_string g); *)
+              (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
+              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
 
               let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat in
               let g_post = SymState.clean g_post res_post in
 
-              Format.printf "Post:\n%s\n" (SymState.to_string g_post);
-              Format.printf "Ret: %s\n" (string_of_expr res_post);
-              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post);
-              Format.printf "-----------------\n";
+              (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
+              (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
+              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post); *)
+              (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
               if SymState.equal g_pre g_post && acc = res_post then inf_strat, g, res
