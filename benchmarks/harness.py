@@ -152,12 +152,12 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
   # colors = ["#ec8688", "#feb140", "#f3dd8d", "#a2b128", "#7fcad5", "#567bb7", "#ac88b3"]
   # red orange green blue purple indigo yellow brown magenta
-  colors = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6"]
+  colors = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
   # edgecolors = ["#b7575c","#c78200","#c0ab5f","#708200","#4d9aa4","#204f87","#204f87"]
   edgecolors = ["#b7575c",
-  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085"]
+  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
 
-  markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*']
+  markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
 
   markersize = 8
 
@@ -356,6 +356,141 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   # ax.legend(*ax.get_legend_handles_labels(), loc='center', ncol=5)
   # figlegend.savefig(os.path.join(output, 'legend.png'), bbox_inches='tight')
   # figlegend.savefig(os.path.join(output, 'legend.pdf'), bbox_inches='tight')
+
+  # time to accuracy
+  fig1, axes1 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig2, axes2 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig3, axes3 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+  fig4, axes4 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y']))
+
+  for ax in [axes1, axes2, axes3, axes4]:
+    for a in ax.flatten():
+      a.set_visible(False)
+
+  for i, (filename, data) in enumerate(results.items()):
+    if files is not None and filename not in files:
+      continue
+    p = []
+    all_errors = {}
+    runtimes = []
+    for j, (p_, data_) in enumerate(sorted(data.items(), key=lambda x: int(x[0]))):
+      if particles is not None and int(p_) not in particles:
+        continue
+      p.append(float(p_))
+
+      for k, (v, errors) in enumerate(data_.items()):
+        if v == 'runtime':
+          median_runtime = np.median(errors['all'])
+          runtimes.append(median_runtime)
+          continue
+
+        transformed_errors = sorted(errors['all'])
+
+        if v not in all_errors:
+          all_errors[v] = {
+            'lower': [],
+            'median': [],
+            'upper': [],
+          }
+        all_errors[v]['lower'].append(transformed_errors[int(0.10 * len(transformed_errors))])
+        all_errors[v]['median'].append(transformed_errors[int(0.50 * len(transformed_errors))])
+        all_errors[v]['upper'].append(transformed_errors[int(0.90 * len(transformed_errors))])
+
+    for k, (v, mses) in enumerate(list(all_errors.items())):
+      plot_i = k % config['n_x']
+      plot_j = k // config['n_x']
+      fmt = markers[i]
+
+      if k == 0:
+        # Only one set of file labels
+        label = os.path.splitext(os.path.basename(filename))[0]
+        label = ' '.join(label.split('_')[1:])
+      else:
+        label = None
+
+      for ax in [axes1, axes2, axes3, axes4]:
+        ax[plot_j][plot_i].set_visible(True)
+
+      axes1[plot_j][plot_i].plot(runtimes, mses['median'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      axes2[plot_j][plot_i].plot(runtimes, mses['lower'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      axes3[plot_j][plot_i].plot(runtimes, mses['upper'], marker=markers[i], color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      
+      median = mses['median']
+      lower_err = [abs(median[i] - mses['lower'][i]) for i in range(len(median))]
+      upper_err = [abs(mses['upper'][i] - median[i]) for i in range(len(median))]
+      axes4[plot_j][plot_i].errorbar(runtimes, median, yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
+
+      # axes1[plot_j][plot_i].set_xticks(p)
+      # axes2[plot_j][plot_i].set_xticks(p)
+      # axes3[plot_j][plot_i].set_xticks(p)
+      # axes4[plot_j][plot_i].set_xticks(p)
+
+      # min non-zero value
+      nonzero = [x for x in mses['lower'] if x > 0]
+      thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
+
+      for ax in [axes1, axes2, axes3, axes4]:
+        ax[plot_j][plot_i].set_yscale('symlog', linthresh=thresh)
+        # ax[plot_j][plot_i].set_yscale('log', nonpositive='clip')
+        ax[plot_j][plot_i].set_xscale('log')
+      # axes1[k][0].set_ylim(1e-4, 1e3)
+      # axes1[k][0].set_xlabel('log')
+      # variable_name = '_'.join(v.split('_')[:-1])
+      variable_name = v
+      for ax in [axes1, axes2, axes3, axes4]:
+        ax[plot_j][plot_i].set_title(variable_name)
+      # axes1[plot_j][plot_i].set_ylabel('MSE')
+
+  for j in range(config['n_y']):
+    for i in range(config['n_x']):
+      # if i == 0 and j == 0:
+      #   axes1[j][i].set_ylabel('MSE')
+      #   axes2[j][i].set_ylabel('MSE')
+      #   axes3[j][i].set_ylabel('MSE')
+      #   axes4[j][i].set_ylabel('MSE')
+      # else:
+      if i == 0:
+        for ax in [axes1, axes2, axes3, axes4]:
+          ax[j][i].set_ylabel('Error')
+
+  for i in range(config['n_x']):
+    for ax in [axes1, axes2, axes3, axes4]:
+      ax[config['n_y'] - 1][i].set_xlabel(f'Runtime')
+
+  for ax in [axes1, axes2, axes3, axes4]:
+    ax[config['n_y'] - 1, config['n_x'] - 1].axis('off')
+
+  for fig in [fig1, fig2, fig3, fig4]:
+    fig.legend(loc='lower right', ncols=config['legend_width'], bbox_to_anchor=(0.96, 0.125), frameon=False)
+    
+  if verbose:
+    print('Saving plots')
+
+  fig1.suptitle('Median Runtime to Accuracy - Median')
+  fig2.suptitle('Median Runtime to Accuracy - 10 Percentile')
+  fig3.suptitle('Median Runtime to Accuracy - 90 Percentile')
+  fig4.suptitle('Median Runtime to Accuracy')
+
+  for fig in [fig1, fig2, fig3, fig4]:
+    fig.tight_layout()
+
+  name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
+  fig1.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_median.png'.format(name)), bbox_inches='tight')
+  fig2.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_lower.png'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_upper.png'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.png'.format(name)), bbox_inches='tight')
+
+  fig1.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_median.pdf'.format(name)), bbox_inches='tight')
+  fig2.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_upper.pdf'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.pdf'.format(name)), bbox_inches='tight')
+
+  for fig in [fig1, fig2, fig3, fig4]:
+    plt.close(fig)
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
