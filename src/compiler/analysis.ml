@@ -1603,15 +1603,25 @@ module AbstractSSI = struct
               Format.printf "%s\n" sym_state_s; *)
               failwith (Format.sprintf "Cannot swap parent %s and child %s" 
                 (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child) ));
-            
-            let did_swap, inf_strat, g = swap inf_strat rv_parent rv_child g in
-            if did_swap then
-              (* let _ = 
-                Format.printf "Swapped %s and %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child)
-              in *)
-              swap_with_parents inf_strat rvs g
-            else 
-              raise (NonConjugate rv_parent)
+
+            let s_parent = SymState.find rv_parent g in
+            begin match s_parent.distr with
+            | Dunk -> 
+              let inf_strat = PVSet.fold (fun pv inf_strat ->
+                let inf_strat = InferenceStrategy.add pv Dynamic inf_strat in
+                inf_strat
+              ) s_parent.name inf_strat in
+              inf_strat, g
+            | _ ->
+              let did_swap, inf_strat, g = swap inf_strat rv_parent rv_child g in
+              if did_swap then
+                (* let _ = 
+                  Format.printf "Swapped %s and %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child)
+                in *)
+                swap_with_parents inf_strat rvs g
+              else 
+                raise (NonConjugate rv_parent)
+              end
             end
           else
             (* let _ = Format.printf "Parent %s is a ghost root\n" (RandomVar.to_string rv_parent) in *)
