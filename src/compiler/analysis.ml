@@ -79,7 +79,6 @@ and abs_distribution =
 | Dstudentt of abs_expr * abs_expr * abs_expr
 | Ddelta of abs_expr
 | Ddelta_sampled 
-| Ddelta_observed
 | Dunk
 
 let v_n = ref 0
@@ -168,7 +167,6 @@ fun d ->
     Printf.sprintf "StudentT(%s, %s, %s)" (string_of_expr e1) (string_of_expr e2) (string_of_expr e3)
   | Ddelta e1 ->
     Printf.sprintf "Delta(%s)" (string_of_expr e1)
-  | Ddelta_observed -> "Delta-Observed"
   | Ddelta_sampled -> "Delta-Sampled"
   | Dunk -> "Unknown"
 
@@ -226,7 +224,7 @@ fun rv1 rv2 d ->
     Dstudentt (rename_expr rv1 rv2 e1, rename_expr rv1 rv2 e2, rename_expr rv1 rv2 e3)
   | Ddelta e1 -> 
     Ddelta (rename_expr rv1 rv2 e1)
-  | Ddelta_observed | Ddelta_sampled -> d
+  | Ddelta_sampled -> d
   | Dunk -> d
 
 
@@ -505,7 +503,7 @@ fun d rv e' ->
   | Ddelta e ->
     let e = subst_rv e rv e' in
     Ddelta e
-  | Ddelta_sampled | Ddelta_observed | Dunk -> d
+  | Ddelta_sampled | Dunk -> d
   
 
 exception NonConjugate of RandomVar.t
@@ -622,7 +620,7 @@ module SymState = struct
         let s = find rv g in
         let rvs = get_randomvars_distr g s.distr rvs in
         begin match s.distr with
-        | Ddelta_sampled | Ddelta_observed | Ddelta _ ->
+        | Ddelta_sampled | Ddelta _ ->
           if get_deltas then RVSet.add rv rvs else rvs
         | _ -> RVSet.add rv rvs
         end
@@ -653,7 +651,7 @@ module SymState = struct
       | Dgamma (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
       | Dpoisson e1 -> get_randomvars' g e1 rvs
       | Ddelta e1 -> get_randomvars' g e1 rvs
-      | Ddelta_observed | Ddelta_sampled -> rvs
+      | Ddelta_sampled -> rvs
       | Dunk -> RVSet.empty
     in
     get_randomvars' g e RVSet.empty
@@ -684,7 +682,7 @@ fun e g ->
   | Eunk -> false
   | Erandomvar rv' ->
     begin match (SymState.find rv' g).distr with
-    | Ddelta _ | Ddelta_observed | Ddelta_sampled -> true
+    | Ddelta _ | Ddelta_sampled -> true
     | _ -> false
     end
   | Etuple es | Elist es ->
@@ -726,7 +724,7 @@ fun g e inf_strat ->
     let s = SymState.find rv g in
     begin match s.distr with
     | Ddelta e -> eval_expr g e inf_strat
-    | Ddelta_observed | Ddelta_sampled -> Econst Cunk, g, inf_strat
+    | Ddelta_sampled -> Econst Cunk, g, inf_strat
     | _ -> e, g, inf_strat
     end
   | Etuple es ->
@@ -836,7 +834,7 @@ fun g d inf_strat ->
   | Ddelta e ->
     let e, g, inf_strat = eval_expr g e inf_strat in
     Ddelta e, g, inf_strat
-  | Ddelta_sampled | Ddelta_observed | Dunk -> d, g, inf_strat
+  | Ddelta_sampled | Dunk -> d, g, inf_strat
 
 (* Joins two expressions, and also joins symbolic state if necessary
    returns the second state if not joins  *)
@@ -1081,7 +1079,6 @@ module AbstractSSI = struct
     | Dbernoulli e | Dpoisson e | Ddelta e ->
       depends_on e rv g transitive conservative
     | Ddelta_sampled -> false
-    | Ddelta_observed -> false
     | Dunk -> conservative
 
   let rec indirectly_depends_on : abs_expr -> RandomVar.t -> SymState.t -> bool =
@@ -1124,7 +1121,6 @@ module AbstractSSI = struct
     | Dbernoulli e | Dpoisson e | Ddelta e ->
       depends_on e rv g true false
     | Ddelta_sampled -> false
-    | Ddelta_observed -> false
     | Dunk -> false
   
   (* Returns Some(a,b) if e can be written as an affine function of
@@ -1213,7 +1209,7 @@ module AbstractSSI = struct
       List.append (List.append (get_parents_expr e1) (get_parents_expr e2)) (get_parents_expr e3)
     | Dbernoulli e | Dpoisson e | Ddelta e ->
       get_parents_expr e
-    | Ddelta_sampled | Ddelta_observed | Dunk -> [] 
+    | Ddelta_sampled | Dunk -> [] 
 
   let topo_sort : RandomVar.t list -> SymState.t -> RandomVar.t list =
   fun rvs g ->
@@ -1270,7 +1266,7 @@ module AbstractSSI = struct
       (depends_on e rv_parent g false false) 
       &&
       (not (indirectly_depends_on e rv_parent g))
-    | Ddelta_sampled | Ddelta_observed -> 
+    | Ddelta_sampled -> 
       (* Never needs to do this, but technically swapping with a constant
          never creates a cycle *)
       true
@@ -1722,15 +1718,15 @@ module AbstractSSI = struct
     in
     inf_strat, g, e
 
-  let rec observe : InferenceStrategy.t -> RandomVar.t -> SymState.t -> InferenceStrategy.t * SymState.t =
-  fun inf_strat rv g ->
+  let rec observe : InferenceStrategy.t -> RandomVar.t -> abs_expr -> SymState.t -> InferenceStrategy.t * SymState.t =
+  fun inf_strat rv v g ->
     try 
       let inf_strat, g = hoist inf_strat rv g in
-      intervene inf_strat rv Ddelta_observed g
+      intervene inf_strat rv (Ddelta v) g
     with NonConjugate rv_parent ->
       (* Format.printf "Observe Non-conjugate: %s\n" (RandomVar.to_string rv_parent); *)
       let inf_strat, g' = value inf_strat rv_parent g in
-      observe inf_strat rv g'
+      observe inf_strat rv v g'
 
 end
 
@@ -1910,10 +1906,17 @@ fun p ->
       inf_strat, g, xs
     | Eobserve (e1, e2) ->
       let inf_strat, g, e1 = infer' inf_strat ctx g e1 in
-      let inf_strat, g, _ = infer' inf_strat ctx g e2 in
+      let inf_strat, g, e2 = infer' inf_strat ctx g e2 in
       let rv = get_obs () in
       let x, inf_strat, g = AbstractSSI.assume inf_strat rv e1 g in
-      let inf_strat, g = AbstractSSI.observe inf_strat x g in
+      let inf_strat, g = AbstractSSI.value_expr inf_strat e2 g in
+      (* If we don't know what e2 is, we know it must be constant *)
+      let e2 =
+        match e2 with
+        | Eunk -> Econst Cunk
+        | _ -> e2
+      in
+      let inf_strat, g = AbstractSSI.observe inf_strat x e2 g in
       inf_strat, g, Econst Cunit
     | Evalue e1 ->
       let inf_strat, g, e1 = infer' inf_strat ctx g e1 in
@@ -2213,23 +2216,23 @@ fun p ->
           | Eunk -> 
             (* Compute fixpoint *)
             let rec iter inf_strat g_pre acc =
-              (* Format.printf "Prev: %s\n" (string_of_expr acc); *)
-              (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
-              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
+              Format.printf "Prev: %s\n" (string_of_expr acc);
+              Format.printf "Pre:\n%s\n" (SymState.to_string g_pre);
+              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat);
 
               let inf_strat, g, res = infer_no_func inf_strat  (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
 
-              (* Format.printf "Step:\n%s" (SymState.to_string g); *)
-              (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
-              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
+              Format.printf "Step:\n%s" (SymState.to_string g);
+              Format.printf "Res: %s\n\n" (string_of_expr res);
+              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat);
 
               let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat in
               let g_post = SymState.clean g_post res_post in
 
-              (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
-              (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
-              (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post); *)
-              (* Format.printf "-----------------\n"; *)
+              Format.printf "Post:\n%s\n" (SymState.to_string g_post);
+              Format.printf "Ret: %s\n" (string_of_expr res_post);
+              Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post);
+              Format.printf "-----------------\n";
 
               (* if equal then return g else return g_post *)
               if SymState.equal g_pre g_post && acc = res_post then inf_strat, g, res
