@@ -1,5 +1,5 @@
 {
-  "benchmark": "serosurvey",
+  "benchmark": "serosurvey_small",
   "true_vars": [
     ["intercept", [2.162511]],
     ["sex", [0.4638138]],
