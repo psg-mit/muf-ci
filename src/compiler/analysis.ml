@@ -267,23 +267,25 @@ module ApproximationStatus = struct
   | Approx
   | Exact
   | Dynamic
-  | Nil
+
+  (* Returns -1 if s1 < s2, 1 if s1 > s2, 0 otherwise *)
+  let compare : t -> t -> int =
+  fun s1 s2 ->
+    match s1, s2 with
+    | Approx, Approx -> 0
+    | Exact, Exact -> 0
+    | Dynamic, Dynamic -> 0
+    | Approx, Exact -> 0
+    | Exact, Approx -> 0
+    | _, Dynamic -> -1
+    | Dynamic, _ -> 1
 
   let join : t -> t -> t =
   fun s1 s2 ->
     match s1, s2 with
     | Approx, Approx -> Approx
     | Exact, Exact -> Exact
-    | Nil, Nil -> Nil
-    | Nil, Approx | Approx, Nil -> Approx
-    | Nil, Exact | Exact, Nil -> Exact
     | _ -> Dynamic
-
-  let finish : t -> t =
-  fun s ->
-    match s with
-    | Nil -> Exact
-    | _ -> s
 
   let verify : t -> t -> bool =
   fun ann inf ->
@@ -299,7 +301,6 @@ module ApproximationStatus = struct
     | Approx -> "APPROX"
     | Exact -> "EXACT"
     | Dynamic -> "DYNAMIC"
-    | Nil -> "NIL"
 end
 
 exception Approximation_Status_Error of RandomVar.t * ApproximationStatus.t * ApproximationStatus.t
@@ -527,8 +528,12 @@ module InferenceStrategy = struct
   fun rv status inf ->
     let status =
       match RVMap.find_opt rv inf with
-      | Some status' -> 
-        ApproximationStatus.join status status'
+      | Some old_status -> 
+        (* Only update if greater *)
+        if ApproximationStatus.compare status old_status = -1 then
+          old_status
+        else 
+          status
       | None -> status
     in
     RVMap.add rv status inf
@@ -550,10 +555,6 @@ module InferenceStrategy = struct
     RVMap.fold (fun rv status acc ->
       Format.sprintf "%s%s: %s\n" acc (string_of_ident rv) (ApproximationStatus.to_string status)
     ) inf ""
-
-  let finish : t -> t =
-  fun inf ->
-    RVMap.map ApproximationStatus.finish inf
 
   let verify : t -> t -> unit =
   fun ann inferred ->
@@ -1648,7 +1649,7 @@ module AbstractSSI = struct
       let g = SymState.add varname { name = PVSet.singleton x; distr = d } g in
       let inf_strat = 
         if not (x.modul = Some "Temp") then 
-          InferenceStrategy.add x Nil inf_strat
+          InferenceStrategy.add x Exact inf_strat
         else
           inf_strat
       in
@@ -2253,8 +2254,6 @@ fun p ->
   in
 
   let inf_strat, _g', _res = infer' inf_strat ctx g e in
-
-  let inf_strat = InferenceStrategy.finish inf_strat in
 
   (* For debug *)
   (* let sym_state_s = SymState.to_string g' in *)
