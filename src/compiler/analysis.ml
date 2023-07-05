@@ -838,7 +838,8 @@ fun g d inf_strat ->
   | Ddelta_sampled | Dunk -> d, g, inf_strat
 
 (* Joins two expressions, and also joins symbolic state if necessary
-   returns the second state if not joins  *)
+   returns the second state if no random variables is returned, because 
+   it doesn't matter which state if no random variables *)
 and join_expr : abs_expr -> abs_expr -> SymState.t -> SymState.t -> InferenceStrategy.t
   -> abs_expr * SymState.t * InferenceStrategy.t =
 fun e1 e2 g1 g2 inf_strat ->
@@ -900,7 +901,7 @@ fun e1 e2 g1 g2 inf_strat ->
     | Econst _, Erandomvar rv2 ->
       Erandomvar rv2, g2, inf_strat
     | Erandomvar rv1, Econst _ ->
-      Erandomvar rv1, g2, inf_strat
+      Erandomvar rv1, g1, inf_strat
     | Erandomvar rv1, Erandomvar rv2 ->
       let s1 = SymState.find rv1 g1 in
 
@@ -1893,9 +1894,16 @@ fun p ->
       (* Only one gets executed *)
       let inf_strat2, g2, e2 = infer' inf_strat1 ctx g1 e2 in
       let inf_strat3, g3, e3 = infer' inf_strat1 ctx g1 e3 in
+      (* Format.printf "g2:\n%s\n" (SymState.to_string g2); *)
+      (* Format.printf "g3:\n%s\n" (SymState.to_string g3); *)
+      (* Format.printf "strat2:\n%s\n" (InferenceStrategy.to_string inf_strat2); *)
+      (* Format.printf "strat3:\n%s\n" (InferenceStrategy.to_string inf_strat3); *)
       (* Widen *)
       let inf_strat = InferenceStrategy.join inf_strat2 inf_strat3 in
+      (* Format.printf "strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
       let e23, g, inf_strat' = join_expr e2 e3 g2 g3 inf_strat in
+      (* Format.printf "g:\n%s\n" (SymState.to_string g); *)
+      (* Format.printf "e23: %s\n" (string_of_expr e23); *)
       inf_strat', g, e23
     | Elet (p, e1, e2) ->
       let inf_strat, g, e1 = infer' inf_strat ctx g e1 in
