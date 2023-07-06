@@ -106,10 +106,17 @@
       -5.120189991855009
     ]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 2,
-  "n_x": 2,
-  "legend_width": 3,
-  "error_func": "se"
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 5,
+  "error_func": "se",
+  "labels": [
+    "x",
+    "r",
+    "q",
+    "q, r",
+    "None"
+  ]
 }

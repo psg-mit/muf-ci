@@ -5,10 +5,17 @@
     ["mu1", [-10.994857395060004]],
     ["mu2", [8.416249615895826]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 2,
-  "n_x": 2,
-  "legend_width": 2,
-  "error_func": "se"
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 5,
+  "error_func": "se",
+  "labels": [
+    "theta",
+    "mu1",
+    "mu2",
+    "mu1, mu2",
+    "None"
+  ]
 }
