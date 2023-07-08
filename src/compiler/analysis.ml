@@ -2285,7 +2285,7 @@ fun p ->
               (* Format.printf "-----------------\n"; *)
 
               (* if equal then return g else return g_post *)
-              if SymState.equal g_pre g_post && acc = res_post then inf_strat, g, res
+              if SymState.equal g_pre g_post && acc = res_post then inf_strat_post, g, res
               else iter inf_strat_post g_post res_post
             in
             let inf_strat, g, res = iter inf_strat g_before acc in
