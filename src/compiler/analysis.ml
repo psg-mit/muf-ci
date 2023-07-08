@@ -713,7 +713,7 @@ fun e1 e2 e3 g inf_strat ->
   | Econst (Cbool false) -> e3, g, inf_strat
   | _ ->
     (* Widen *)
-    let e23, g', inf_strat' = join_expr e2 e3 g g inf_strat false in
+    let e23, g', inf_strat' = join_expr e2 e3 g g inf_strat in
 
     if not (is_const e1 g) || e23 = Eunk then
       (* Make no changes *)
@@ -721,141 +721,140 @@ fun e1 e2 e3 g inf_strat ->
     else
       e23, g', inf_strat'
 
-and eval_expr : SymState.t -> abs_expr -> InferenceStrategy.t -> bool
+and eval_expr : SymState.t -> abs_expr -> InferenceStrategy.t
   -> abs_expr * SymState.t * InferenceStrategy.t =
-fun g e inf_strat narrowing ->
+fun g e inf_strat ->
   match e with
   | Erandomvar rv ->
     let s = SymState.find rv g in
     begin match s.distr with
-    | Ddelta e -> eval_expr g e inf_strat narrowing 
-    | Ddelta_sampled -> if narrowing then e, g, inf_strat else Econst Cunk, g, inf_strat
+    | Ddelta e -> eval_expr g e inf_strat 
+    | Ddelta_sampled -> Econst Cunk, g, inf_strat
     | _ -> e, g, inf_strat
     end
   | Etuple es ->
     let es, g, inf_strat = 
       List.fold_left (fun (es, g, inf_strat) e ->
-        let e', g', inf_strat' = eval_expr g e inf_strat narrowing in
+        let e', g', inf_strat' = eval_expr g e inf_strat  in
         e' :: es, g', inf_strat'
       ) ([], g, inf_strat) es
     in
     Etuple (List.rev es), g, inf_strat
   | Eadd (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_add e1 e2, g2, inf_strat
   | Emul (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_mul e1 e2, g2, inf_strat
   | Ediv (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_div e1 e2, g2, inf_strat
   | Eintadd (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_int_add e1 e2, g2, inf_strat
   | Eintmul (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_int_mul e1 e2, g2, inf_strat
   | Einttofloat e1 ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
     begin match e1 with
     | Econst (Cint c) -> Econst (Cfloat (float_of_int c)), g1, inf_strat
     | Econst Cunk -> Econst Cunk, g1, inf_strat
     | _ -> Einttofloat e1, g1, inf_strat
     end
   | Eunop (op, e1) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
     eval_unop op e1, g1, inf_strat
   | Ecmp (op, e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     eval_cmp op e1 e2, g2, inf_strat
   | Eif (e1, e2, e3) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
-    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
+    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat  in
     eval_if e1 e2 e3 g3 inf_strat
   | Elist es ->
     let es, g, inf_strat = 
       List.fold_left (fun (es, g, inf_strat) e ->
-        let e', g', inf_strat' = eval_expr g e inf_strat narrowing in
+        let e', g', inf_strat' = eval_expr g e inf_strat  in
         e' :: es, g', inf_strat'
       ) ([], g, inf_strat) es
     in
     Elist (List.rev es), g, inf_strat
   | Edistr d -> 
-    let d, g, inf_strat = eval_distribution g d inf_strat narrowing in
+    let d, g, inf_strat = eval_distribution g d inf_strat  in
     Edistr d, g, inf_strat
   | Eunk | Econst _ -> e, g, inf_strat
-and eval_distribution : SymState.t -> abs_distribution -> InferenceStrategy.t -> bool -> abs_distribution * SymState.t * InferenceStrategy.t =
-fun g d inf_strat narrowing ->
+and eval_distribution : SymState.t -> abs_distribution -> InferenceStrategy.t ->  abs_distribution * SymState.t * InferenceStrategy.t =
+fun g d inf_strat  ->
   match d with
   | Dgaussian (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     Dgaussian (e1, e2), g2, inf_strat
   (* | DmvNormal of expr * expr *)
   | Dcategorical (e1, e2, e3) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
-    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
+    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat  in
     Dcategorical (e1, e2, e3), g3, inf_strat
   | Dbeta (e1, e2) ->
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     Dbeta (e1, e2), g2, inf_strat
   | Dbernoulli e ->
-    let e, g, inf_strat = eval_expr g e inf_strat narrowing in
+    let e, g, inf_strat = eval_expr g e inf_strat  in
     Dbernoulli e, g, inf_strat
   | Dbinomial (e1, e2) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     Dbinomial (e1, e2), g2, inf_strat
   | Dbetabinomial (e1, e2, e3) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
-    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
+    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat  in
     Dbetabinomial (e1, e2, e3), g3, inf_strat
   | Dnegativebinomial (e1, e2) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     Dnegativebinomial (e1, e2), g2, inf_strat
   | Dgamma (e1, e2) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
     Dgamma (e1, e2), g2, inf_strat
   | Dpoisson e -> 
-    let e, g, inf_strat = eval_expr g e inf_strat narrowing in
+    let e, g, inf_strat = eval_expr g e inf_strat  in
     Dpoisson e, g, inf_strat
   | Dstudentt (e1, e2, e3) -> 
-    let e1, g1, inf_strat = eval_expr g e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat narrowing in
-    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g e1 inf_strat  in
+    let e2, g2, inf_strat = eval_expr g1 e2 inf_strat  in
+    let e3, g3, inf_strat = eval_expr g2 e3 inf_strat  in
     Dstudentt (e1, e2, e3), g3, inf_strat
   | Ddelta e ->
-    let e, g, inf_strat = eval_expr g e inf_strat narrowing in
+    let e, g, inf_strat = eval_expr g e inf_strat  in
     Ddelta e, g, inf_strat
   | Ddelta_sampled | Dunk -> d, g, inf_strat
 
 (* Joins two expressions, and also joins symbolic state if necessary
    returns the second state if no random variables is returned, because 
    it doesn't matter which state if no random variables *)
-and join_expr : abs_expr -> abs_expr -> SymState.t -> SymState.t -> InferenceStrategy.t -> bool
+and join_expr : abs_expr -> abs_expr -> SymState.t -> SymState.t -> InferenceStrategy.t
   -> abs_expr * SymState.t * InferenceStrategy.t =
-fun e1 e2 g1 g2 inf_strat narrowing ->
+fun e1 e2 g1 g2 inf_strat ->
 
   (* Maps renamings *)
-  let mapping_old_names = Hashtbl.create 10 in
-  let mapping_new_names = Hashtbl.create 10 in
+  let mapping_names = ref [] in
 
   let rec join_expr = 
   fun e1 e2 g1 g2 inf_strat ->
-    let e1, g1, inf_strat = eval_expr g1 e1 inf_strat narrowing in
-    let e2, g2, inf_strat = eval_expr g2 e2 inf_strat narrowing in
+    let e1, g1, inf_strat = eval_expr g1 e1 inf_strat in
+    let e2, g2, inf_strat = eval_expr g2 e2 inf_strat in
     match e1, e2 with
     | Econst c1, Econst c2 ->
       let e = if c1 = c2 then Econst c1 else Econst Cunk in
@@ -900,44 +899,49 @@ fun e1 e2 g1 g2 inf_strat narrowing ->
         ) ([], g2, inf_strat) es1 es2 in
         Elist (List.rev es), g, inf_strat
     | Edistr d1, Edistr d2 ->
-      let d, g, inf_strat = join_distribution d1 d2 g1 g2 inf_strat narrowing in
+      let d, g, inf_strat = join_distribution d1 d2 g1 g2 inf_strat in
       Edistr d, g, inf_strat
     | Econst _, Erandomvar rv2 ->
       Erandomvar rv2, g2, inf_strat
     | Erandomvar rv1, Econst _ ->
-      Erandomvar rv1, g1, inf_strat
+      (* Add rv1 to g2 with renaming *)
+
+      (* Mark to rename if rv1 is already in g2 *)
+      if SymState.mem rv1 g2 then
+        (match List.assoc_opt rv1 !mapping_names with
+        | Some _ -> ()
+        | None -> 
+          let new_rv = get_temp () in
+          mapping_names := (rv1, new_rv) :: !mapping_names);
+
+      (* Mark to rename temp to rv1 *)
+      let new_rv = get_temp () in
+      mapping_names := (new_rv, rv1) :: !mapping_names;
+      
+      let g = SymState.add new_rv (SymState.find rv1 g1) g2 in
+      Erandomvar new_rv, g, inf_strat
     | Erandomvar rv1, Erandomvar rv2 ->
       let s1 = SymState.find rv1 g1 in
       let s2 = SymState.find rv2 g2 in
-
-      begin match s1.distr, s2.distr with
-      | Ddelta_sampled, Ddelta_sampled -> Econst Cunk, g2, inf_strat
-      | Ddelta_sampled, _ -> Erandomvar rv2, g2, inf_strat  
-      | _, Ddelta_sampled ->
-        if narrowing && rv1 = rv2 then
-          (* If joining from pre and post function step, 
-          then if the same variable becomes sampled, retain the sampled *)
-          Econst Cunk, g2, inf_strat
-        else 
-          Erandomvar rv1, g1, inf_strat
-      | _, _ ->
-        let name = PVSet.union s1.name s2.name in
-        let d, g, inf_strat = join_distribution s1.distr s2.distr g1 g2 inf_strat narrowing in
-        
-        (* Mark to rename if rv1 is already in g2 *)
-        (if SymState.mem rv1 g2 then
+      let name = PVSet.union s1.name s2.name in
+      let d, g, inf_strat = join_distribution s1.distr s2.distr g1 g2 inf_strat in
+      
+      (* Mark to rename if rv1 is already in g2 *)
+      if SymState.mem rv1 g2 then
+        (match List.assoc_opt rv1 !mapping_names with
+        | Some _ -> ()
+        | None -> 
           let new_rv = get_temp () in
-          Hashtbl.add mapping_old_names rv1 new_rv);
+          mapping_names := (rv1, new_rv) :: !mapping_names);
 
-        (* Mark to rename temp to rv1 *)
-        let new_rv = get_temp () in
-        Hashtbl.add mapping_new_names new_rv rv1;
+      (* Mark to rename temp to rv1 *)
+      let new_rv = get_temp () in
+      mapping_names := (new_rv, rv1) :: !mapping_names;
 
-        let d, g, inf_strat = eval_distribution g d inf_strat false in
-        
-        let g = SymState.add new_rv { name; distr = d } g in
-        Erandomvar new_rv, g, inf_strat
-      end
+      let d, g, inf_strat = eval_distribution g d inf_strat in
+      
+      let g = SymState.add new_rv { name; distr = d } g in
+      Erandomvar new_rv, g, inf_strat
     | e1, e2 -> 
       let rvs1 = SymState.get_randomvars g1 e1 false in
       let rvs2 = SymState.get_randomvars g2 e2 false in
@@ -957,74 +961,88 @@ fun e1 e2 g1 g2 inf_strat narrowing ->
       ) rvs2 inf_strat in
       Eunk, g2, inf_strat
   in
-  let e, g, inf_strat = join_expr e1 e2 g1 g2 inf_strat in
+
+  (* Format.printf "Joining %s and %s\n" (string_of_expr e1) (string_of_expr e2); *)
+  (* Format.printf "g1:\n%s\n" (SymState.to_string g1); *)
+  (* Format.printf "g2:\n%s\n" (SymState.to_string g2); *)
+
+  let e, g, inf_strat = 
+    join_expr e1 e2 g1 g2 inf_strat 
+  in
+
+  (* Format.printf "Result:%s\n" (string_of_expr e); *)
+  (* Format.printf "g:\n%s\n" (SymState.to_string g); *)
 
   (* Capture avoiding substitution *)
-  let rename old_name new_name (g, e) =
-    let s = SymState.find old_name g in
+  let rename (g, e) (old_name, new_name) =
+    let s = match SymState.find_opt old_name g with
+    | Some s -> s
+    | None -> 
+      failwith (Format.sprintf "join_expr: %s not found in g" (RandomVar.to_string old_name))
+    in
     let e = rename_expr old_name new_name e in
     let g = SymState.remove old_name g in
     let g = SymState.add new_name s g in
     g, e
   in
 
-  (* Rename old vars to their new names to free up their name *)
-  let g, e = Hashtbl.fold rename mapping_old_names (g, e) in
+  (* Rename vars in order *)
+  let g, e = List.fold_left rename (g, e) (List.rev !mapping_names)  in
 
-  (* Rename temp vars to the new (now freed up) names *)
-  let g, e = Hashtbl.fold rename mapping_new_names (g, e) in
+  (* Format.printf "Renamed expr: %s\n" (string_of_expr e); *)
+  (* Format.printf "Renamed:\n%s\n" (SymState.to_string g); *)
 
-  let e, g, inf_strat = eval_expr g e inf_strat false in
+  let e, g, inf_strat = eval_expr g e inf_strat in
 
   e, g, inf_strat
 
-and join_distribution : abs_distribution -> abs_distribution -> SymState.t -> SymState.t -> InferenceStrategy.t -> bool
+and join_distribution : abs_distribution -> abs_distribution -> SymState.t -> SymState.t -> InferenceStrategy.t
   -> abs_distribution * SymState.t * InferenceStrategy.t =
-fun d1 d2 g1 g2 inf_strat narrowing ->
+fun d1 d2 g1 g2 inf_strat  ->
   match d1, d2 with
   | Dgaussian (e1, e2), Dgaussian (e1', e2') -> 
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
     Dgaussian (e1, e2), g2, inf_strat
   | Dcategorical (e1, e2, e3), Dcategorical (e1', e2', e3') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
-    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
+    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat  in
     Dcategorical (e1, e2, e3), g2, inf_strat
   | Dbeta (e1, e2), Dbeta (e1', e2') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
     Dbeta (e1, e2), g2, inf_strat
   | Dbernoulli e1, Dbernoulli e2 ->
-    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat  in
     Dbernoulli e1, g2, inf_strat
   | Dbinomial (e1, e2), Dbinomial (e1', e2') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
     Dbinomial (e1, e2), g2, inf_strat
   | Dbetabinomial (e1, e2, e3), Dbetabinomial (e1', e2', e3') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
-    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
+    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat  in
     Dbetabinomial (e1, e2, e3), g2, inf_strat
   | Dnegativebinomial (e1, e2), Dnegativebinomial (e1', e2') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
     Dnegativebinomial (e1, e2), g2, inf_strat
   | Dgamma (e1, e2), Dgamma (e1', e2') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
     Dgamma (e1, e2), g2, inf_strat
   | Dpoisson e1, Dpoisson e2 ->
-    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat  in
     Dpoisson e1, g2, inf_strat
   | Dstudentt (e1, e2, e3), Dstudentt (e1', e2', e3') ->
-    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat narrowing in
-    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat narrowing in
-    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e1' g1 g2 inf_strat  in
+    let e2, g2, inf_strat = join_expr e2 e2' g1 g2 inf_strat  in
+    let e3, g2, inf_strat = join_expr e3 e3' g1 g2 inf_strat  in
     Dstudentt (e1, e2, e3), g2, inf_strat
   | Ddelta e1, Ddelta e2 ->
-    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat narrowing in
+    let e1, g2, inf_strat = join_expr e1 e2 g1 g2 inf_strat  in
     Ddelta e1, g2, inf_strat
   | Ddelta_sampled, Ddelta_sampled -> Ddelta_sampled, g2, inf_strat
   | d1, d2 -> 
@@ -1051,7 +1069,7 @@ module AbstractSSI = struct
   let intervene : InferenceStrategy.t -> RandomVar.t -> abs_distribution -> SymState.t -> 
     InferenceStrategy.t * SymState.t =
   fun inf_strat rv d g ->
-    let d, g, inf_strat = eval_distribution g d inf_strat false in
+    let d, g, inf_strat = eval_distribution g d inf_strat in
     let inf_strat =
       match d with
       | Ddelta_sampled -> 
@@ -1526,8 +1544,8 @@ module AbstractSSI = struct
   fun inf_strat rv1 rv2 g ->
     let d1 = (SymState.find rv1 g).distr in
     let d2 = (SymState.find rv2 g).distr in
-    let d1, g, inf_strat = eval_distribution g d1 inf_strat false in
-    let d2, g, inf_strat = eval_distribution g d2 inf_strat false in
+    let d1, g, inf_strat = eval_distribution g d1 inf_strat in
+    let d2, g, inf_strat = eval_distribution g d2 inf_strat in
     match d1, d2 with
     | Dgaussian (_, _), Dgaussian (_, _) ->
       begin match gaussian_marginal rv1 rv2 g, gaussian_posterior rv1 rv2 g with
@@ -1688,7 +1706,7 @@ module AbstractSSI = struct
     match e with
     | Edistr d -> 
       let varname = get_temp () in
-      let d, g, inf_strat = eval_distribution g d inf_strat false in
+      let d, g, inf_strat = eval_distribution g d inf_strat in
       let g = SymState.add varname { name = PVSet.singleton x; distr = d } g in
       let inf_strat = 
         if not (x.modul = Some "Temp") then 
@@ -1922,7 +1940,7 @@ fun p ->
         (* Widen *)
         let inf_strat2, g2, e2 = infer' inf_strat1 ctx g1 e2 in
         let inf_strat3, g3, e3 = infer' inf_strat2 ctx g2 e3 in
-        let e23, g, inf_strat' = join_expr e2 e3 g2 g3 inf_strat false in
+        let e23, g, inf_strat' = join_expr e2 e3 g2 g3 inf_strat in
 
         if not (is_const e1 g1) || e23 = Eunk then
           (* State gets threaded through *)
@@ -1943,7 +1961,7 @@ fun p ->
       (* Widen *)
       let inf_strat = InferenceStrategy.join inf_strat2 inf_strat3 in
       (* Format.printf "strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
-      let e23, g, inf_strat' = join_expr e2 e3 g2 g3 inf_strat false in
+      let e23, g, inf_strat' = join_expr e2 e3 g2 g3 inf_strat in
       (* Format.printf "g:\n%s\n" (SymState.to_string g); *)
       (* Format.printf "e23: %s\n" (string_of_expr e23); *)
       inf_strat', g, e23
@@ -2252,7 +2270,7 @@ fun p ->
                 (* Format.printf "Step:\n%s" (SymState.to_string g); *)
                 (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
 
-                let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat true in
+                let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat in
                 let g_post = SymState.clean g_before g_post res_post in
 
                 (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
@@ -2270,13 +2288,13 @@ fun p ->
               (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
 
-              let inf_strat, g, res = infer_no_func inf_strat  (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
+              let inf_strat, g, res = infer_no_func inf_strat (VarMap.empty) g_pre f (Etuple [acc; Eunk]) in
 
               (* Format.printf "Step:\n%s" (SymState.to_string g); *)
               (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
 
-              let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat true in
+              let res_post, g_post, inf_strat_post = join_expr acc res g_pre g inf_strat in
               let g_post = SymState.clean g_before g_post res_post in
 
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
