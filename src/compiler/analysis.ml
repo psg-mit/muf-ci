@@ -734,7 +734,7 @@ fun ctx e1 e2 e3 g inf_strat ->
     let ctx' = Hashtbl.copy ctx in
     let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g g inf_strat true in
 
-    if not (is_const e1 g) || e23 = Eunk then
+    if not (is_const e1 g) then
       (* Make no changes *)
       ctx, Eif (e1, e2, e3), g, inf_strat
     else
@@ -2030,7 +2030,7 @@ fun p ->
         let ctx' = Hashtbl.copy ctx in
         let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g2 g3 inf_strat true in
 
-        if not (is_const e1 g1) || e23 = Eunk then
+        if not (is_const e1 g1) then
           (* let () = 
           Format.printf "e: %s\n" (string_of_expr (Eif(e1, e2, e3)));
           Format.printf "g':\n%s\n" (SymState.to_string g3);
