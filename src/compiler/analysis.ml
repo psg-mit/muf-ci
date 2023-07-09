@@ -920,20 +920,28 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
       let ctx, e3, g_acc, inf_strat = join_expr ctx e13 e23 g1 g2 g_acc inf_strat merge_distr in
       ctx, Eif (e1, e2, e3), g_acc, inf_strat
     | Elist es1, Elist es2 ->
-      if List.length es1 <> List.length es2 then
+      (* if List.length es1 <> List.length es2 then
         let inf_strat = mark_as_lost (Elist es1) g1 inf_strat in
         let inf_strat = mark_as_lost (Elist es2) g2 inf_strat in
         ctx, Eunk, g_acc, inf_strat
-      else
+      else *)
       let rec traversal ctx l1 l2 es g_acc inf_strat =
         match l1, l2 with
         | [], [] -> ctx, es, g_acc, inf_strat
         | [], e2 -> 
           let inf_strat = mark_as_lost (Elist e2) g2 inf_strat in
-          ctx, (Eunk :: es), g_acc, inf_strat
+          let es = match es with
+          | Eunk :: es -> Eunk :: es
+          | _ -> Eunk :: es
+          in
+          ctx, es, g_acc, inf_strat
         | e1, [] ->
           let inf_strat = mark_as_lost (Elist e1) g1 inf_strat in
-          ctx, (Eunk :: es), g_acc, inf_strat
+          let es = match es with
+          | Eunk :: es -> Eunk :: es
+          | _ -> Eunk :: es
+          in
+          ctx, es, g_acc, inf_strat
         | e1 :: l1, e2 :: l2 ->
           let ctx, e, g_acc, inf_strat = join_expr ctx e1 e2 g1 g2 g_acc inf_strat merge_distr in
           traversal ctx l1 l2 (e :: es) g_acc inf_strat
@@ -2327,13 +2335,13 @@ fun p ->
                 (* Format.printf "Step:\n%s" (SymState.to_string g); *)
                 (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
 
-                let ctx_post, res_post, g_post, inf_strat_post = join_by_value ctx acc res g_pre g inf_strat true in
+                (* let ctx_post, res_post, g_post, inf_strat_post = join_by_value ctx acc res g_pre g inf_strat true in *)
 
                 (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
                 (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
                 (* Format.printf "-----------------\n"; *)
                 
-                iter inf_strat_post ctx_post g_post res_post args
+                iter inf_strat ctx g res args
             in
             let inf_strat, ctx, g, res = iter inf_strat ctx_before g_before acc args in
             inf_strat, ctx, g, res
