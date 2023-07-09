@@ -957,20 +957,52 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
       ctx, Erandomvar rv1, g_acc, inf_strat
     | Erandomvar rv1, Erandomvar rv2 ->
       if merge_distr then
-        let s1 = SymState.find rv1 g1 in
-        let s2 = SymState.find rv2 g2 in
+        let new_var, s1, s2 = 
+          if Hashtbl.mem g1_renamings rv1 && Hashtbl.mem g2_renamings rv2 then
+            (* Both rv1 and rv2 have been renamed *)
+            let new_var1 = Hashtbl.find g1_renamings rv1 in
+            let new_var2 = Hashtbl.find g2_renamings rv2 in
+            if new_var1 = new_var2 then
+              (* Both rv1 and rv2 have been renamed to the same variable *)
+              let s = SymState.find new_var1 g_acc in
+              new_var1, s, s
+            else
+              (* Both rv1 and rv2 have been renamed to different variables *)
+              let new_var = get_temp () in
+              Hashtbl.add g1_renamings rv1 new_var;
+              Hashtbl.add g2_renamings rv2 new_var;
+              let s1 = SymState.find new_var1 g_acc in
+              let s2 = SymState.find new_var2 g_acc in
+              new_var, s1, s2
+          else if Hashtbl.mem g1_renamings rv1 then
+            (* only rv1 has been renamed *)
+            let new_var = Hashtbl.find g1_renamings rv1 in
+            Hashtbl.add g2_renamings rv2 new_var;
+            let s1 = SymState.find new_var g_acc in
+            let s2 = SymState.find rv2 g2 in
+            new_var, s1, s2
+          else if Hashtbl.mem g2_renamings rv2 then
+            (* only rv2 has been renamed *)
+            let new_var = Hashtbl.find g2_renamings rv2 in
+            Hashtbl.add g1_renamings rv1 new_var;
+            let s1 = SymState.find rv1 g1 in
+            let s2 = SymState.find new_var g_acc in
+            new_var, s1, s2
+          else
+            (* Neither rv1 nor rv2 have been renamed *)
+            let new_var = get_temp () in
+            Hashtbl.add g1_renamings rv1 new_var;
+            Hashtbl.add g2_renamings rv2 new_var;
+            let s1 = SymState.find rv1 g1 in
+            let s2 = SymState.find rv2 g2 in
+            new_var, s1, s2
+        in
         
-        let new_var = get_temp () in
         let name = PVSet.union s1.name s2.name in
         let ctx, d, g_acc, inf_strat = join_distribution ctx s1.distr s2.distr g1 g2 g_acc inf_strat in
 
         let g_acc = SymState.add new_var { name = name; distr = d } g_acc in
 
-        (* Mark rv1 to be renamed to new_var *)
-        Hashtbl.add g1_renamings rv1 new_var;
-        (* Mark rv2 to be renamed to new_var *)
-        Hashtbl.add g2_renamings rv2 new_var;
-        (* Mark new_var to be renamed back to rv1 *)
         Hashtbl.add old_renamings new_var rv1;
 
         ctx, Erandomvar new_var, g_acc, inf_strat
@@ -1047,6 +1079,7 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
 
   (* Format.printf "Result: %s\n" (string_of_expr e); *)
   (* Format.printf "g_acc:\n%s\n" (SymState.to_string g_acc); *)
+  (* Format.printf "ctx:\n%s\n" (string_of_ctx ctx); *)
   (* Format.printf "g1 renamings:%s\n\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) g1_renamings ""); *)
   (* Format.printf "g2 renamings:%s\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) g2_renamings ""); *)
 
@@ -1995,21 +2028,21 @@ fun p ->
         let inf_strat2, ctx, g2, e2 = infer' inf_strat1 ctx g1 e2 in
         let inf_strat3, ctx, g3, e3 = infer' inf_strat2 ctx g2 e3 in
         let ctx' = Hashtbl.copy ctx in
-        let _ctx', _e23, _g', _inf_strat' = join_by_value ctx' e2 e3 g2 g3 inf_strat true in
+        let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g2 g3 inf_strat true in
 
-        (* if not (is_const e1 g1) || e23 = Eunk then *)
+        if not (is_const e1 g1) || e23 = Eunk then
           (* let () = 
           Format.printf "e: %s\n" (string_of_expr (Eif(e1, e2, e3)));
           Format.printf "g':\n%s\n" (SymState.to_string g3);
           Format.printf "ctx':\n%s\n" (string_of_ctx ctx) in *)
           (* State gets threaded through *)
           inf_strat3, ctx, g3, Eif(e1, e2, e3)
-        (* else *)
+        else
           (* let () =
           Format.printf "e23: %s\n" (string_of_expr e23);
           Format.printf "g':\n%s\n" (SymState.to_string g');
           Format.printf "ctx':\n%s\n" (string_of_ctx ctx') in *)
-          (* inf_strat', ctx', g', e23 *)
+          inf_strat', ctx', g', e23
       end
     | Eifeval (e1, e2, e3) ->
       let inf_strat1, ctx1, g1, e1 = infer' inf_strat ctx g e1 in
