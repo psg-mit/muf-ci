@@ -114,8 +114,8 @@
   "error_func": "se",
   "labels": [
     "x",
-    "r",
     "q",
+    "r",
     "q, r",
     "None"
   ]
