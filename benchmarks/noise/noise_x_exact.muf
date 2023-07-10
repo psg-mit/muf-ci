@@ -18,7 +18,7 @@ val step = fun (acc, zobs) ->
   (* let g = 1. in *)
   (* let u = 0, so g not used *)
 
-  let x <- gaussian(mul(f, prev_x), div(1., q)) in
+  let exact x <- gaussian(mul(f, prev_x), div(1., q)) in
   let () = observe(gaussian(mul(h, prev_x), div(1., r)), zobs) in
   
   (List.cons(x, xs), q, r)
