@@ -630,6 +630,4 @@ if __name__ == '__main__':
       with open(os.path.join(args.benchmark, args.output, 'results.json'), 'w') as f:
         json.dump(results, f, indent=2)
   
-
-  
   

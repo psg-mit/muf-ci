@@ -8,10 +8,17 @@
     ["sens", [0.808969]],
     ["spec", [0.9941081]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 3,
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 2,
   "n_x": 3,
   "legend_width": 3,
-  "error_func": "se"
+  "error_func": "se",
+  "labels": [
+    "sens",
+    "fpr",
+    "true_pos",
+    "sens, fpr",
+    "None"
+  ]
 }

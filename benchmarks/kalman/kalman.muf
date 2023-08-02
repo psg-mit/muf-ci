@@ -15,9 +15,11 @@ val init_y = fun i ->
 let n = 100 in
 let x0 <- gaussian(0., 100.) in
 let x = (x0, [x0]) in
+(* 1 to 100 inclusive *)
 let ys = List.rev(List.init(n, init_y)) in
 (* Fold doesn't reach 100-ish *)
 (* let final_x = List.fold(step, ys, x) in *)
 (* Fold_resample does reach 100-ish *)
 let final_x = List.fold_resample(step, ys, x) in
+(* Note that output is reversed something of 100 to 0 inclusive *)
 final_x
