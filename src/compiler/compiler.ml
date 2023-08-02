@@ -28,38 +28,6 @@ let parse parsing_fun lexing_fun source_name =
       close_in ic;
       syntax_error (source_name, loc)
 
-(* let analyze_file n_iters p =
-  let module SMap = Map.Make (String) in
-  let open Muf in
-  List.fold_left
-    (fun (fctx, mctx, (mcons, unsep)) d ->
-      match d.decl with
-      | Dfun (name, p, e) ->
-          let rs = Analysis.process_fn p e fctx mctx in
-          (Analysis.VarMap.add { modul = None; name } rs fctx,
-           mctx,
-           (mcons, unsep))
-      | Dnode (name, _, node) -> (
-          let p, e = node.n_step in
-          match p.patt with
-          | Ptuple [ p_state; p_in ] ->
-              let rs, (mcons', unsep') =
-                Analysis.process_node n_iters node.n_init p_state p_in e fctx
-                  mctx
-              in
-              (fctx,
-               Analysis.VarMap.add { modul = None; name } rs mctx,
-               (mcons && mcons', unsep && unsep'))
-          | _ -> failwith "Stream definition lacking step (state, input).")
-      | _ -> (fctx, mctx, (mcons, unsep)))
-    (Analysis.VarMap.empty, Analysis.VarMap.empty, (true, true))
-    p
-  |> fun (_, _, (mcons, unsep)) ->
-  if mcons then Format.printf "     o m-consumed analysis success@."
-  else Format.printf "     x m-consumed analysis failure@.";
-  if unsep then Format.printf "     o Unseparated paths analysis success@."
-  else Format.printf "     x Unseparated paths analysis failure@." *)
-
 let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
   let mlff = Format.formatter_of_out_channel mlc in
