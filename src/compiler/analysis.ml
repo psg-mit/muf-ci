@@ -1220,8 +1220,20 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
     | Ddelta e1, Ddelta e2 ->
       let ctx, e1, g_acc, inf_strat = join_expr ctx e1 e2 g1 g2 g_acc inf_strat false in
       ctx, Ddelta e1, g_acc, inf_strat
+    | Ddelta _, Ddelta_sampled ->
+      ctx, Ddelta_sampled, g_acc, inf_strat
+    | Ddelta_sampled, Ddelta _ ->
+      ctx, Ddelta_sampled, g_acc, inf_strat
+    | Ddelta _, e2 ->
+      ctx, e2, g_acc, inf_strat
+    | e1, Ddelta _ ->
+      ctx, e1, g_acc, inf_strat
     | Ddelta_sampled, Ddelta_sampled -> 
       ctx, Ddelta_sampled, g_acc, inf_strat
+    | Ddelta_sampled, e2 ->
+      ctx, e2, g_acc, inf_strat
+    | e1, Ddelta_sampled ->
+      ctx, e1, g_acc, inf_strat
     | d1, d2 ->
       let inf_strat = mark_as_lost (Edistr d1) g1 inf_strat in
       let inf_strat = mark_as_lost (Edistr d2) g2 inf_strat in
@@ -2545,8 +2557,6 @@ fun p ->
               let ctx_post = Hashtbl.copy ctx in
               let ctx_post, res_post, g_post, inf_strat_post = join_by_value ctx_post acc res g_pre g inf_strat true in
               
-              (* let () = if !i >= 1 then exit(2) else incr i in *)
-
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
               (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post); *)
@@ -2577,9 +2587,7 @@ fun p ->
   (* For debug *)
   (* let sym_state_s = SymState.to_string g' in *)
   (* Format.printf "g:\n%s\n" sym_state_s; *)
-
   (* Format.printf "ctx:%s\n" (string_of_ctx ctx); *)
-
   (* Format.printf "Res: %s\n" (string_of_expr res); *)
 
   inf_strat
