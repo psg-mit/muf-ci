@@ -1,5 +1,7 @@
 open Mufextern
 
+let i = ref 0 
+
 let string_of_ident : identifier -> string =
 fun id ->
   match id.modul with
@@ -237,11 +239,20 @@ end)
 
 type ctx = (identifier, abs_expr) Hashtbl.t
 
+let ctx_add_helper : identifier -> abs_expr -> ctx -> unit =
+fun x e ctx ->
+  match Hashtbl.find_opt ctx x with
+  | Some e' -> 
+    if e = e' then ()
+    else Hashtbl.add ctx x e
+  | None ->
+    Hashtbl.add ctx x e
+
 let rec ctx_add : pattern -> abs_expr -> ctx -> ctx =
 fun p e ctx ->
   match p, e with
-  | Pid name, Etuple [e] -> Hashtbl.add ctx name e; ctx
-  | Pid name, _ -> Hashtbl.add ctx name e; ctx
+  | Pid name, Etuple [e] -> ctx_add_helper name e ctx; ctx
+  | Pid name, _ -> ctx_add_helper name e ctx; ctx
   | Ptuple [], Etuple [] | Ptuple [], Eunk -> ctx
   | Ptuple [p], _ -> ctx_add p e ctx
   | Ptuple (p :: ps), Etuple (e :: es) ->
@@ -268,6 +279,14 @@ fun p ctx ->
   | Pid name -> Hashtbl.remove ctx name; ctx
   | Ptuple ps -> List.fold_left (fun ctx p -> ctx_remove p ctx) ctx ps
   | Pany | Punit -> ctx
+
+let ctx_fold : (identifier -> abs_expr -> 'a -> 'a) -> ctx -> 'a -> 'a =
+fun f ctx acc ->
+  let acc, _ = Hashtbl.fold (fun x e (acc, seen) ->
+    let acc = if PVSet.mem x seen then acc else f x e acc in
+    (acc, PVSet.add x seen)
+  ) ctx (acc, PVSet.empty) in
+  acc
 
 let string_of_ctx : ctx -> string =
 fun ctx ->
@@ -627,7 +646,7 @@ module SymState = struct
 
   (* Helper functions *)
 
-  let get_randomvars : t -> abs_expr -> bool -> RVSet.t =
+  let rec get_randomvars : t -> abs_expr -> bool -> RVSet.t =
   fun g e get_deltas ->
     let rec get_randomvars' : t -> abs_expr -> RVSet.t -> RVSet.t =
     fun g e rvs ->
@@ -636,7 +655,7 @@ module SymState = struct
       | Erandomvar rv -> 
         begin match find_opt rv g with
         | Some s -> 
-          let rvs = get_randomvars_distr g s.distr rvs in
+          let rvs = get_randomvars_distr g s.distr get_deltas in
           begin match s.distr with
           | Ddelta_sampled | Ddelta _ ->
             if get_deltas then RVSet.add rv rvs else rvs
@@ -654,38 +673,86 @@ module SymState = struct
       | Eif (e1, e2, e3) -> 
         RVSet.union (get_randomvars' g e1 rvs) 
           (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
-      | Edistr d -> get_randomvars_distr g d rvs
-    and get_randomvars_distr : t -> abs_distribution -> RVSet.t -> RVSet.t =
-    fun g d rvs ->
-      match d with
-      | Dgaussian (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dcategorical (e1, e2, e3) -> 
-        RVSet.union (get_randomvars' g e1 rvs) 
-          (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
-      | Dbeta (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dbernoulli e1 -> get_randomvars' g e1 rvs
-      | Dbinomial (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
-        RVSet.union (get_randomvars' g e1 rvs) 
-          (RVSet.union (get_randomvars' g e2 rvs) (get_randomvars' g e3 rvs))
-      | Dnegativebinomial (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dgamma (e1, e2) -> RVSet.union (get_randomvars' g e1 rvs) (get_randomvars' g e2 rvs)
-      | Dpoisson e1 -> get_randomvars' g e1 rvs
-      | Ddelta e1 -> get_randomvars' g e1 rvs
-      | Ddelta_sampled -> rvs
-      | Dunk -> RVSet.empty
+      | Edistr d -> get_randomvars_distr g d get_deltas
     in
     get_randomvars' g e RVSet.empty
+  and get_randomvars_distr : t -> abs_distribution -> bool -> RVSet.t =
+  fun g d get_deltas ->
+    match d with
+    | Dgaussian (e1, e2) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) (get_randomvars g e2 get_deltas) 
+    | Dcategorical (e1, e2, e3) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) 
+        (RVSet.union (get_randomvars g e2 get_deltas) (get_randomvars g e3 get_deltas))
+    | Dbeta (e1, e2) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) (get_randomvars g e2 get_deltas)
+    | Dbernoulli e1 -> get_randomvars g e1 get_deltas
+    | Dbinomial (e1, e2) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) (get_randomvars g e2 get_deltas)
+    | Dbetabinomial (e1, e2, e3) | Dstudentt (e1, e2, e3) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) 
+        (RVSet.union (get_randomvars g e2 get_deltas) (get_randomvars g e3 get_deltas))
+    | Dnegativebinomial (e1, e2) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) (get_randomvars g e2 get_deltas)
+    | Dgamma (e1, e2) -> 
+      RVSet.union (get_randomvars g e1 get_deltas) (get_randomvars g e2 get_deltas)
+    | Dpoisson e1 -> get_randomvars g e1 get_deltas
+    | Ddelta e1 -> get_randomvars g e1 get_deltas
+    | Ddelta_sampled -> RVSet.empty
+    | Dunk -> RVSet.empty
 
   (* Garbage collect random variables if not referenced *)
-  let clean : ctx -> abs_expr -> t -> t =
+  let rec clean : ctx -> abs_expr -> t -> t =
   fun ctx e g ->
     let used_rvs_e = get_randomvars g e true in
-    let used_rvs_ctx = Hashtbl.fold (fun _ e acc ->
-      RVSet.union acc (get_randomvars g e true)) ctx RVSet.empty in
+    let used_rvs_ctx = ctx_fold (fun _ e acc ->
+      RVSet.union acc (get_randomvars g e true)
+    ) ctx RVSet.empty in
+    let used_rvs_g = RVMap.fold (fun _ s acc -> 
+      let rvs = get_randomvars_distr g s.distr true in
+      RVSet.union acc rvs
+    ) g RVSet.empty in
 
-    let used_rvs = RVSet.union used_rvs_e used_rvs_ctx in
-    RVMap.filter (fun rv _ -> RVSet.mem rv used_rvs) g
+    let used_rvs = RVSet.union used_rvs_e (RVSet.union used_rvs_ctx used_rvs_g) in
+    let g' = RVMap.filter (fun rv _ -> RVSet.mem rv used_rvs) g in
+    if g = g' then g else clean ctx e g'
+
+  let rec rename : ctx -> abs_expr -> t -> RandomVar.t -> RandomVar.t -> ctx * abs_expr * t =
+  fun ctx e g old_name new_name ->
+
+    (* If old name is already in g, need to rename existing entry into 
+       fresh name *)
+    let ctx, e, g = 
+      if mem new_name g then
+        rename ctx e g new_name (get_temp ())
+      else
+        ctx, e, g
+    in
+
+    (* Rename RV refs in ctx *)
+    Hashtbl.filter_map_inplace (fun _ e ->
+      let e = rename_expr old_name new_name e in
+      Some e
+    ) ctx;
+
+    (* Rename RV refs in e *)
+    let e = rename_expr old_name new_name e in
+
+    (* Rename entries and distributions in g *)
+    let g =
+      map (fun s ->
+        let d = rename_distr old_name new_name s.distr in
+        { s with distr = d }
+      ) g
+    in
+    let g = 
+      match find_opt old_name g with
+      | Some s -> 
+        remove old_name g |> add new_name s
+      | None -> g
+    in
+
+    ctx, e, g
 
   let to_string : t -> string =
     fun g ->
@@ -719,6 +786,98 @@ fun e g ->
     is_const e1 g && is_const e2 g && is_const e3 g
   | Edistr _ -> false
 
+let rec replace_free_vars : abs_expr -> SymState.t -> abs_expr =
+fun e g ->
+  match e with
+  | Econst _ | Eunk -> e
+  | Erandomvar rv -> if SymState.mem rv g then e else Eunk
+  | Etuple es -> Etuple (List.map (fun e -> replace_free_vars e g) es)
+  | Elist es -> Elist (List.map (fun e -> replace_free_vars e g) es)
+  | Eadd (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Eadd (e1', e2')
+  | Emul (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Emul (e1', e2')
+  | Ediv (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Ediv (e1', e2')
+  | Eintadd (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Eintadd (e1', e2')
+  | Eintmul (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Eintmul (e1', e2')
+  | Ecmp (cmp, e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Ecmp (cmp, e1', e2')
+  | Eunop (op, e1) ->
+    let e1' = replace_free_vars e1 g in
+    Eunop (op, e1')
+  | Einttofloat e1 ->
+    let e1' = replace_free_vars e1 g in
+    Einttofloat e1'
+  | Eif (e1, e2, e3) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    let e3' = replace_free_vars e3 g in
+    Eif (e1', e2', e3')
+  | Edistr d -> Edistr (replace_free_vars_distr d g)
+and replace_free_vars_distr : abs_distribution -> SymState.t -> abs_distribution =
+fun d g ->
+  match d with
+  | Dgaussian (e1, e2) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Dgaussian (e1', e2')
+  | Dcategorical (e1, e2, e3) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    let e3' = replace_free_vars e3 g in
+    Dcategorical (e1', e2', e3')
+  | Dbeta (e1, e2) ->
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Dbeta (e1', e2')
+  | Dbernoulli e ->
+    let e' = replace_free_vars e g in
+    Dbernoulli e'
+  | Dbinomial (e1, e2) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Dbinomial (e1', e2')
+  | Dbetabinomial (e1, e2, e3) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    let e3' = replace_free_vars e3 g in
+    Dbetabinomial (e1', e2', e3')    
+  | Dnegativebinomial (e1, e2) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Dnegativebinomial (e1', e2')
+  | Dgamma (e1, e2) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    Dgamma (e1', e2')
+  | Dpoisson e -> 
+    let e' = replace_free_vars e g in
+    Dpoisson e'
+  | Dstudentt (e1, e2, e3) -> 
+    let e1' = replace_free_vars e1 g in
+    let e2' = replace_free_vars e2 g in
+    let e3' = replace_free_vars e3 g in
+    Dstudentt (e1', e2', e3')
+  | Ddelta e ->
+    let e' = replace_free_vars e g in
+    Ddelta e'
+  | Ddelta_sampled | Dunk -> d
+
 (* 
   TODO: Widening can be even smarter... 
   curently has imprecision due to alias 
@@ -731,13 +890,12 @@ fun ctx e1 e2 e3 g inf_strat ->
   | Econst (Cbool false) -> ctx, e3, g, inf_strat
   | _ ->
     (* Widen *)
-    let ctx' = Hashtbl.copy ctx in
-    let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g g inf_strat true in
-
     if not (is_const e1 g) then
       (* Make no changes *)
       ctx, Eif (e1, e2, e3), g, inf_strat
     else
+      let ctx' = Hashtbl.copy ctx in
+      let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g g inf_strat true in
       ctx', e23, g', inf_strat'
 
 and eval_expr : ctx -> SymState.t -> abs_expr -> InferenceStrategy.t
@@ -969,30 +1127,30 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
             else
               (* Both rv1 and rv2 have been renamed to different variables *)
               let new_var = get_temp () in
-              Hashtbl.add g1_renamings rv1 new_var;
-              Hashtbl.add g2_renamings rv2 new_var;
+              Hashtbl.replace g1_renamings rv1 new_var;
+              Hashtbl.replace g2_renamings rv2 new_var;
               let s1 = SymState.find new_var1 g_acc in
               let s2 = SymState.find new_var2 g_acc in
               new_var, s1, s2
           else if Hashtbl.mem g1_renamings rv1 then
             (* only rv1 has been renamed *)
             let new_var = Hashtbl.find g1_renamings rv1 in
-            Hashtbl.add g2_renamings rv2 new_var;
+            Hashtbl.replace g2_renamings rv2 new_var;
             let s1 = SymState.find new_var g_acc in
             let s2 = SymState.find rv2 g2 in
             new_var, s1, s2
           else if Hashtbl.mem g2_renamings rv2 then
             (* only rv2 has been renamed *)
             let new_var = Hashtbl.find g2_renamings rv2 in
-            Hashtbl.add g1_renamings rv1 new_var;
+            Hashtbl.replace g1_renamings rv1 new_var;
             let s1 = SymState.find rv1 g1 in
             let s2 = SymState.find new_var g_acc in
             new_var, s1, s2
           else
             (* Neither rv1 nor rv2 have been renamed *)
             let new_var = get_temp () in
-            Hashtbl.add g1_renamings rv1 new_var;
-            Hashtbl.add g2_renamings rv2 new_var;
+            Hashtbl.replace g1_renamings rv1 new_var;
+            Hashtbl.replace g2_renamings rv2 new_var;
             let s1 = SymState.find rv1 g1 in
             let s2 = SymState.find rv2 g2 in
             new_var, s1, s2
@@ -1003,7 +1161,7 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
 
         let g_acc = SymState.add new_var { name = name; distr = d } g_acc in
 
-        Hashtbl.add old_renamings new_var rv1;
+        Hashtbl.replace old_renamings new_var rv1;
 
         ctx, Erandomvar new_var, g_acc, inf_strat
       else
@@ -1073,15 +1231,15 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
   (* Format.printf "Joining %s and %s\n" (string_of_expr e1) (string_of_expr e2); *)
   (* Format.printf "g1:\n%s\n" (SymState.to_string g1); *)
   (* Format.printf "g2:\n%s\n" (SymState.to_string g2); *)
+  (* Format.printf "ctx:\n%s\n" (string_of_ctx ctx); *)
 
   (* Join expression by value, and merging the random variables if 1-1 match at the top level. Save as new variable name *)
   let ctx, e, g_acc, inf_strat = join_expr ctx e1 e2 g1 g2 SymState.empty inf_strat true in
 
-  (* Format.printf "Result: %s\n" (string_of_expr e); *)
+  (* Format.printf "Result: %s\n\n" (string_of_expr e); *)
   (* Format.printf "g_acc:\n%s\n" (SymState.to_string g_acc); *)
-  (* Format.printf "ctx:\n%s\n" (string_of_ctx ctx); *)
   (* Format.printf "g1 renamings:%s\n\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) g1_renamings ""); *)
-  (* Format.printf "g2 renamings:%s\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) g2_renamings ""); *)
+  (* Format.printf "g2 renamings:%s\n\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) g2_renamings ""); *)
 
   (* Delete v1 in g1 and v2 in *)
   let g1 = Hashtbl.fold (fun old_name _ g1 ->
@@ -1108,6 +1266,8 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
     ) ctx; ctx
   ) g2_renamings ctx in
 
+  (* Format.printf "ctx_renamed:\n%s\n" (string_of_ctx ctx); *)
+
   (* Rename references to v1, v2 in g1 and g2 to new_var *)
   let g1 = Hashtbl.fold (fun old_name new_name g1 ->
     SymState.map (fun s ->
@@ -1124,15 +1284,8 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
 
   (* Format.printf "g1_renamed:\n%s\n" (SymState.to_string g1); *)
   (* Format.printf "g2_renamed:\n%s\n" (SymState.to_string g2); *)
-
-  let g1 = SymState.clean ctx e g1 in
-  let g2 = SymState.clean ctx e g2 in
-
-  (* Format.printf "g1_clean:\n%s\n" (SymState.to_string g1); *)
-  (* Format.printf "g2_clean:\n%s\n" (SymState.to_string g2); *)
-
-  (* Copy things in g1 and g2 to g_acc, if RV is used in ctx or in e,
-    merging by key *)
+  
+  (* Copy things in g1 and g2 to g_acc, merging by key *)
   let ctx, g_acc, inf_strat = SymState.fold (fun rv s1 (ctx, g_acc, inf_strat) ->
     match SymState.find_opt rv g_acc with
     | Some _ -> ctx, g_acc, inf_strat
@@ -1163,38 +1316,26 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
   
   (* Format.printf "g_acc:\n%s\n" (SymState.to_string g_acc); *)
 
-  (* Format.printf "old_renamings:\n%s\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) old_renamings ""); *)
-
   let ctx, e, g_acc = if use_old_name then
     (* Rename from old_renamings everywhere *)
-    let ctx = Hashtbl.fold (fun old_name new_name ctx ->
-      Hashtbl.filter_map_inplace (fun _ e ->
-        let e = rename_expr old_name new_name e in
-        Some e
-      ) ctx; ctx
-    ) old_renamings ctx in
-    let g_acc = Hashtbl.fold (fun old_name new_name g_acc ->
-      SymState.map (fun s ->
-        let d = rename_distr old_name new_name s.distr in
-        { s with distr = d }
-      ) g_acc
-    ) old_renamings g_acc in
-    let g_acc = Hashtbl.fold (fun old_name new_name g_acc ->
-      match SymState.find_opt old_name g_acc with
-      | Some s -> 
-        let g_acc = SymState.remove old_name g_acc in
-        SymState.add new_name s g_acc
-      | None -> g_acc
-    ) old_renamings g_acc in
-    let e = Hashtbl.fold (fun old_name new_name e ->
-      rename_expr old_name new_name e
-    ) old_renamings e in
-    ctx, e, g_acc
-  else ctx, e, g_acc in
 
-  (* Format.printf "ctx:%s\n" (string_of_ctx ctx); *)
-  (* Format.printf "e: %s\n" (string_of_expr e); *)
+    (* let _ = Format.printf "old_renamings:%s\n\n" (Hashtbl.fold (fun k v acc -> Format.sprintf "%s\n%s -> %s" acc (string_of_ident k) (string_of_ident v)) old_renamings "") in *)
+
+    Hashtbl.fold (fun old_name new_name (ctx, e, g_acc) ->
+      SymState.rename ctx e g_acc old_name new_name
+    ) old_renamings (ctx, e, g_acc)
+    
+  else ctx, e, g_acc in
+  
+  (* Format.printf "ctx:\n%s\n" (string_of_ctx ctx); *)
+  (* Format.printf "e: %s\n\n" (string_of_expr e); *)
   (* Format.printf "g_acc:\n%s\n" (SymState.to_string g_acc); *)
+
+  let g_acc = SymState.clean ctx e g_acc in
+
+  (* Format.printf "g_acc_clean:\n%s\n" (SymState.to_string g_acc); *)
+
+  (* Format.printf "Done joining\n\n"; *)
 
   ctx, e, g_acc, inf_strat
 
@@ -1665,10 +1806,11 @@ module AbstractSSI = struct
   fun ctx inf_strat rv1 rv2 g ->
     let d1 = (SymState.find rv1 g).distr in
     let d2 = (SymState.find rv2 g).distr in
+    
     let ctx, d1, g, inf_strat = eval_distribution ctx g d1 inf_strat in
     let ctx, d2, g, inf_strat = eval_distribution ctx g d2 inf_strat in
     let dist_marg, dist_post = 
-      match d1, d2 with
+    match d1, d2 with
       | Dgaussian (_, _), Dgaussian (_, _) ->
         gaussian_marginal rv1 rv2 d1 d2 g, gaussian_posterior rv1 rv2 d1 d2 g
       | Dbeta(_, _), Dbernoulli(_) ->
@@ -1678,6 +1820,7 @@ module AbstractSSI = struct
       | Dgamma(_, _), Dpoisson(_) ->
         gamma_poisson_marginal rv1 rv2 d1 d2 g, gamma_poisson_posterior rv1 rv2 d1 d2 g
       | Dgamma(_, _), Dgaussian(_, _) ->
+        (* let () = if !i >= 0 then exit(1) else incr i in *)
         gamma_normal_marginal rv1 rv2 d1 d2 g, gamma_normal_posterior rv1 rv2 d1 d2 g
       | Dbernoulli _, Dbernoulli _ ->
         bernoulli_marginal rv1 rv2 d1 d2 g, bernoulli_posterior rv1 rv2 d1 d2 g
@@ -1700,6 +1843,8 @@ module AbstractSSI = struct
       (* Format.printf "Hoisting %s with ghost roots [%s] and parents [%s]\n" (RandomVar.to_string rv_child)
         (String.concat ", " (List.map RandomVar.to_string (RVSet.elements ghost_roots)))
         (String.concat ", " (List.map RandomVar.to_string parents)); *)
+
+      (* Format.printf "%s\n" (SymState.to_string g); *)
 
       let rec hoist_parents : ctx -> InferenceStrategy.t -> RandomVar.t list -> RVSet.t -> SymState.t 
         -> ctx * InferenceStrategy.t * SymState.t =
@@ -1754,12 +1899,14 @@ module AbstractSSI = struct
               ctx, inf_strat, g
             | _ ->
               (* Format.printf "Starting swap\n"; *)
+              
               let ctx, did_swap, inf_strat, g = swap ctx inf_strat rv_parent rv_child g in
               if did_swap then
                 (* let _ = 
                   Format.printf "Swapped %s and %s\n" (RandomVar.to_string rv_parent) (RandomVar.to_string rv_child)
                 in *)
-                swap_with_parents ctx inf_strat rvs g
+                let res = swap_with_parents ctx inf_strat rvs g in 
+                res
               else 
                 (* let _ = Format.printf "%s\n" (SymState.to_string g) in *)
                 (* let _ = 
@@ -1773,12 +1920,13 @@ module AbstractSSI = struct
       in
 
       let ctx, inf_strat, g = hoist_parents ctx inf_strat parents ghost_roots g in
-      (* Format.printf "Dont hoisting parents for %s\n" (RandomVar.to_string rv_child); *)
+      (* Format.printf "Done hoisting parents for %s\n" (RandomVar.to_string rv_child); *)
       let parents = List.rev parents in
       (* Format.printf "Begin swapping child %s with parents [%s]\n" (RandomVar.to_string rv_child)
         (String.concat ", " (List.map RandomVar.to_string parents)); *)
       let ctx, inf_strat, g = swap_with_parents ctx inf_strat parents g in
       (* Format.printf "Done hoisting %s\n" (RandomVar.to_string rv_child); *)
+
       ctx, inf_strat, g
     in
 
@@ -1872,6 +2020,7 @@ module AbstractSSI = struct
   let rec observe : ctx -> InferenceStrategy.t -> RandomVar.t -> abs_expr -> SymState.t -> ctx * InferenceStrategy.t * SymState.t =
   fun ctx inf_strat rv v g ->
     try 
+      (* Format.printf "Observe: %s\n" (RandomVar.to_string rv); *)
       let ctx, inf_strat, g = hoist ctx inf_strat rv g in
       intervene ctx inf_strat rv (Ddelta v) g
     with NonConjugate rv_parent ->
@@ -2027,8 +2176,6 @@ fun p ->
         (* Widen *)
         let inf_strat2, ctx, g2, e2 = infer' inf_strat1 ctx g1 e2 in
         let inf_strat3, ctx, g3, e3 = infer' inf_strat2 ctx g2 e3 in
-        let ctx' = Hashtbl.copy ctx in
-        let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g2 g3 inf_strat true in
 
         if not (is_const e1 g1) then
           (* let () = 
@@ -2038,6 +2185,8 @@ fun p ->
           (* State gets threaded through *)
           inf_strat3, ctx, g3, Eif(e1, e2, e3)
         else
+          let ctx' = Hashtbl.copy ctx in
+          let ctx', e23, g', inf_strat' = join_by_value ctx' e2 e3 g2 g3 inf_strat true in
           (* let () =
           Format.printf "e23: %s\n" (string_of_expr e23);
           Format.printf "g':\n%s\n" (SymState.to_string g');
@@ -2385,17 +2534,19 @@ fun p ->
               (* Format.printf "Pre:\n%s\n" (SymState.to_string g_pre); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
               (* Format.printf "Ctx:\n%s\n" (string_of_ctx ctx_pre); *)
-
+              
               let inf_strat, ctx, g, res = infer_no_func inf_strat ctx_pre g_pre f (Etuple [acc; Eunk]) in
 
               (* Format.printf "Step:\n%s" (SymState.to_string g); *)
               (* Format.printf "Res: %s\n\n" (string_of_expr res); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat); *)
               (* Format.printf "Ctx:\n%s\n" (string_of_ctx ctx); *)
-
+              
               let ctx_post = Hashtbl.copy ctx in
               let ctx_post, res_post, g_post, inf_strat_post = join_by_value ctx_post acc res g_pre g inf_strat true in
               
+              (* let () = if !i >= 1 then exit(2) else incr i in *)
+
               (* Format.printf "Post:\n%s\n" (SymState.to_string g_post); *)
               (* Format.printf "Ret: %s\n" (string_of_expr res_post); *)
               (* Format.printf "Strat:\n%s\n" (InferenceStrategy.to_string inf_strat_post); *)
