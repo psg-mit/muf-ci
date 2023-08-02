@@ -1,0 +1,12 @@
+{
+  "benchmark": "coin",
+  "true_vars": [
+    ["xt", [4.111111]]
+  ],
+  "base_y": 4,
+  "base_x": 5,
+  "n_y": 2,
+  "n_x": 2,
+  "legend_width": 2,
+  "error_func": "se"
+}

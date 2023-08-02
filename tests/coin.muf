@@ -1,16 +1,8 @@
-val coin = stream {
-  init = (true, const (0.));
-  step ((first, xt), yobs) =
-    let xt = if first then sample (beta (1., 1.)) else xt in
-    let () = observe (bernoulli (xt), yobs) in
-    (xt, (false, xt))
-}
+val output = fun xt ->
+  let mean_xt = mean_float (xt) in
+  let _ = Print.print_float (mean_xt) in
+  ()
 
-val main = stream {
-  init = infer (1, coin);
-  step (coin, ()) = 
-    let (d, s) = unfold (coin, true) in
-    let () = print_any_t (d) in
-    let () = print_newline (()) in
-    ((), s)
-}
+let xt <- beta (1., 1.) in
+let () = observe (bernoulli (xt), true) in
+xt

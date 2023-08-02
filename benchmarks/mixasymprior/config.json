@@ -1,0 +1,26 @@
+{
+  "benchmark": "mixasymprior",
+  "true_vars": [
+    ["mu1", [2.1921384385074987]],
+    ["mu2", [-1.6679387731399125]],
+    ["var1", [0.21335468073917283]],
+    ["var2", [0.1741233555754545]]
+  ],
+  "base_y": 4.7,
+  "base_x": 6,
+  "n_y": 2,
+  "n_x": 2,
+  "legend_width": 3,
+  "error_func": "se",
+  "labels": [
+    "mu1",
+    "mu2",
+    "var1",
+    "var2",
+    "mu1, mu2",
+    "var1, var2",
+    "mu1, var2",
+    "mu2, var1",
+    "None"
+  ]
+}

@@ -60,15 +60,30 @@ let analyze_file n_iters p =
   if unsep then Format.printf "     o Unseparated paths analysis success@."
   else Format.printf "     x Unseparated paths analysis failure@."
 
-let compile_file muf_list name =
+let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
   let mlff = Format.formatter_of_out_channel mlc in
+  let output_header, output_option = 
+    match output with 
+    | "" -> "", "None"
+    | o -> 
+      ("let () = Format.printf \"==== OUTPUT ====\\n\" in", 
+        Format.sprintf "(Some %s)" o)
+  in
   try
-    let ml_list = List.map Muf_gencode.compile_program [ muf_list ] in
-    Format.fprintf mlff "%s@.%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
-      "open Distribution" "open Muf" "open Infer_muf" "open Infer_semi_symbolic"
+    let ml_list = List.map (Mufextern.compile_program output) [program] in
+    Format.fprintf mlff "%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
+      "open Distribution" "open Muf" "open Infer_muf"
       (pp_print_list ~pp_sep:pp_force_newline Pprintast.structure)
-      ml_list
+      ml_list;
+    Format.fprintf mlff
+      "@[<v 2>@[let post_main _ = @]@;\
+       @[%s@]@;\
+       @[let _ = infer %d main %s in@]@;\
+       @[let () = Format.printf \"\\n==== APPROXIMATION STATUS ====\\n\" in@]@;\
+       @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
+       @[<v 2>@[let _ =@]@;\
+       @[post_main ()@]@]@." output_header particles output_option
   with Zmisc.Error ->
     close_out mlc;
     raise Error
@@ -92,10 +107,10 @@ let compile_simulator name node =
     node;
   close_out mainc
 
-let print_cmd name node =
+let print_cmd name =
   let cmd =
-    "ocamlfind ocamlc -linkpkg -package muf " ^ name ^ ".ml " ^ node ^ ".ml "
-    ^ "-o " ^ name ^ "_" ^ node ^ ".exe"
+    "ocamlfind ocamlc -linkpkg -package muf " ^ name ^ ".ml "
+    ^ "-o " ^ name ^ ".exe"
   in
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
@@ -113,32 +128,22 @@ let approx_status muf_list =
   (* approx_status, muf_list *)
   muf_list
 
-let compile verbose only_check particles node file =
+let compile verbose only_check particles output file =
   (* let name = Filename.basename file in *)
   let name = Filename.chop_extension file in
-  let muf_list = parse Parser.program (Lexer.token ()) file in
+  let program = parse Parser.program (Lexer.token ()) file in
 
-  
   if verbose then (
     Format.printf "particles: %d@." particles;
     Format.printf "%s\n" (Mufextern.show_program
-      (fun ff () -> Format.fprintf ff "()")
-      muf_list));
+      (* (fun ff () -> Format.fprintf ff "()") *)
+      program));
 
   Format.printf "-- Approximation Status Analysis %s.ml@." name;
-  let _ = approx_status muf_list in
+  let _ = approx_status program in
   
   if not only_check then (
     Format.printf "-- Generating %s.ml@." name;
 
-    let muf_intern : unit Muf.program = Mufextern.convert_to_intern particles verbose muf_list in
-  
-    if verbose then (
-      Format.printf "%s\n" (Muf.show_program
-        (fun ff () -> Format.fprintf ff "()")
-        muf_intern));
-
-    compile_file muf_intern name;
-    Format.printf "-- Generating %s.ml@." node;
-    compile_simulator name node;
-    print_cmd name node)
+    compile_file particles program name output;
+    print_cmd name)

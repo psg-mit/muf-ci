@@ -11,7 +11,7 @@
 %token OPEN
 %token LET IN FUN VAL
 %token IF THEN ELSE
-%token OBSERVE
+%token OBSERVE VALUE RESAMPLE
 // %token BOOLT INTT FLOATT
 // %token DIST UNIT ARRAY LIST
 %token EXACT APPROX
@@ -21,22 +21,17 @@
 %token LPAREN RPAREN LSQUARE RSQUARE
 %token COMMA SEMI
 %token EOF
-%token COLON
-%token STAR
 %token UNDERSCORE
 
-// %token NIL CONS
-
-%start <unit Mufextern.program> program
+%start <Mufextern.program> program
 
 %%
 
 program:
 | e = expr EOF
     { [], e }
-| p = list(decl) e = expr EOF
-    { p, e }
-
+| d = decl p = program
+    { List.cons d (fst p), snd p }
 
 decl:
 | OPEN m = IDENT
@@ -46,14 +41,6 @@ decl:
     { Dfun (x, p, e) }
 // | VAL x = patt EQUAL e = expr
 //     { Ddecl (x, e) }
-// | LET x = IDENT EQUAL STREAM LCURLY INIT EQUAL e_init = expr SEMI step = IDENT p = patt EQUAL e_step = expr RCURLY
-//     { begin match step with "step" -> () | _ -> failwith "step expected" end;
-//       let n =
-//         { n_type = ([], TKrecord []); (* XXX TODO XXX *)
-//           n_init = e_init;
-//           n_step = (p, e_step); }
-//       in
-//       { decl = Dnode (x, [], n) } }
 
 simple_expr:
 (* Parenthesized expression *)
@@ -74,13 +61,15 @@ simple_expr:
 | m = IDENT DOT x = IDENT
     { Evar { modul = Some m; name = x } }
 (* Unit *)
-| LPAREN RPAREN { Etuple [] }
+| LPAREN RPAREN { Econst (Cunit) }
 (* Tuple *)
 | LPAREN e1 = simple_expr COMMA el = separated_nonempty_list(COMMA, simple_expr) RPAREN
-    { Etuple (e1 :: el) }
+    { Epair (e1 :: el) }
 (* Call unit *)
 | e1 = simple_expr LPAREN RPAREN
-    { Eapp (e1, Etuple []) }
+    { Eapp (e1, Econst (Cunit)) }
+| VALUE LPAREN e1 = simple_expr RPAREN
+    { Evalue e1 }
 (* Call *)
 | e1 = simple_expr LPAREN e2 = expr RPAREN
     { Eapp (e1, e2) }
@@ -94,9 +83,13 @@ simple_expr:
 //     { mk_expr (Earray []) }
 (* List *)
 // | NIL
-//     { Evar { modul = Some "List"; name = "nil"} }
+//     { Enil }
 // | CONS LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
-//     { Eapp (Evar { modul = Some "List"; name = "cons"}, Etuple [e1; e2]) }
+//     { Econs (e1, e2) }
+| LSQUARE e1 = simple_expr RSQUARE
+    { Elist ([e1]) }
+| LSQUARE e1 = simple_expr SEMI el = separated_nonempty_list(SEMI, simple_expr) RSQUARE
+    { Elist (e1 :: el) }
 
 expr:
 | e = simple_expr
@@ -115,7 +108,8 @@ expr:
   { Elet (x, Esample (x, Adynamic, v), e) }
 | OBSERVE LPAREN e1 = simple_expr COMMA e2 = simple_expr RPAREN
     { Eobserve (e1, e2) }
-
+| RESAMPLE LPAREN RPAREN
+    { Eresample }
 // typ:
 // | INTT { Tany }
 // | FLOATT { Tany }
@@ -132,7 +126,7 @@ patt:
     { Pid { modul = None; name = x } }
 | LPAREN p1 = patt COMMA pl = separated_nonempty_list(COMMA, patt) RPAREN
     { Ptuple (p1::pl) }
-| LPAREN RPAREN { Ptuple [] }
+| LPAREN RPAREN { Punit }
 // | x = IDENT COLON t = typ
 //     { mk_patt (Ptype (mk_patt (Pid { modul = None; name = x }), t))}
 | UNDERSCORE { Pany }

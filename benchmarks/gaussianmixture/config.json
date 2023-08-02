@@ -1,0 +1,24 @@
+{
+  "benchmark": "gaussianmixture",
+  "true_vars": [
+    ["theta", [0.14555517884306435]],
+    ["mu1", [-10.994857395060004]],
+    ["mu2", [8.416249615895826]]
+  ],
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 4,
+  "error_func": "se",
+  "labels": [
+    "theta",
+    "mu1",
+    "mu2",
+    "theta, mu1",
+    "theta, mu2",
+    "mu1, mu2",
+    "theta, mu1, mu2",
+    "None"
+  ]
+}
