@@ -31,6 +31,18 @@
           ("open", OPEN);
           ("exact", EXACT);
           ("approx", APPROX);
+          ("gaussian", GAUSSIAN);
+          ("categorical", CATEGORICAL);
+          ("uniform_int", UNIFORM_INT);
+          ("beta", BETA);
+          ("bernoulli", BERNOULLI);
+          ("binomial", BINOMIAL);
+          ("beta_binomial", BETA_BINOMIAL);
+          ("negative_binomial", NEGATIVE_BINOMIAL);
+          ("exponential", EXPONENTIAL);
+          ("gamma", GAMMA);
+          ("poisson", POISSON);
+          ("delta", DELTA);
 	]; tbl
     end
 

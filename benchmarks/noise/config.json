@@ -118,5 +118,24 @@
     "r",
     "q, r",
     "None"
+  ],
+  "files": [
+    "noise_x_exact.muf",
+    "noise_r_exact.muf",
+    "noise_q_exact.muf",
+    "noise_qr_exact.muf",
+    "noise_approx.muf"
+  ],
+  "strats": [
+    {"q": "APPROX", "r": "APPROX", "step_x": "EXACT"},
+    {"q": "APPROX", "r": "EXACT", "step_x": "APPROX"},
+    {"q": "EXACT", "r": "APPROX", "step_x": "APPROX"},
+    {"q": "EXACT", "r": "EXACT", "step_x": "APPROX"},
+    {"q": "APPROX", "r": "APPROX", "step_x": "APPROX"}
+  ],
+  "vars": [
+    "step_x",
+    "q",
+    "r"
   ]
 }

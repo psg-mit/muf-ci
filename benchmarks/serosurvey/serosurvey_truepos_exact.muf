@@ -25,7 +25,7 @@ val dot = fun (acc, p) ->
   let (x, b) = split (p) in
   add(acc, mul(x, b))
   
-val sigmoid = fun x -> div(1., add(1., exp(sub(1., x))))
+  val sigmoid = fun x -> div(1., add(1., exp(mul(-1., x))))
 
 (* model *)
 (* val init_eta = fun i ->
@@ -48,7 +48,7 @@ val make_observations = fun (params, data) ->
   (b, sens, fpr)
 
 (* parameters *)
-(* let hh = 98 in *)
+let hh = 98 in
 let n_survey = 100 in
 let n_pos_control = 181 in
 let n_neg_control = 176 in

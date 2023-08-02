@@ -28,38 +28,6 @@ let parse parsing_fun lexing_fun source_name =
       close_in ic;
       syntax_error (source_name, loc)
 
-let analyze_file n_iters p =
-  let module SMap = Map.Make (String) in
-  let open Muf in
-  List.fold_left
-    (fun (fctx, mctx, (mcons, unsep)) d ->
-      match d.decl with
-      | Dfun (name, p, e) ->
-          let rs = Analysis.process_fn p e fctx mctx in
-          (Analysis.VarMap.add { modul = None; name } rs fctx,
-           mctx,
-           (mcons, unsep))
-      | Dnode (name, _, node) -> (
-          let p, e = node.n_step in
-          match p.patt with
-          | Ptuple [ p_state; p_in ] ->
-              let rs, (mcons', unsep') =
-                Analysis.process_node n_iters node.n_init p_state p_in e fctx
-                  mctx
-              in
-              (fctx,
-               Analysis.VarMap.add { modul = None; name } rs mctx,
-               (mcons && mcons', unsep && unsep'))
-          | _ -> failwith "Stream definition lacking step (state, input).")
-      | _ -> (fctx, mctx, (mcons, unsep)))
-    (Analysis.VarMap.empty, Analysis.VarMap.empty, (true, true))
-    p
-  |> fun (_, _, (mcons, unsep)) ->
-  if mcons then Format.printf "     o m-consumed analysis success@."
-  else Format.printf "     x m-consumed analysis failure@.";
-  if unsep then Format.printf "     o Unseparated paths analysis success@."
-  else Format.printf "     x Unseparated paths analysis failure@."
-
 let compile_file particles program name output =
   let mlc = open_out (name ^ ".ml") in
   let mlff = Format.formatter_of_out_channel mlc in
@@ -80,7 +48,7 @@ let compile_file particles program name output =
       "@[<v 2>@[let post_main _ = @]@;\
        @[%s@]@;\
        @[let _ = infer %d main %s in@]@;\
-       @[let () = Format.printf \"\\n==== APPROXIMATION STATUS ====\\n\" in@]@;\
+       @[let () = Format.printf \"\\n==== RUNTIME APPROXIMATION STATUS ====\\n\" in@]@;\
        @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
        @[<v 2>@[let _ =@]@;\
        @[post_main ()@]@]@." output_header particles output_option
@@ -115,20 +83,39 @@ let print_cmd name =
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
 
-let approx_status muf_list = 
-  (* let typs = Siren.approximation_status muf_list in
-  Siren.pp_map std_formatter typs; *)
-  (* let approx_status, muf_list = Siren.approximation_status muf_list in *)
-  (* Print out approx_status *)
-  (* let print_approx_status (name, approx_status) =
-    Format.printf "  %s: %s@." name (Siren.string_of_approx_status approx_status)
-  in *)
-  (* List.iter print_approx_status approx_status; *)
+let verify_approx_status output program check = 
+  Format.printf "==== STATIC APPROXIMATION STATUS ====@.";
 
-  (* approx_status, muf_list *)
-  muf_list
+  let decls, e = program in
 
-let compile verbose only_check particles output file =
+  (* Remove output function from analysis *)
+  let decls = List.filter (fun d ->
+    let open Mufextern in
+    match d with
+    | Ddecl _ | Dopen _ -> false
+    | Dfun (s, _, _) -> not (s = output)
+  ) decls in
+
+  let ann_inf = Analysis.annotated_inference_strategy (decls, e) in
+
+  let inferred_inf = Analysis.infer (decls, e) in
+  let inferred_inf_s = Analysis.InferenceStrategy.to_string inferred_inf in
+
+  Format.printf "%s\n" inferred_inf_s;
+
+  try 
+    Analysis.InferenceStrategy.verify ann_inf inferred_inf;
+    Format.printf "Inference Strategy - Satisfiable@."
+  with Analysis.Approximation_Status_Error (rv, ann, inf) ->
+    Format.printf "Inference Strategy - Unsatisfiable@.";
+    Format.printf "> `%s` is annotated with %s but expected to be %s@." 
+      (Analysis.string_of_ident rv) 
+      (Analysis.ApproximationStatus.to_string ann) 
+      (Analysis.ApproximationStatus.to_string inf);
+    if check then
+      raise (Analysis.Inference_Strategy_Error)
+
+let compile verbose norun analyze check particles output file =
   (* let name = Filename.basename file in *)
   let name = Filename.chop_extension file in
   let program = parse Parser.program (Lexer.token ()) file in
@@ -139,11 +126,18 @@ let compile verbose only_check particles output file =
       (* (fun ff () -> Format.fprintf ff "()") *)
       program));
 
-  Format.printf "-- Approximation Status Analysis %s.ml@." name;
-  let _ = approx_status program in
+  (* Passes that need to be done before analysis *)
+  let program = Mufextern.pre_passes output program in
+
+  if norun || analyze || check then (
+    Format.printf "-- Approximation Status Analysis %s.ml@." name;
+    verify_approx_status output program check
+  );
   
-  if not only_check then (
+  if not norun then (
+
     Format.printf "-- Generating %s.ml@." name;
 
     compile_file particles program name output;
-    print_cmd name)
+    print_cmd name
+  )

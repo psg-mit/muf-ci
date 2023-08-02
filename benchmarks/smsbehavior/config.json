@@ -16,5 +16,22 @@
     "lambda2",
     "lambda1, lambda2",
     "None"
+  ],
+  "files": [
+    "smsbehavior_lambda1_exact.muf",
+    "smsbehavior_lambda2_exact.muf",
+    "smsbehavior_lambda_both_exact.muf",
+    "smsbehavior_approx.muf"
+  ],
+  "strats": [
+    {"tau": "APPROX", "lambda1": "EXACT", "lambda2": "APPROX"},
+    {"tau": "APPROX", "lambda1": "APPROX", "lambda2": "EXACT"},
+    {"tau": "APPROX", "lambda1": "EXACT", "lambda2": "EXACT"},
+    {"tau": "APPROX", "lambda1": "APPROX", "lambda2": "APPROX"}
+  ],
+  "vars": [
+    "lambda1",
+    "lambda2",
+    "tau"
   ]
 }

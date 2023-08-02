@@ -1,7 +1,11 @@
 open Mufcompilerlibs
 open Compiler
 
-let only_check = ref false
+let norun = ref false
+
+let analyze = ref false
+
+let check = ref false
 
 let output = ref ""
 
@@ -16,9 +20,15 @@ let () =
     Arg.parse
       (Arg.align
          [
-           ( "--only-check",
-             Arg.Set only_check,
+           ( "--no-run",
+             Arg.Set norun,
              "\t Only run the static analysis (default false)" );
+           ( "--analyze",
+             Arg.Set analyze,
+             "\t Run the static analysis (default false)" );
+           ( "--check",
+             Arg.Set check,
+             "\t Run the static analysis and check inference plan satisfiability (default false)" );
            ( "--output",
              Arg.Set_string output,
              "\t function (takes in marginal distribution) to call to print inference result (optional)");
@@ -32,4 +42,4 @@ let () =
          ])
       (fun f -> filename := f) "The muF Compiler. Options are:"
   with Error -> exit 2;;
-  compile !verbose !only_check !particles !output !filename
+  compile !verbose !norun !analyze !check !particles !output !filename
