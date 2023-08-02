@@ -6,6 +6,38 @@ import time
 from math import log
 import matplotlib.pyplot as plt
 import glob
+import itertools
+
+DEFAULT_BENCHMARKS = [
+  'gaussianmixture',
+  'noise',
+  'smsbehavior',
+  'outlier',
+  'mixasymprior',
+  "noisenolist",
+  "outliernolist",
+]
+
+BENCHMARK_LATEX_NAMES = {
+  'gaussianmixture': r"\bGaussianmix{}",
+  'mixasymprior': r"\bAsymprior{}",
+  'noise': r"\bNoise{}",
+  'outlier': r"\bOutlier{}",
+  'smsbehavior': r"\bSmsbehavior{}",
+  "outliernolist": r"\bOutliernolist{}",
+  "noisenolist": r"\bNoisenolist{}"
+}
+
+
+TABLE_STR = r"""
+\begin{tabular}[h]{lrrrrrrrrr}
+  \toprule
+  Benchmark & \# Plans & \# Sat & TP & TN & FP & FN & Precision & Recall & Accuracy \\
+  \midrule
+CONTENT
+  \bottomrule
+\end{tabular}
+"""
 
 def error_func(config, x):
   if config['error_func'] == "se":
@@ -352,12 +384,268 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   # figlegend.savefig(os.path.join(output, 'legend.png'), bbox_inches='tight')
   # figlegend.savefig(os.path.join(output, 'legend.pdf'), bbox_inches='tight')
 
+def analyze(statistics, benchmark, output, verbose, config):
+
+  if benchmark not in statistics:
+    statistics[benchmark] = {}
+
+  with open(os.path.join(benchmark, 'all_programs', f'{benchmark}_template.muf')) as template_file:
+    template = template_file.read()
+
+  variables = config['vars']
+  statuses = ['EXACT', 'APPROX']
+
+  # generate all possible combinations
+  all_strats = list(itertools.product(statuses, repeat=len(variables)))
+
+  # Number of strats
+  statistics[benchmark]['n_strats'] = len(all_strats)
+  # Number of variables
+  statistics[benchmark]['n_vars'] = len(variables)
+  # Number of annotations
+  statistics[benchmark]['n_annotations'] = len(all_strats) * len(variables)
+
+  n_true_satisfied = 0
+
+  n_satisfied_tp = 0
+  n_satisfied_fp = 0
+  n_satisfied_tn = 0
+  n_satisfied_fn = 0
+
+  n_sat_vars = 0
+  n_exacts = 0
+  n_satisfiable_exact = 0
+  n_exact_tp = 0
+  n_exact_fp = 0
+  n_exact_tn = 0
+  n_exact_fn = 0
+
+  for strat_index, strat in enumerate(all_strats):
+    # generate program
+    program = template
+    annotations = {}
+    for i, v in enumerate(variables):
+      annotations[v] = strat[i]
+      program = program.replace('PLACEHOLDER', strat[i].lower(), 1)
+
+    print('> Strat:', annotations)
+
+    n_exacts += len([x for x in strat if x == 'EXACT'])
+  
+    filename = f'{benchmark}_{strat_index}.muf'
+
+    # write program to file
+    with open(os.path.join(benchmark, 'all_programs', filename), 'w') as program_file:
+      program_file.write(program)
+
+    # get analysis output
+    cmd = 'dune exec mufc -- {} --analyze --output output'.format(filename)
+    if verbose:
+      print('>', cmd)
+
+    wd = os.path.join(os.getcwd(), benchmark, 'all_programs')
+    out = subprocess.check_output(cmd, cwd=wd, shell=True).decode("utf-8") 
+
+    # parse output
+    lines = out.strip().split('\n')
+
+    static_satisfied = False
+
+    inferred_strat = {}
+    start = False
+    for line in lines:
+      if '==== STATIC APPROXIMATION STATUS ====' in line:
+        start = True
+      elif 'Inference Strategy - ' in line:
+        # Final judgement
+        is_sat = line.split(' - ')[1].strip()
+        if is_sat == 'Satisfiable':
+          static_satisfied = True
+        else:
+          static_satisfied = False
+        break
+      elif start:
+        if line != '':
+          var, status = line.strip().split(': ')
+          inferred_strat[var] = status
+      
+    # Double check inferred strat is correct
+    if static_satisfied:
+      for var in variables:
+        if inferred_strat[var] != annotations[var]:
+          print('Inferred strat is incorrect')
+          print('Inferred:', inferred_strat)
+          print('Annotations:', annotations)
+          exit(1)
+    
+    # run program for runtime analysis
+    cmd = './{}.exe'.format(os.path.splitext(os.path.basename(filename))[0])
+    if verbose:
+      print('>', cmd)
+
+    wd = os.path.join(os.getcwd(), benchmark, 'all_programs')
+    out = subprocess.check_output(cmd, cwd=wd, shell=True).decode("utf-8")
+
+    # parse output
+    lines = out.strip().split('\n')
+
+    # get outputs after ==== RUNTIME APPROXIMATION STATUS ====
+    real_strat = {}
+    start = False
+    for line in lines:
+      if '==== RUNTIME APPROXIMATION STATUS ====' in line:
+        start = True
+      elif start:
+        if line != '':
+          var, status = line.strip().split(' ')[:2]
+          var = var.strip(':').strip()
+          real_strat[var] = status.strip()
+
+    # compare inferred and real strats
+    runtime_satisfied = True
+    for var in variables:
+      if (annotations[var] == 'EXACT' and real_strat[var] != 'EXACT') or \
+          (annotations[var] == 'APPROX' and real_strat[var] != 'APPROX'):
+        runtime_satisfied = False
+        break
+
+    if runtime_satisfied:
+      n_true_satisfied += 1
+      n_satisfiable_exact += len([x for x in strat if x == 'EXACT'])
+      
+
+      known = False
+      for known_strats in config['strats']:
+        if annotations == known_strats:
+          known = True
+          break
+
+      if not known:
+        print()
+        print(f'MISSED: {filename}')
+        print('Unknown strat:', annotations)
+        print('Inferred:', inferred_strat)
+        print('Real:', real_strat)
+
+    if static_satisfied and runtime_satisfied:
+      n_satisfied_tp += 1
+    elif static_satisfied and not runtime_satisfied:
+      print()
+      print('False Positive')
+      print('Inferred:', inferred_strat)
+      print('Real:', real_strat)
+      print('Annotations:', annotations)
+      exit()
+      n_satisfied_fp += 1
+    elif not static_satisfied and runtime_satisfied:
+      print()
+      print('False Negative')
+      print('Inferred:', inferred_strat)
+      print('Real:', real_strat)
+      print('Annotations:', annotations)
+      n_satisfied_fn += 1
+    elif not static_satisfied and not runtime_satisfied:
+      n_satisfied_tn += 1
+
+
+  statistics[benchmark]['n_true_satisfied'] = n_true_satisfied
+  statistics[benchmark]['n_satisfied_tp'] = n_satisfied_tp
+  statistics[benchmark]['n_satisfied_fp'] = n_satisfied_fp
+  statistics[benchmark]['n_satisfied_tn'] = n_satisfied_tn
+  statistics[benchmark]['n_satisfied_fn'] = n_satisfied_fn
+  statistics[benchmark]['n_exacts'] = n_exacts
+  statistics[benchmark]['n_satisfiable_exact'] = n_satisfiable_exact
+  statistics[benchmark]['n_exact_tp'] = n_exact_tp
+  statistics[benchmark]['n_exact_fp'] = n_exact_fp
+  statistics[benchmark]['n_exact_tn'] = n_exact_tn
+  statistics[benchmark]['n_exact_fn'] = n_exact_fn
+
+  return statistics
+
+  # # total number of exact and approx variables
+  # n_exact = 0
+  # n_approx = 0
+
+  # # total number of missed exact variables
+  # n_missed_exact = 0
+
+  # # total number of missed approx variables
+  # n_missed_approx = 0
+
+  # for file_index, filename in enumerate(files):
+  #   if verbose:
+  #     print('Analyzing {}'.format(filename))
+
+  #   # get analysis output
+  #   cmd = 'dune exec mufc -- {} --analyze --output output'.format(filename)
+  #   if verbose:
+  #     print('>', cmd)
+
+  #   wd = os.path.join(os.getcwd(), benchmark)
+  #   try:
+  #     out = subprocess.check_output(cmd, cwd=wd, shell=True).decode("utf-8") 
+  #   except subprocess.CalledProcessError as e:
+  #     out = e.output.decode("utf-8")
+
+  #   # parse output
+  #   lines = out.strip().split('\n')
+
+  #   satisfied = False
+
+  #   inferred_strat = {}
+  #   start = False
+  #   for line in lines:
+  #     if '==== STATIC APPROXIMATION STATUS ====' in line:
+  #       start = True
+  #     elif 'Inference Strategy - ' in line:
+  #       # Final judgement
+  #       is_sat = line.split(' - ')[1].strip()
+  #       if is_sat == 'Satisfiable':
+  #         satisfied = True
+  #       else:
+  #         satisfied = False
+  #       break
+  #     elif start:
+  #       if line != '':
+  #         var, status = line.strip().split(': ')
+  #         inferred_strat[var] = status
+    
+  #   # Double check it is satisfied
+  #   ann_strat = config['strats'][file_index]
+  #   if satisfied and ann_strat != inferred_strat:
+  #     print('Annotation and inference strategy do not match but says SATISFIABLE')
+  #     print('Annotation: {}'.format(ann_strat))
+  #     print('Inferred: {}'.format(inferred_strat))
+  #     exit(2)
+
+  #   if satisfied:
+  #     n_correct += 1
+
+  #   for v, s in ann_strat.items():
+  #     if (s == 'EXACT' and inferred_strat[v] != 'EXACT') or (s == 'APPROX' and inferred_strat[v] != 'APPROX'):
+  #       print(f'>> {v} is supposed to be {s} but inferred as {inferred_strat[v]}')
+
+  #   n_vars += len(ann_strat)
+  #   n_exact += len([v for v in ann_strat if ann_strat[v] == 'EXACT'])
+  #   n_approx += len([v for v in ann_strat if ann_strat[v] == 'APPROX'])
+  #   n_missed_exact += len([v for v in ann_strat if ann_strat[v] == 'EXACT' and inferred_strat[v] != 'EXACT'])
+  #   n_missed_approx += len([v for v in ann_strat if ann_strat[v] == 'APPROX' and inferred_strat[v] != 'APPROX'])
+
+  # statistics[benchmark]['n_correct'] = n_correct
+  # statistics[benchmark]['n_vars'] = n_vars
+  # statistics[benchmark]['n_exact'] = n_exact
+  # statistics[benchmark]['n_missed_exact'] = n_missed_exact
+  # statistics[benchmark]['n_approx'] = n_approx
+  # statistics[benchmark]['n_missed_approx'] = n_missed_approx
+
+  # print()
+  
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
-  p.add_argument('--benchmark', '-b', type=str, required=True)
-  p.add_argument('--verbose', '-v', action='store_true', required=False)
+  p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+")
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--files', '-f', type=str, required=False, nargs="+")
+  p.add_argument('--verbose', '-v', action='store_true', required=False)
 
   sp = p.add_subparsers(dest='subparser_name')
 
@@ -369,46 +657,107 @@ if __name__ == '__main__':
   pp = sp.add_parser('plot')
   pp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
 
+  ap = sp.add_parser('analyze')
+  ap.add_argument('--no-run', '-n', action='store_true', required=False)
+
   args = p.parse_args()
 
-  with open(os.path.join(args.benchmark, 'config.json')) as f:
-    config = json.load(f)
+  # If no benchmark specified, use default list
+  if args.benchmark is None:
+    args.benchmark = DEFAULT_BENCHMARKS
 
-  # If no files specified, use all files in benchmark directory
+  use_config_for_files = False
   if args.files is None:
-    args.files = glob.glob(os.path.join(args.benchmark, '*.muf'))
+    use_config_for_files = True
+
+  for benchmark in args.benchmark:
+    print('Benchmark: {}'.format(benchmark))
+
+    with open(os.path.join(benchmark, 'config.json')) as f:
+      config = json.load(f)
+    
+    # If no files specified, use all files in benchmark directory
+    if use_config_for_files:
+      args.files = config['files']
     args.files = [os.path.basename(f) for f in args.files]
 
-  # If plotting, just plot and exit. Assumes output is in args.output
-  if args.subparser_name == 'plot':
-    plot(args.benchmark, args.output, args.files, args.particles, config, args.verbose)
-    exit()
+    # If plotting, just plot and exit. Assumes output is in args.output
+    if args.subparser_name == 'plot':
+      plot(benchmark, args.output, args.files, args.particles, config, args.verbose)
+      exit()
 
-  elif args.subparser_name == 'run':
-    # make output directory
-    os.makedirs(os.path.join(args.benchmark, args.output), exist_ok=True)
+    elif args.subparser_name == 'run':
+      # make output directory
+      os.makedirs(os.path.join(benchmark, args.output), exist_ok=True)
 
-    for file in args.files:
-      if not os.path.exists(os.path.join(args.benchmark, file)):
-        raise Exception('File not found: {}'.format(file))
+      for file in args.files:
+        if not os.path.exists(os.path.join(benchmark, file)):
+          raise Exception('File not found: {}'.format(file))
 
-      results = {}
-      if os.path.exists(os.path.join(args.benchmark, args.output, 'results.json')):
-        with open(os.path.join(args.benchmark, args.output, 'results.json')) as f:
+        results = {}
+        if os.path.exists(os.path.join(benchmark, args.output, 'results.json')):
+          with open(os.path.join(benchmark, args.output, 'results.json')) as f:
+            try:
+              results = json.load(f)
+            except:
+              results = {}
+
+        try:
+          results = run(benchmark, file, args.output, args.particles, args.accuracy, args.n, results, config, args.verbose)
+        except KeyboardInterrupt:
+          pass
+
+        # write results
+        with open(os.path.join(benchmark, args.output, 'results.json'), 'w') as f:
+          json.dump(results, f, indent=2)
+    
+    elif args.subparser_name == 'analyze' and not args.no_run:
+      statistics = {}
+      if os.path.exists(os.path.join('statistics.json')):
+        with open(os.path.join('statistics.json')) as f:
           try:
-            results = json.load(f)
+            statistics = json.load(f)
           except:
-            results = {}
+            statistics = {}
+      statistics = analyze(statistics, benchmark, args.output, args.verbose, config)
 
-      try:
-        results = run(args.benchmark, file, args.output, args.particles, args.accuracy, args.n, results, config, args.verbose)
-      except KeyboardInterrupt:
-        pass
+      # write statistics
+      with open(os.path.join('statistics.json'), 'w') as f:
+        json.dump(statistics, f, indent=2)
 
-      # write results
-      with open(os.path.join(args.benchmark, args.output, 'results.json'), 'w') as f:
-        json.dump(results, f, indent=2)
-  
+  if args.subparser_name == 'analyze':
 
-  
-  
+    if os.path.exists(os.path.join('statistics.json')):
+      with open(os.path.join('statistics.json')) as f:
+        try:
+          statistics = json.load(f)
+        except:
+          print('Error loading statistics.json')
+          exit()
+    else:
+      print('Error: statistics.json not found')
+      exit()
+    # Benchmark & \# Plans & \# Sat & TP & TN & FP & FN & Precision & Recall & Accuracy \\
+    # \bGaussianmix{}    &  & 8 & 8 &  8 & 0 & 0 & 100\% & 100\% & 100\%\\
+    content = ''
+    for benchmark in DEFAULT_BENCHMARKS:
+      precision = statistics[benchmark]['n_satisfied_tp'] / (statistics[benchmark]['n_satisfied_tp'] + statistics[benchmark]['n_satisfied_fp'])
+      recall = statistics[benchmark]['n_satisfied_tp'] / (statistics[benchmark]['n_satisfied_tp'] + statistics[benchmark]['n_satisfied_fn'])
+      accuracy = (statistics[benchmark]['n_satisfied_tp'] + statistics[benchmark]['n_satisfied_tn']) / statistics[benchmark]['n_strats']
+
+      row = '    {} & {} & {} & {} & {} & {} & {} & {:.0f}\% & {:.0f}\% & {:.0f}\%\\\\'.format(
+        BENCHMARK_LATEX_NAMES[benchmark],
+        statistics[benchmark]['n_strats'],
+        statistics[benchmark]['n_true_satisfied'],
+        statistics[benchmark]['n_satisfied_tp'],
+        statistics[benchmark]['n_satisfied_tn'],
+        statistics[benchmark]['n_satisfied_fp'],
+        statistics[benchmark]['n_satisfied_fn'],
+        precision * 100,
+        recall * 100,
+        accuracy * 100,
+      )
+      content += row + '\n'
+
+    print(TABLE_STR.replace('CONTENT', content))
+

@@ -115,7 +115,7 @@ let print_cmd name =
   Format.printf "%s@." cmd;
   match Sys.command cmd with 0 -> () | _ -> raise Error
 
-let verify_approx_status output program = 
+let verify_approx_status output program check = 
   Format.printf "==== STATIC APPROXIMATION STATUS ====@.";
 
   let decls, e = program in
@@ -144,9 +144,10 @@ let verify_approx_status output program =
       (Analysis.string_of_ident rv) 
       (Analysis.ApproximationStatus.to_string ann) 
       (Analysis.ApproximationStatus.to_string inf);
-    raise (Analysis.Inference_Strategy_Error)
+    if check then
+      raise (Analysis.Inference_Strategy_Error)
 
-let compile verbose only_check analyze particles output file =
+let compile verbose norun analyze check particles output file =
   (* let name = Filename.basename file in *)
   let name = Filename.chop_extension file in
   let program = parse Parser.program (Lexer.token ()) file in
@@ -160,12 +161,12 @@ let compile verbose only_check analyze particles output file =
   (* Passes that need to be done before analysis *)
   let program = Mufextern.pre_passes output program in
 
-  if only_check || analyze then (
+  if norun || analyze || check then (
     Format.printf "-- Approximation Status Analysis %s.ml@." name;
-    verify_approx_status output program
+    verify_approx_status output program check
   );
   
-  if not only_check then (
+  if not norun then (
 
     Format.printf "-- Generating %s.ml@." name;
 

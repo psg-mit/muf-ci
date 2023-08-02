@@ -11,5 +11,34 @@
   "n_y": 2,
   "n_x": 3,
   "legend_width": 3,
-  "error_func": "se"
+  "error_func": "se",
+  "files": [
+    "mixasymprior_mu1_exact.muf",
+    "mixasymprior_mu2_exact.muf",
+    "mixasymprior_var1_exact.muf",
+    "mixasymprior_var2_exact.muf",
+    "mixasymprior_mu_both_exact.muf",
+    "mixasymprior_var_both_exact.muf",
+    "mixasymprior_mu1_var2_exact.muf",
+    "mixasymprior_mu2_var1_exact.muf",
+    "mixasymprior_approx.muf"
+  ],
+  "strats": [
+    {"make_observations_switch": "APPROX", "mu1": "EXACT", "mu2": "APPROX", "var1": "APPROX", "var2": "APPROX"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "EXACT", "var1": "APPROX", "var2": "APPROX"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "APPROX", "var1": "EXACT", "var2": "APPROX"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "APPROX", "var1": "APPROX", "var2": "EXACT"},
+    {"make_observations_switch": "APPROX", "mu1": "EXACT", "mu2": "EXACT", "var1": "APPROX", "var2": "APPROX"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "APPROX", "var1": "EXACT", "var2": "EXACT"},
+    {"make_observations_switch": "APPROX", "mu1": "EXACT", "mu2": "APPROX", "var1": "APPROX", "var2": "EXACT"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "EXACT", "var1": "EXACT", "var2": "APPROX"},
+    {"make_observations_switch": "APPROX", "mu1": "APPROX", "mu2": "APPROX", "var1": "APPROX", "var2": "APPROX"}
+  ],
+  "vars": [
+    "make_observations_switch",
+    "mu1",
+    "mu2",
+    "var1",
+    "var2"
+  ]
 }

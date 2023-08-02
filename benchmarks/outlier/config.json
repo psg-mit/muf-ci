@@ -110,5 +110,22 @@
   "n_y": 2,
   "n_x": 2,
   "legend_width": 2,
-  "error_func": "se"
+  "error_func": "se",
+  "files": [
+    "outlier_xt_exact.muf",
+    "outlier_outlier_prob_exact.muf",
+    "outlier_xt_outlier_prob_exact.muf",
+    "outlier_approx.muf"
+  ],
+  "strats": [
+    {"step_is_outlier": "APPROX", "outlier_prob": "APPROX", "step_xt": "EXACT"},
+    {"step_is_outlier": "APPROX", "outlier_prob": "EXACT", "step_xt": "APPROX"},
+    {"step_is_outlier": "APPROX", "outlier_prob": "EXACT", "step_xt": "EXACT"},
+    {"step_is_outlier": "APPROX", "outlier_prob": "APPROX", "step_xt": "APPROX"}
+  ],
+  "vars": [
+    "step_xt",
+    "step_is_outlier",
+    "outlier_prob"
+  ]
 }

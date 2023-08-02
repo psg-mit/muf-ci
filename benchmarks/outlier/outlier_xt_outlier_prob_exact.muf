@@ -20,10 +20,6 @@ val step = fun (prev, yobs) ->
   let mu = if is_outlier then 0. else xt in
   let var = if is_outlier then 10000. else 1. in
   let () = observe(gaussian(mu, var), yobs) in
-  (* let (mu, var) = split(if is_outlier then (0., 10000.) else (x, 1.)) in *)
-  (* Note: Types prevent this. Observe has to take a distribution *)
-  (* let y = if is_outlier then gaussian(const (0.), const (10000.)) else gaussian(x, const (1.)) in *)
-  (* let () = observe(y, yobs) in *)
   
   (false, outlier_prob, xt, List.cons(xt, xs))
 in
@@ -49,7 +45,6 @@ let (outlier_prob, res) = split(res) in
 let (_, xs) = split(res) in
 let xs = List.rev(xs) in
 
-(* TODO: this is a temporary hack due to the cps ite bug. can remove later *)
 (* Remove first element of xs *)
 let xs = List.tl(xs) in
 
