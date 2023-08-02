@@ -106,12 +106,19 @@
       -5.120189991855009
     ]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 2,
-  "n_x": 2,
-  "legend_width": 3,
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 5,
   "error_func": "se",
+  "labels": [
+    "x",
+    "q",
+    "r",
+    "q, r",
+    "None"
+  ],
   "files": [
     "noise_x_exact.muf",
     "noise_r_exact.muf",

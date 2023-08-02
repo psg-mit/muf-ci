@@ -37,17 +37,11 @@ in
 
 val make_observations = fun (params, data) ->
   let (b, params) = split(params) in
-  let (eta, params) = split(params) in
-  let (sigma_h, params) = split(params) in
   let (sens, fpr) = split(params) in
-  let (x, data) = split(data) in
-  let (h, survey_result) = split(data) in
+  let (x, survey_result) = split(data) in
 
-  let eta_h = Array.get(eta, h) in
-  let p' = add(
-    List.fold (dot, List.zip(x, b), 0.),
-    mul(sigma_h, eta_h)
-    ) in
+  (* let eta_h = Array.get(eta, h) in *)
+  let p' = List.fold (dot, List.zip(x, b), 0.) in
   let p = sigmoid(p') in
   
   let approx true_pos <- bernoulli(p) in
@@ -71,33 +65,33 @@ let data = List.map(preprocess_data, read ("data/processed_data.csv")) in
 
 let approx sens <- beta (1., 1.) in
 let approx fpr <- beta (1., 1.) in
-let sigma <- gaussian(0., 1.) in
+(* let sigma <- gaussian(0., 0.25) in *)
 (* Half-gaussian *)
-let sigma_h = if lt(0., sigma) then sigma else sub(0., sigma) in
+(* let sigma_h = if lt(0., sigma) then sigma else sub(0., sigma) in *)
 
-let eta = Array.init(hh, init_eta) in
+(* let eta = Array.init(hh, init_eta) in *)
 
 (* b coefficients *)
 (* sex = 0 is female, 1 is male *)
 (* age_cat[20, 50) is encoded by all 0s; likewise for week2 *)
-let intercept <- gaussian (0., 1.) in
-let sex <- gaussian (0., 1.) in
-let age_cat_5_10 <- gaussian (0., 1.) in
-let age_cat_10_20 <- gaussian (0., 1.) in
-let age_cat_50_65 <- gaussian (0., 1.) in
-let age_cat_65_105 <- gaussian (0., 1.) in
-let week1 <- gaussian (0., 1.) in
-let week3 <- gaussian (0., 1.) in
-let week4 <- gaussian (0., 1.) in
-let week5 <- gaussian (0., 1.) in
+let approx intercept <- gaussian (0., 1.) in
+let approx sex <- gaussian (0., 1.) in
+let approx age_cat_5_10 <- gaussian (0., 1.) in
+let approx age_cat_10_20 <- gaussian (0., 1.) in
+let approx age_cat_50_65 <- gaussian (0., 1.) in
+let approx age_cat_65_105 <- gaussian (0., 1.) in
+let approx week1 <- gaussian (0., 1.) in
+let approx week3 <- gaussian (0., 1.) in
+let approx week4 <- gaussian (0., 1.) in
+let approx week5 <- gaussian (0., 1.) in
 let b = [intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105;
 week1; week3; week4; week5] in
 
-let _ = List.fold_resample(make_observations, data, (b, eta, sigma_h, sens, fpr)) in
+let _ = List.fold_resample(make_observations, data, (b, sens, fpr)) in
 let () = observe(binomial(n_pos_control, sens), control_tp_result) in
 let () = observe(binomial(n_neg_control, fpr), control_fp_result) in
 
 (* anything after fold is done after the particle filter is done *)
 let spec = sub(1., fpr) in
 
-[intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1; week3; week4; week5; sigma_h; sens; spec]
+[intercept; sex; age_cat_5_10; age_cat_10_20; age_cat_50_65; age_cat_65_105; week1; week3; week4; week5; sens; spec]

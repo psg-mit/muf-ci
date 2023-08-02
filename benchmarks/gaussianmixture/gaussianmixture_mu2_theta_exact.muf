@@ -1,3 +1,11 @@
+(* 
+  inference strategy
+  mu1 - approx
+  mu2 - theta
+  switch - approx
+  theta - exact
+*)
+
 val preprocess_data = fun entry -> List.hd(entry) in
 
 val make_observations = fun (acc, yobs) ->

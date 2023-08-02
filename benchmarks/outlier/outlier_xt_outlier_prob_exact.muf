@@ -26,7 +26,6 @@ in
 
 val output = fun out ->
   let (outlier_prob, xs) = split(out) in
-  (* let () = Print.print_string (pp_mdistr(outlier_prob)) in *)
   let () = Print.print_float (mean_float(outlier_prob)) in
   let () = Print.print_endline () in
   let () = Print.print_float_list2 (xs) in

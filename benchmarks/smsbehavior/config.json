@@ -5,12 +5,18 @@
     ["lambda1", [17.749241151314294]],
     ["lambda2", [22.72325027312415]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 2,
-  "n_x": 2,
-  "legend_width": 2,
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 4,
   "error_func": "se",
+  "labels": [
+    "lambda1",
+    "lambda2",
+    "lambda1, lambda2",
+    "None"
+  ],
   "files": [
     "smsbehavior_lambda1_exact.muf",
     "smsbehavior_lambda2_exact.muf",

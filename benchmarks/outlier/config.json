@@ -105,12 +105,18 @@
       -16.058714177918617
     ]]
   ],
-  "base_y": 4,
-  "base_x": 5,
-  "n_y": 2,
+  "base_y": 4.5,
+  "base_x": 6,
+  "n_y": 1,
   "n_x": 2,
   "legend_width": 2,
   "error_func": "se",
+  "labels": [
+    "xt",
+    "outlier_prob",
+    "xt, outlier_prob",
+    "None"
+  ],
   "files": [
     "outlier_xt_exact.muf",
     "outlier_outlier_prob_exact.muf",
