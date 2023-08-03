@@ -9,7 +9,7 @@ init:
 	opam pin -y -k path .
 
 install:
-	opam reinstall -y muf
+	opam reinstall -y siren
 
 tests:
 	make -C tests

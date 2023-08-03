@@ -1,4 +1,4 @@
 (library
- (name muf)
- (public_name muf)
+ (name siren)
+ (public_name siren)
  (libraries probzelus))

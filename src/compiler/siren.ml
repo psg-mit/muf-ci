@@ -1,4 +1,4 @@
-open Mufcompilerlibs
+open Sirencompilerlibs
 open Compiler
 
 let norun = ref false
@@ -40,6 +40,6 @@ let () =
               Arg.Set verbose, 
               "\t verbose mode (default false)" );
          ])
-      (fun f -> filename := f) "The muF Compiler. Options are:"
+      (fun f -> filename := f) "The Siren Compiler. Options are:"
   with Error -> exit 2;;
   compile !verbose !norun !analyze !check !particles !output !filename

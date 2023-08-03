@@ -3,19 +3,19 @@
  (modules parser))
 
 (library
- (name mufcompilerlibs)
- (public_name muf.mufcompilerlibs)
- (libraries zelus.zlcompilerlibs probzelus)
- (modules :standard \ mufc)
+ (name sirencompilerlibs)
+ (public_name siren.sirencompilerlibs)
+ (libraries probzelus compiler-libs)
+ (modules :standard \ siren)
  (preprocess (pps ppx_deriving.show ppx_deriving.fold ppx_deriving.map)))
 
 (executable
- (name mufc)
- (modules mufc)
+ (name siren)
+ (modules siren)
  (promote (until-clean) (into ../..))
- (libraries compiler-libs.common mufcompilerlibs zelus.zlcompilerlibs))
+ (libraries compiler-libs.common sirencompilerlibs compiler-libs))
 
 (install
- (package muf)
+ (package siren)
  (section bin)
- (files (mufc.exe as mufc)))
+ (files (siren.exe as siren)))

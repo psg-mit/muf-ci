@@ -1,4 +1,4 @@
-# Controllable Inference Muf 
+# Siren
 
 ## Requirements
 - Probzelus (https://github.com/psg-mit/probzelus-ci) `master`

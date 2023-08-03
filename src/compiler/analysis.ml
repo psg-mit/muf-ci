@@ -1,4 +1,4 @@
-open Mufextern
+open Sirenextern
 
 let i = ref 0 
 
@@ -2009,7 +2009,7 @@ module AbstractSSI = struct
             let ctx, x, inf_strat, g = assume ctx inf_strat id es g in
             let ctx, inf_strat, g =
               match a with
-              | Mufextern.Aapprox -> value ctx inf_strat x g
+              | Sirenextern.Aapprox -> value ctx inf_strat x g
               | _ -> ctx, inf_strat, g
             in
             ctx, inf_strat, g, x :: xs
@@ -2042,7 +2042,7 @@ module AbstractSSI = struct
 
 end
 
-let annotated_inference_strategy : Mufextern.program -> InferenceStrategy.t =
+let annotated_inference_strategy : Sirenextern.program -> InferenceStrategy.t =
 fun (decls, e) ->
 
   (* assumes each random var has unique name *)

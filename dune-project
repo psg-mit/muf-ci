@@ -1,21 +1,21 @@
 (lang dune 2.7)
-(name muf)
+(name siren)
 (version 0.1.0)
 (using menhir 2.1)
 
 (generate_opam_files true)
 
-(source (github psg-mit/probzelus-analysis-impl))
+(source (github psg-mit/siren))
 (license Apache-2.0)
-(authors  "Eric Atkinson"
+(authors  "Ellie Cheng"
+          "Eric Atkinson"
           "Guillaume Baudart"
-          "Michael Carbin"
           "Louis Mandel"
-          "Charles Yuan")
-(maintainers "Louis Mandel")
+          "Michael Carbin")
+(maintainers "Ellie Cheng")
 
 (package
- (name muf)
- (synopsis "The muF compiler")
- (description "Compiler, static analysis, and runtime for muF")
+ (name siren)
+ (synopsis "The Siren compiler")
+ (description "Compiler, static analysis, and runtime for Siren")
  (depends probzelus))

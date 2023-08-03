@@ -675,9 +675,9 @@ let compile_expr (functions: string list) (cps: bool) (e: expr) : Parsetree.expr
   let e = distribution_pass e in
   let e = annotation_pass e in
   let e = if cps then 
-    let e' = cps_pass functions e (Evar {modul=None; name = "muf_k"}) in
+    let e' = cps_pass functions e (Evar {modul=None; name = "siren_k"}) in
     let e' = compile_expr' e' in
-    Exp.fun_ Nolabel None (Pat.var (with_loc "muf_k")) e'
+    Exp.fun_ Nolabel None (Pat.var (with_loc "siren_k")) e'
   else 
     compile_expr' e
   in

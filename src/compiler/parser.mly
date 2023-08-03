@@ -1,5 +1,5 @@
 %{
-  open Mufextern
+  open Sirenextern
 %}
 
 %token <bool> BOOL
@@ -28,7 +28,7 @@
 %token EXPONENTIAL GAMMA POISSON DELTA
 %token UNIFORM_INT
 
-%start <Mufextern.program> program
+%start <Sirenextern.program> program
 
 %%
 

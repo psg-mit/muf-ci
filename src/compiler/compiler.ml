@@ -38,46 +38,23 @@ let compile_file particles program name output =
       ("let () = Format.printf \"==== OUTPUT ====\\n\" in", 
         Format.sprintf "(Some %s)" o)
   in
-  try
-    let ml_list = List.map (Mufextern.compile_program output) [program] in
-    Format.fprintf mlff "%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
-      "open Distribution" "open Muf" "open Infer_muf"
-      (pp_print_list ~pp_sep:pp_force_newline Pprintast.structure)
-      ml_list;
-    Format.fprintf mlff
-      "@[<v 2>@[let post_main _ = @]@;\
-       @[%s@]@;\
-       @[let _ = infer %d main %s in@]@;\
-       @[let () = Format.printf \"\\n==== RUNTIME APPROXIMATION STATUS ====\\n\" in@]@;\
-       @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
-       @[<v 2>@[let _ =@]@;\
-       @[post_main ()@]@]@." output_header particles output_option
-  with Zmisc.Error ->
-    close_out mlc;
-    raise Error
-
-let compile_simulator name node =
-  (* let dir = Sys.getcwd () in *)
-  (* let mainc = open_out (dir ^ "/" ^ node ^ ".ml") in *)
-  let mainc = open_out (node ^ ".ml") in
-  let mainff = Format.formatter_of_out_channel mainc in
-  Format.fprintf mainff
-    "@[<v> open Muf @;\
-     @;\
-     @[(* simulation (discrete) function *)@]@;\
-     @[<v 2>@[let main =@]@;\
-     @[let mem = ref (Muflib.init %s.%s) in@]@;\
-     @[(fun x -> let _, s = Muflib.step !mem x in mem := s)@]@]@];;@.@[<v>(* \
-     (discrete) simulation loop *)@;\
-     main ();@;\
-     exit(0);;@]@."
-    (String.capitalize_ascii name)
-    node;
-  close_out mainc
+  let ml_list = List.map (Sirenextern.compile_program output) [program] in
+  Format.fprintf mlff "%s@.%s@.%s@.%s@.@.%a@." "open Probzelus"
+    "open Distribution" "open Siren" "open Infer_siren"
+    (pp_print_list ~pp_sep:pp_force_newline Pprintast.structure)
+    ml_list;
+  Format.fprintf mlff
+    "@[<v 2>@[let post_main _ = @]@;\
+      @[%s@]@;\
+      @[let _ = infer %d main %s in@]@;\
+      @[let () = Format.printf \"\\n==== RUNTIME APPROXIMATION STATUS ====\\n\" in@]@;\
+      @[let () = Format.printf \"%%s\\n\" (pp_approx_status false) in ()@]@]@.\
+      @[<v 2>@[let _ =@]@;\
+      @[post_main ()@]@]@." output_header particles output_option
 
 let print_cmd name =
   let cmd =
-    "ocamlfind ocamlc -linkpkg -package muf " ^ name ^ ".ml "
+    "ocamlfind ocamlc -linkpkg -package siren " ^ name ^ ".ml "
     ^ "-o " ^ name ^ ".exe"
   in
   Format.printf "%s@." cmd;
@@ -90,7 +67,7 @@ let verify_approx_status output program check =
 
   (* Remove output function from analysis *)
   let decls = List.filter (fun d ->
-    let open Mufextern in
+    let open Sirenextern in
     match d with
     | Ddecl _ | Dopen _ -> false
     | Dfun (s, _, _) -> not (s = output)
@@ -122,12 +99,12 @@ let compile verbose norun analyze check particles output file =
 
   if verbose then (
     Format.printf "particles: %d@." particles;
-    Format.printf "%s\n" (Mufextern.show_program
+    Format.printf "%s\n" (Sirenextern.show_program
       (* (fun ff () -> Format.fprintf ff "()") *)
       program));
 
   (* Passes that need to be done before analysis *)
-  let program = Mufextern.pre_passes output program in
+  let program = Sirenextern.pre_passes output program in
 
   if norun || analyze || check then (
     Format.printf "-- Approximation Status Analysis %s.ml@." name;

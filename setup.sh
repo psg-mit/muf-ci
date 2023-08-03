@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This is a setup script for installing muf
+# This is a setup script for installing siren
 
 sudo apt install build-essential -y
 sudo apt install libopenblas-dev -y
@@ -12,15 +12,6 @@ eval $(opam env)
 opam switch create ci ocaml-base-compiler.4.13.1
 eval $(opam env)
 
-# muf zelus
-git clone https://github.com/INRIA/zelus.git
-cd zelus
-git checkout muf
-opam pin -k path . -y
-opam install zelus -y
-cd ..
-
-
 # probzelus
 git clone https://github.com/psg-mit/probzelus-ci.git
 cd probzelus-ci
@@ -30,12 +21,12 @@ opam install probzelus -y
 # opam install zelus-owl-plplot zelus-io -y
 cd ..
 
-# muf
-git clone https://github.com/psg-mit/muf-ci.git
-cd muf-ci
+# siren
+git clone https://github.com/psg-mit/siren.git
+cd siren
 git checkout reimplement
 opam pin -y -k path .
-opam install muf -y
+opam install siren -y
 cd ..
 
 eval $(opam env)

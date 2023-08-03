@@ -54,8 +54,8 @@ def error_func(config, x):
     return
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_muf(benchmark, filename, config, verbose=False):
-  # run muf file
+def run_siren(benchmark, filename, config, verbose=False):
+  # run siren file
   cmd = './{}.exe'.format(os.path.splitext(os.path.basename(filename))[0])
   
   if verbose:
@@ -69,7 +69,7 @@ def run_muf(benchmark, filename, config, verbose=False):
   if verbose:
     print('> Took {} seconds'.format(t2 - t1))
 
-    # with open(os.path.join(output, 'muf.log'), 'a') as f:
+    # with open(os.path.join(output, 'siren.log'), 'a') as f:
     #   f.write(' '.join([str(x) for x in [p, n, t2 - t1]]) + '\n' + out + '\n')
   
   # parse output
@@ -109,15 +109,15 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
     if verbose:
       print('Running with {} particles'.format(p))
 
-    # Compile muf
-    # mufc -- --particles 1 --output output test.muf
-    cmd = 'dune exec mufc -- --particles {} --output output {}'.format(p, filename)
+    # Compile siren
+    # sirenc -- --particles 1 --output output test.siren
+    cmd = 'dune exec siren -- --particles {} --output output {}'.format(p, filename)
     if verbose:
       print('>', cmd)
 
     wd = os.path.join(os.getcwd(), benchmark)
     if subprocess.call(cmd, cwd=wd, shell=True, stdout=subprocess.DEVNULL) != 0:
-      raise Exception('Failed to compile muf file')
+      raise Exception('Failed to compile Siren file')
 
     mses = {}
     runtimes = []
@@ -125,7 +125,7 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
       if verbose:
         print('{} particles - Run {}'.format(p, i))
 
-      program_output, t = run_muf(benchmark, filename, config, verbose)
+      program_output, t = run_siren(benchmark, filename, config, verbose)
       for k, v in program_output.items():
         if k not in mses:
           mses[k] = []
@@ -138,7 +138,7 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
     runtimes = runtimes
 
     # if verbose:
-    #   with open(os.path.join(output, 'muf.log'), 'a') as f:
+    #   with open(os.path.join(output, 'siren.log'), 'a') as f:
         # for k, v in mses_lower.items():
         #   f.write('{}: {} '.format(k, v))
         # f.write('p_mse: ' + ' '.join(map(str, p_mse_sorted)) + '\n')
@@ -601,7 +601,7 @@ def analyze(statistics, benchmark, output, verbose, config):
   if benchmark not in statistics:
     statistics[benchmark] = {}
 
-  with open(os.path.join(benchmark, 'all_programs', f'{benchmark}_template.muf')) as template_file:
+  with open(os.path.join(benchmark, 'all_programs', f'{benchmark}_template.si')) as template_file:
     template = template_file.read()
 
   variables = config['vars']
@@ -644,14 +644,14 @@ def analyze(statistics, benchmark, output, verbose, config):
 
     n_exacts += len([x for x in strat if x == 'EXACT'])
   
-    filename = f'{benchmark}_{strat_index}.muf'
+    filename = f'{benchmark}_{strat_index}.si'
 
     # write program to file
     with open(os.path.join(benchmark, 'all_programs', filename), 'w') as program_file:
       program_file.write(program)
 
     # get analysis output
-    cmd = 'dune exec mufc -- {} --analyze --output output'.format(filename)
+    cmd = 'dune exec siren -- {} --analyze --output output'.format(filename)
     if verbose:
       print('>', cmd)
 
@@ -789,7 +789,7 @@ def analyze(statistics, benchmark, output, verbose, config):
   #     print('Analyzing {}'.format(filename))
 
   #   # get analysis output
-  #   cmd = 'dune exec mufc -- {} --analyze --output output'.format(filename)
+  #   cmd = 'dune exec siren -- {} --analyze --output output'.format(filename)
   #   if verbose:
   #     print('>', cmd)
 
