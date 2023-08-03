@@ -24,7 +24,6 @@ cd ..
 # siren
 git clone https://github.com/psg-mit/siren.git
 cd siren
-git checkout reimplement
 opam pin -y -k path .
 opam install siren -y
 cd ..
