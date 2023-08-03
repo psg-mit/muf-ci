@@ -16,7 +16,6 @@ DEFAULT_BENCHMARKS = [
   'smsbehavior',
   'outlier',
   'mixasymprior',
-  "noisenolist",
   "outliernolist",
 ]
 

@@ -1220,20 +1220,8 @@ fun ctx e1 e2 g1 g2 inf_strat use_old_name ->
     | Ddelta e1, Ddelta e2 ->
       let ctx, e1, g_acc, inf_strat = join_expr ctx e1 e2 g1 g2 g_acc inf_strat false in
       ctx, Ddelta e1, g_acc, inf_strat
-    | Ddelta _, Ddelta_sampled ->
-      ctx, Ddelta_sampled, g_acc, inf_strat
-    | Ddelta_sampled, Ddelta _ ->
-      ctx, Ddelta_sampled, g_acc, inf_strat
-    | Ddelta _, e2 ->
-      ctx, e2, g_acc, inf_strat
-    | e1, Ddelta _ ->
-      ctx, e1, g_acc, inf_strat
     | Ddelta_sampled, Ddelta_sampled -> 
       ctx, Ddelta_sampled, g_acc, inf_strat
-    | Ddelta_sampled, e2 ->
-      ctx, e2, g_acc, inf_strat
-    | e1, Ddelta_sampled ->
-      ctx, e1, g_acc, inf_strat
     | d1, d2 ->
       let inf_strat = mark_as_lost (Edistr d1) g1 inf_strat in
       let inf_strat = mark_as_lost (Edistr d2) g2 inf_strat in
