@@ -58,9 +58,14 @@ let pp_approx_status = SSI.pp_approx_status
 
 let get_marginal_expr = Utils.get_marginal_expr
 
+let samplenum = ref 0
+let get_samplenum _ =
+  samplenum := !samplenum + 1;
+  !samplenum
 
 (* Inference *)
 let sample name dist k (prob : 'b prob) =
+  let name = match name with | "" -> "var" ^ (string_of_int (get_samplenum())) | _ -> name in
   let v = SSI.sample name dist in
   k v prob
 
