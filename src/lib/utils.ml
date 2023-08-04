@@ -1,12 +1,4 @@
-(* open Semi_symbolic.Semi_symbolic_impl *)
-(* module Distr_operations = Semi_symbolic.Distr_operations *)
-open Semi_symbolic.Semi_symbolic_impl
-module SSI = Semi_symbolic.Semi_symbolic_impl
-module Distr_operations = Semi_symbolic.Distr_operations
-
-type 'a distribution = 'a SSI.distribution
-type 'a random_var = 'a SSI.random_var
-type 'a expr = 'a SSI.expr
+open Sirenlib.SSI
 
 type 'a mdistr = 'a expr
 
@@ -71,7 +63,7 @@ fun e ->
       try hoist_and_eval rv
       with NonConjugate rv_nc ->
         (* (Printf.printf "NonConjugate %s\n" rv_nc.name); *)
-        let _ = SSI.value rv_nc ~record:false in
+        let _ = value_no_record rv_nc in
         marginalize ()
     in
     marginalize ();

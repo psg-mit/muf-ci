@@ -1,8 +1,10 @@
 (* Semi-symbolic inference interface *)
-module SSI = Semi_symbolic.Semi_symbolic_impl
+module SSI = Sirenlib.SSI
+module Distr_operations = Sirenlib.Distr_operations
 open Utils
 
-type 'a expr = 'a Utils.expr
+type 'a expr = 'a SSI.expr
+type 'a distribution = 'a SSI.distribution
 
 let const = SSI.const
 let add (a, b) = SSI.add a b
