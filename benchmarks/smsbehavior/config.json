@@ -18,10 +18,10 @@
     "None"
   ],
   "files": [
-    "smsbehavior_lambda1_exact.muf",
-    "smsbehavior_lambda2_exact.muf",
-    "smsbehavior_lambda_both_exact.muf",
-    "smsbehavior_approx.muf"
+    "smsbehavior_lambda1_exact.si",
+    "smsbehavior_lambda2_exact.si",
+    "smsbehavior_lambda_both_exact.si",
+    "smsbehavior_approx.si"
   ],
   "strats": [
     {"tau": "APPROX", "lambda1": "EXACT", "lambda2": "APPROX"},

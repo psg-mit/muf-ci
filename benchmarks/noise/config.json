@@ -120,11 +120,11 @@
     "None"
   ],
   "files": [
-    "noise_x_exact.muf",
-    "noise_r_exact.muf",
-    "noise_q_exact.muf",
-    "noise_qr_exact.muf",
-    "noise_approx.muf"
+    "noise_x_exact.si",
+    "noise_r_exact.si",
+    "noise_q_exact.si",
+    "noise_qr_exact.si",
+    "noise_approx.si"
   ],
   "strats": [
     {"q": "APPROX", "r": "APPROX", "step_x": "EXACT"},

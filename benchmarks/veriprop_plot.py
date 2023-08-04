@@ -179,7 +179,7 @@ if __name__ == '__main__':
     config = json.load(f)
 
   if args.files is None:
-    args.files = glob.glob(os.path.join(args.benchmark, '*.muf'))
+    args.files = glob.glob(os.path.join(args.benchmark, '*.si'))
     args.files = [os.path.basename(f) for f in args.files]
 
   plot(args.benchmark, args.output, args.files, args.particles, config, args.verbose)

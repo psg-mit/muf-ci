@@ -112,10 +112,10 @@
   "legend_width": 2,
   "error_func": "se",
   "files": [
-    "outliernolist_xt_exact.muf",
-    "outliernolist_outlier_prob_exact.muf",
-    "outliernolist_xt_outlier_prob_exact.muf",
-    "outliernolist_approx.muf"
+    "outliernolist_xt_exact.si",
+    "outliernolist_outlier_prob_exact.si",
+    "outliernolist_xt_outlier_prob_exact.si",
+    "outliernolist_approx.si"
   ],
   "strats": [
     {"step_is_outlier": "APPROX", "outlier_prob": "APPROX", "step_xt": "EXACT"},

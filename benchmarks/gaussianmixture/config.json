@@ -22,14 +22,14 @@
     "None"
   ],
   "files": [
-    "gaussianmixture_theta_exact.muf",
-    "gaussianmixture_mu1_exact.muf",
-    "gaussianmixture_mu2_exact.muf",
-    "gaussianmixture_mu1_mu2_theta_exact.muf",
-    "gaussianmixture_mu1_theta_exact.muf",
-    "gaussianmixture_mu2_theta_exact.muf",
-    "gaussianmixture_mu_both_exact.muf",
-    "gaussianmixture_approx.muf"
+    "gaussianmixture_theta_exact.si",
+    "gaussianmixture_mu1_exact.si",
+    "gaussianmixture_mu2_exact.si",
+    "gaussianmixture_mu1_mu2_theta_exact.si",
+    "gaussianmixture_mu1_theta_exact.si",
+    "gaussianmixture_mu2_theta_exact.si",
+    "gaussianmixture_mu_both_exact.si",
+    "gaussianmixture_approx.si"
   ],
   "strats": [
     {"make_observations_switch": "APPROX", 

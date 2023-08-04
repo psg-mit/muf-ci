@@ -1,5 +1,5 @@
 {
-  "serosurveysmall_sens_exact.muf": {
+  "serosurveysmall_sens_exact.si": {
     "1": {
       "intercept": {
         "all": [
@@ -19711,7 +19711,7 @@
       }
     }
   },
-  "serosurveysmall_fpr_exact.muf": {
+  "serosurveysmall_fpr_exact.si": {
     "1": {
       "intercept": {
         "all": [
@@ -39423,7 +39423,7 @@
       }
     }
   },
-  "serosurveysmall_truepos_exact.muf": {
+  "serosurveysmall_truepos_exact.si": {
     "1": {
       "intercept": {
         "all": [
@@ -59135,7 +59135,7 @@
       }
     }
   },
-  "serosurveysmall_sens_fpr_exact.muf": {
+  "serosurveysmall_sens_fpr_exact.si": {
     "1": {
       "intercept": {
         "all": [
@@ -78847,7 +78847,7 @@
       }
     }
   },
-  "serosurveysmall_approx.muf": {
+  "serosurveysmall_approx.si": {
     "1": {
       "intercept": {
         "all": [

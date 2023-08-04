@@ -24,15 +24,15 @@
     "None"
   ],
   "files": [
-    "mixasymprior_mu1_exact.muf",
-    "mixasymprior_mu2_exact.muf",
-    "mixasymprior_var1_exact.muf",
-    "mixasymprior_var2_exact.muf",
-    "mixasymprior_mu_both_exact.muf",
-    "mixasymprior_var_both_exact.muf",
-    "mixasymprior_mu1_var2_exact.muf",
-    "mixasymprior_mu2_var1_exact.muf",
-    "mixasymprior_approx.muf"
+    "mixasymprior_mu1_exact.si",
+    "mixasymprior_mu2_exact.si",
+    "mixasymprior_var1_exact.si",
+    "mixasymprior_var2_exact.si",
+    "mixasymprior_mu_both_exact.si",
+    "mixasymprior_var_both_exact.si",
+    "mixasymprior_mu1_var2_exact.si",
+    "mixasymprior_mu2_var1_exact.si",
+    "mixasymprior_approx.si"
   ],
   "strats": [
     {"make_observations_switch": "APPROX", "mu1": "EXACT", "mu2": "APPROX", "var1": "APPROX", "var2": "APPROX"},

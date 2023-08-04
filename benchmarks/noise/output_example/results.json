@@ -1,5 +1,5 @@
 {
-  "noise_x_exact.muf": {
+  "noise_x_exact.si": {
     "1": {
       "q": {
         "all": [
@@ -10033,7 +10033,7 @@
       }
     }
   },
-  "noise_r_exact.muf": {
+  "noise_r_exact.si": {
     "1": {
       "q": {
         "all": [

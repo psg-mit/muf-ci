@@ -114,7 +114,6 @@ module SSI = struct
 
   and eval_sample : type a. a expr -> a =
   fun e ->
-    Format.printf "test\n";
     begin match e with
     | ExConst c -> c
     | ExVar _ -> assert false

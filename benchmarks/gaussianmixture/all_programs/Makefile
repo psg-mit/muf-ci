@@ -1,2 +1,2 @@
 clean:
-	rm *.cmi *.cmo *.exe *.ml *.muf
+	rm *.cmi *.cmo *.exe *.ml 

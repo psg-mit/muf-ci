@@ -132,19 +132,6 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
       
       runtimes.append(t)
 
-    # quantiles of mse for runs
-    mses_sorted = {k: v for k, v in mses.items()}
-    runtimes = runtimes
-
-    # if verbose:
-    #   with open(os.path.join(output, 'siren.log'), 'a') as f:
-        # for k, v in mses_lower.items():
-        #   f.write('{}: {} '.format(k, v))
-        # f.write('p_mse: ' + ' '.join(map(str, p_mse_sorted)) + '\n')
-        # f.write('sens_mse: ' + ' '.join(map(str, sens_mse_sorted)) + '\n')
-        # f.write('spec_mse: ' + ' '.join(map(str, spec_mse_sorted)) + '\n')
-        # f.write('runtimes: ' + ' '.join(map(str, runtimes)) + '\n')
-
     # save results
     if filename not in results:
       results[filename] = {}
@@ -153,13 +140,9 @@ def run(benchmark, filename, output, particles, accuracy, n, results, config, ve
 
     variables = mses.keys()
     for v in variables:
-      if v not in results[filename][p]:
-        results[filename][p][v] = {}
-      results[filename][p][v]['all'] = mses_sorted[v]
+      results[filename][p][v] = mses[v]
 
-    if 'runtime' not in results[filename][p]:
-      results[filename][p]['runtime'] = {}
-    results[filename][p]['runtime']['all'] = runtimes
+    results[filename][p]['runtime'] = runtimes
 
   return results
 
@@ -170,7 +153,6 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
   # Plot results
 
-  types = ['accuracy', 'runtime']
   # subplot for each variable
 
   # get n variables
@@ -222,7 +204,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
       measurement_label = 'runtime'
 
-      runtimes = sorted(data_[measurement_label]['all'])
+      runtimes = sorted(data_[measurement_label])
 
       lower.append(runtimes[int(0.10 * len(runtimes))])
       median.append(runtimes[int(0.50 * len(runtimes))])
@@ -266,8 +248,8 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   axf.axis('off')
   axf.legend(*ax.get_legend_handles_labels(), loc='center', ncol=config['legend_width'], markerscale=2)
   figlegend.tight_layout()
-  figlegend.savefig(os.path.join(benchmark, output, f'{name}_legend.png'), bbox_inches='tight')
-  figlegend.savefig(os.path.join(benchmark, output, f'{name}_legend.pdf'), bbox_inches='tight')
+  # figlegend.savefig(os.path.join(benchmark, output, f'{name}_legend.png'), bbox_inches='tight')
+  # figlegend.savefig(os.path.join(benchmark, output, f'{name}_legend.pdf'), bbox_inches='tight')
 
   fig.savefig(os.path.join(benchmark, output, '{}_runtime.pdf'.format(name)), bbox_inches='tight')
   fig.savefig(os.path.join(benchmark, output, '{}_runtime.png'.format(name)), bbox_inches='tight')
@@ -300,7 +282,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
         if v == 'runtime':
           continue
 
-        transformed_errors = sorted(errors['all'])
+        transformed_errors = sorted(errors)
 
         if v not in all_errors:
           all_errors[v] = {
@@ -425,13 +407,13 @@ def plot(benchmark, output, files, particles, config, verbose=False):
     fig.tight_layout()
 
   name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
-  fig1.savefig(os.path.join(benchmark, output, '{}_accuracy_median.png'.format(name)), bbox_inches='tight')
-  fig2.savefig(os.path.join(benchmark, output, '{}_accuracy_lower.png'.format(name)), bbox_inches='tight')
+  # fig1.savefig(os.path.join(benchmark, output, '{}_accuracy_median.png'.format(name)), bbox_inches='tight')
+  # fig2.savefig(os.path.join(benchmark, output, '{}_accuracy_lower.png'.format(name)), bbox_inches='tight')
   fig3.savefig(os.path.join(benchmark, output, '{}_accuracy_upper.png'.format(name)), bbox_inches='tight')
   fig4.savefig(os.path.join(benchmark, output, '{}_accuracy.png'.format(name)), bbox_inches='tight')
 
-  fig1.savefig(os.path.join(benchmark, output, '{}_accuracy_median.pdf'.format(name)), bbox_inches='tight')
-  fig2.savefig(os.path.join(benchmark, output, '{}_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
+  # fig1.savefig(os.path.join(benchmark, output, '{}_accuracy_median.pdf'.format(name)), bbox_inches='tight')
+  # fig2.savefig(os.path.join(benchmark, output, '{}_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
   fig3.savefig(os.path.join(benchmark, output, '{}_accuracy_upper.pdf'.format(name)), bbox_inches='tight')
   fig4.savefig(os.path.join(benchmark, output, '{}_accuracy.pdf'.format(name)), bbox_inches='tight')
 
@@ -443,8 +425,10 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   fig2, axes2 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y'] + 1))
   fig3, axes3 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y'] + 1))
   fig4, axes4 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y'] + 1))
+  fig5, axes5 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y'] + 1))
+  fig6, axes6 = plt.subplots(config['n_y'], config['n_x'], figsize=(config['base_x'] * config['n_x'], config['base_y'] * config['n_y'] + 1))
 
-  for ax in [axes1, axes2, axes3, axes4]:
+  for ax in [axes1, axes2, axes3, axes4, axes5]:
     for a in ax.flatten():
       a.set_visible(False)
 
@@ -453,7 +437,12 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       continue
     p = []
     all_errors = {}
-    runtimes = []
+    all_runtimes = {
+      'lower': [],
+      'median': [],
+      'upper': [],
+      'all': [],
+    }
     for j, (p_, data_) in enumerate(sorted(data.items(), key=lambda x: int(x[0]))):
       if particles is not None and int(p_) not in particles:
         continue
@@ -461,21 +450,26 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
       for k, (v, errors) in enumerate(data_.items()):
         if v == 'runtime':
-          median_runtime = np.median(errors['all'])
-          runtimes.append(median_runtime)
+        
+          all_runtimes['lower'].append(errors[int(0.10 * len(errors))])
+          all_runtimes['median'].append(errors[int(0.50 * len(errors))])
+          all_runtimes['upper'].append(errors[int(0.90 * len(errors))])
+          all_runtimes['all'] += errors
           continue
 
-        transformed_errors = sorted(errors['all'])
+        transformed_errors = sorted(errors)
 
         if v not in all_errors:
           all_errors[v] = {
             'lower': [],
             'median': [],
             'upper': [],
+            'all': [],
           }
         all_errors[v]['lower'].append(transformed_errors[int(0.10 * len(transformed_errors))])
         all_errors[v]['median'].append(transformed_errors[int(0.50 * len(transformed_errors))])
         all_errors[v]['upper'].append(transformed_errors[int(0.90 * len(transformed_errors))])
+        all_errors[v]['all'] += errors
 
     for k, (v, mses) in enumerate(list(all_errors.items())):
       plot_i = k % config['n_x']
@@ -487,11 +481,15 @@ def plot(benchmark, output, files, particles, config, verbose=False):
         ax2 = axes2[plot_j][plot_i]
         ax3 = axes3[plot_j][plot_i]
         ax4 = axes4[plot_j][plot_i]
+        ax5 = axes5[plot_j][plot_i]
+        ax6 = axes6[plot_j][plot_i]
       else:
         ax1 = axes1[plot_i]
         ax2 = axes2[plot_i]
         ax3 = axes3[plot_i]
         ax4 = axes4[plot_i]
+        ax5 = axes5[plot_i]
+        ax6 = axes6[plot_i]
 
       if k == 0:
         # Only one set of file labels
@@ -501,23 +499,32 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       else:
         label = None
 
-      for ax in [ax1, ax2, ax3, ax4]:
+      for ax in [ax1, ax2, ax3, ax4, ax5]:
         ax.set_visible(True)
 
       # Sort by runtime
-      runtimes, mses['lower'], mses['median'], mses['upper'] = zip(*sorted(zip(runtimes, mses['lower'], mses['median'], mses['upper'])))
+      # runtimes, mses['lower'], mses['median'], mses['upper'] = zip(*sorted(zip(all_runtimes, mses['lower'], mses['median'], mses['upper'])))
 
-      ax1.plot(runtimes, mses['median'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
+      ax1.plot(all_runtimes['median'], mses['median'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
-      ax2.plot(runtimes, mses['lower'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
+      ax2.plot(all_runtimes['median'], mses['lower'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
-      ax3.plot(runtimes, mses['upper'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
+      ax3.plot(all_runtimes['median'], mses['upper'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+      
+      
+      ax5.plot(all_runtimes['all'], mses['all'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
+                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
       
       median = mses['median']
       lower_err = [abs(median[i] - mses['lower'][i]) for i in range(len(median))]
       upper_err = [abs(mses['upper'][i] - median[i]) for i in range(len(median))]
-      ax4.errorbar(runtimes, median, yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
+      ax4.errorbar(all_runtimes['median'], median, yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
+                                 markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
+      
+      lower_time = [abs(all_runtimes['median'][i] - all_runtimes['lower'][i]) for i in range(len(median))]
+      upper_time = [abs(all_runtimes['upper'][i] - all_runtimes['median'][i]) for i in range(len(median))]
+      ax6.errorbar(all_runtimes['median'], median, xerr=[lower_time, upper_time], yerr=[lower_err, upper_err], fmt=fmt, color=colors[i], label=label, 
                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], capsize=5, markersize=markersize)
 
       # axes1[plot_j][plot_i].set_xticks(p)
@@ -529,7 +536,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       nonzero = [x for x in mses['lower'] if x > 0]
       thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
 
-      for ax in [ax1, ax2, ax3, ax4]:
+      for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
         ax.set_yscale('symlog', linthresh=thresh)
         # ax.tick_params(numticks=nbins)
         # ax.locator_params(axis='y', numticks=nbins)
@@ -538,8 +545,8 @@ def plot(benchmark, output, files, particles, config, verbose=False):
         ax.minorticks_on()
 
       variable_name = v
-      for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_title(variable_name)
+      for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
+        ax.set_title(f'Accuracy of {variable_name}')
       # axes1[plot_j][plot_i].set_ylabel('MSE')
 
   for j in range(config['n_y']):
@@ -551,14 +558,14 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       #   axes4[j][i].set_ylabel('MSE')
       # else:
       if i == 0:
-        for ax in [axes1, axes2, axes3, axes4]:
+        for ax in [axes1, axes2, axes3, axes4, axes5, axes6]:
           if config['n_y'] != 1:
             ax[j][i].set_ylabel('Error (log scale)')
           else:
             ax[i].set_ylabel('Error (log scale)')
 
   for i in range(config['n_x']):
-    for ax in [axes1, axes2, axes3, axes4]:
+    for ax in [axes1, axes2, axes3, axes4, axes5, axes6]:
       if config['n_y'] != 1:
         ax[config['n_y'] - 1][i].set_xlabel(f'Execution Time in s (log scale)')
       else:
@@ -567,7 +574,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   # for ax in [axes1, axes2, axes3, axes4]:
   #   ax[config['n_y'] - 1, config['n_x'] - 1].axis('off')
 
-  for fig in [fig1, fig2, fig3, fig4]:
+  for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
     fig.legend(loc='upper center', ncols=config['legend_width'], bbox_to_anchor=(0.5, 0.0))
     
   if verbose:
@@ -578,21 +585,25 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   # fig3.suptitle('Median Runtime to Accuracy - 90 Percentile')
   # fig4.suptitle('Median Runtime to Accuracy')
 
-  for fig in [fig1, fig2, fig3, fig4]:
+  for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
     fig.tight_layout()
 
   name = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
-  fig1.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_median.png'.format(name)), bbox_inches='tight')
-  fig2.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_lower.png'.format(name)), bbox_inches='tight')
-  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_upper.png'.format(name)), bbox_inches='tight')
-  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.png'.format(name)), bbox_inches='tight')
+  # fig1.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_median.png'.format(name)), bbox_inches='tight')
+  # fig2.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_lower.png'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_upper.png'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy.png'.format(name)), bbox_inches='tight')
+  fig5.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_all.png'.format(name)), bbox_inches='tight')
+  fig6.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.png'.format(name)), bbox_inches='tight')
 
-  fig1.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_median.pdf'.format(name)), bbox_inches='tight')
-  fig2.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
-  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_upper.pdf'.format(name)), bbox_inches='tight')
-  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.pdf'.format(name)), bbox_inches='tight')
+  # fig1.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_median.pdf'.format(name)), bbox_inches='tight')
+  # fig2.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_lower.pdf'.format(name)), bbox_inches='tight')
+  fig3.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy_upper.pdf'.format(name)), bbox_inches='tight')
+  fig4.savefig(os.path.join(benchmark, output, '{}_runtime_median_accuracy.pdf'.format(name)), bbox_inches='tight')
+  fig5.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy_all.pdf'.format(name)), bbox_inches='tight')
+  fig6.savefig(os.path.join(benchmark, output, '{}_runtime_accuracy.pdf'.format(name)), bbox_inches='tight')
 
-  for fig in [fig1, fig2, fig3, fig4]:
+  for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
     plt.close(fig)
 
 def analyze(statistics, benchmark, output, verbose, config):

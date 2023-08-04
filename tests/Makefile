@@ -30,11 +30,11 @@ bench: \
 	 mtt.check \
 	 slam_array.check 
 
-%.check: %.muf
-	@mufc --only-check $<
+%.check: %.si
+	@siren --only-check $<
 
-%_main.exe: %.muf
-	mufc $<
+%_main.exe: %.si
+	siren $<
 
 clean:
 	rm -rf *.cm* *.ml *.exe

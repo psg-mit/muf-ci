@@ -1,5 +1,5 @@
 {
-  "mixasymprior_mu1_exact.muf": {
+  "mixasymprior_mu1_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -13573,7 +13573,7 @@
       }
     }
   },
-  "mixasymprior_mu2_exact.muf": {
+  "mixasymprior_mu2_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -27147,7 +27147,7 @@
       }
     }
   },
-  "mixasymprior_var1_exact.muf": {
+  "mixasymprior_var1_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -41243,7 +41243,7 @@
       }
     }
   },
-  "mixasymprior_var2_exact.muf": {
+  "mixasymprior_var2_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -54817,7 +54817,7 @@
       }
     }
   },
-  "mixasymprior_mu_both_exact.muf": {
+  "mixasymprior_mu_both_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -68391,7 +68391,7 @@
       }
     }
   },
-  "mixasymprior_var_both_exact.muf": {
+  "mixasymprior_var_both_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -81965,7 +81965,7 @@
       }
     }
   },
-  "mixasymprior_mu1_var2_exact.muf": {
+  "mixasymprior_mu1_var2_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -95539,7 +95539,7 @@
       }
     }
   },
-  "mixasymprior_mu2_var1_exact.muf": {
+  "mixasymprior_mu2_var1_exact.si": {
     "1": {
       "mu1": {
         "all": [
@@ -109113,7 +109113,7 @@
       }
     }
   },
-  "mixasymprior_approx.muf": {
+  "mixasymprior_approx.si": {
     "1": {
       "mu1": {
         "all": [
