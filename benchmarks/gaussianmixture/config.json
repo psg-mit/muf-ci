@@ -15,10 +15,10 @@
     "theta",
     "mu1",
     "mu2",
+    "theta, mu1, mu2",
     "theta, mu1",
     "theta, mu2",
     "mu1, mu2",
-    "theta, mu1, mu2",
     "None"
   ],
   "files": [

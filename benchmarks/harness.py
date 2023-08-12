@@ -173,7 +173,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
 
   markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
 
-  markersize = 12
+  markersize = 8
 
   gridparams = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
@@ -514,7 +514,7 @@ def plot(benchmark, output, files, particles, config, verbose=False):
       
       
       ax5.plot(all_runtimes['all'], mses['all'], marker=markers[i], color=colors[i], label=label, linestyle = 'None',
-                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=markersize)
+                                  markerfacecolor=colors[i], markeredgecolor=edgecolors[i], markersize=3)
       
       median = mses['median']
       lower_err = [abs(median[i] - mses['lower'][i]) for i in range(len(median))]
