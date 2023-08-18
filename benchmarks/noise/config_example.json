@@ -113,7 +113,7 @@
   "legend_width": 5,
   "error_func": "se",
   "labels": [
-    "x",
-    "r"
+    "x symbolic | q,r sample",
+    "r symbolic | x,q sample"
   ]
 }

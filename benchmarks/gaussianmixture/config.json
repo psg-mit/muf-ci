@@ -12,14 +12,14 @@
   "legend_width": 4,
   "error_func": "se",
   "labels": [
-    "theta",
-    "mu1",
-    "mu2",
-    "theta, mu1, mu2",
-    "theta, mu1",
-    "theta, mu2",
-    "mu1, mu2",
-    "None"
+    "theta symbolic",
+    "mu1 symbolic",
+    "mu2 symbolic",
+    "theta, mu1, mu2 symbolic",
+    "theta, mu1 symbolic",
+    "theta, mu2 symbolic",
+    "mu1, mu2 symbolic",
+    "None symbolic"
   ],
   "files": [
     "gaussianmixture_theta_exact.si",

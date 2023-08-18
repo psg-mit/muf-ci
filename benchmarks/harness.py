@@ -164,12 +164,12 @@ def plot(benchmark, output, files, particles, config, verbose=False):
   n_variables -= 1 # runtime
   n_files = len(results)
 
-  # colors = ["#ec8688", "#feb140", "#f3dd8d", "#a2b128", "#7fcad5", "#567bb7", "#ac88b3"]
   # red orange green blue purple indigo yellow brown magenta
   colors = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
-  # edgecolors = ["#b7575c","#c78200","#c0ab5f","#708200","#4d9aa4","#204f87","#204f87"]
-  edgecolors = ["#b7575c",
-  "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
+  # red blue orange green purple indigo yellow brown magenta
+  # colors = ["#f4827b", "#7cc7d2", "#feb140", "#9baa20", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
+  edgecolors = ["#b7575c", "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
+  # edgecolors = ["#b7575c", "#4d9aa4", "#c0ab5f","#708200","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
 
   markers = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
 

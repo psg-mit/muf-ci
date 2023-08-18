@@ -113,11 +113,11 @@
   "legend_width": 5,
   "error_func": "se",
   "labels": [
-    "x",
-    "r",
-    "q",
-    "q, r",
-    "None"
+    "x symbolic",
+    "r symbolic",
+    "q symbolic",
+    "q, r symbolic",
+    "None symbolic"
   ],
   "files": [
     "noise_x_exact.si",

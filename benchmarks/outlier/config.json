@@ -112,10 +112,10 @@
   "legend_width": 2,
   "error_func": "se",
   "labels": [
-    "xt",
-    "outlier_prob",
-    "xt, outlier_prob",
-    "None"
+    "xt symbolic",
+    "outlier_prob symbolic",
+    "xt, outlier_prob symbolic",
+    "None symbolic"
   ],
   "files": [
     "outlier_xt_exact.si",

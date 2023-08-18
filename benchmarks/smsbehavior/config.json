@@ -12,10 +12,10 @@
   "legend_width": 4,
   "error_func": "se",
   "labels": [
-    "lambda1",
-    "lambda2",
-    "lambda1, lambda2",
-    "None"
+    "lambda1 symbolic",
+    "lambda2 symbolic",
+    "lambda1, lambda2 symbolic",
+    "None symbolic"
   ],
   "files": [
     "smsbehavior_lambda1_exact.si",
