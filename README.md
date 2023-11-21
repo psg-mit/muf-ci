@@ -1,5 +1,8 @@
 # Siren
 
+## Requirements
+>= Python3.10
+
 ## Benchmarking
 Inside `benchmarks` folder,
 ```bash
