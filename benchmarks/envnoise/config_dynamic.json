@@ -1,0 +1,8178 @@
+{
+  "benchmark": "envnoise",
+  "true_vars": [
+    [
+      "q",
+      [
+        2.45
+      ]
+    ],
+    [
+      "r",
+      [
+        1
+      ]
+    ],
+    [
+      "x",
+      [
+        2.4795456675917182,
+        1.306359702258329,
+        0.7171896298330893,
+        1.4026824762136907,
+        4.392341983355182,
+        5.249281331825888,
+        6.434821193234384,
+        4.50855226822668,
+        7.242346979553746,
+        7.936952758140529,
+        4.500811690311007,
+        4.411856089462548,
+        4.317011613451067,
+        4.143951735422982,
+        3.053078472565807,
+        4.554530279620977,
+        5.953994887102928,
+        6.180984605505777,
+        6.055460520265544,
+        5.101064739316584,
+        4.345248637938237,
+        4.344190928246769,
+        3.18737702144039,
+        4.766721425111264,
+        2.2923490525574257,
+        0.7557791117959847,
+        2.180246020636812,
+        3.1328395271397627,
+        3.414885584722989,
+        6.141278716092364,
+        3.9343063435261336,
+        4.4256361913612485,
+        3.6552011067320898,
+        3.792172105445528,
+        8.508792889148797,
+        8.500193244187885,
+        8.3779218348415,
+        10.690895383958924,
+        9.152523407701064,
+        12.134592307785223,
+        13.33158317141946,
+        12.977420390827676,
+        13.429887515136313,
+        16.682077471109835,
+        16.6827125960449,
+        18.66410762113263,
+        18.34307571788234,
+        21.342802924873936,
+        22.76002504795321,
+        21.382134118958476,
+        20.656631094992424,
+        22.092795159187375,
+        23.018116368431738,
+        23.92068035045573,
+        27.865072062231093,
+        27.730618925862114,
+        29.204763679053418,
+        31.166873469563573,
+        32.230885214107076,
+        31.01449304398488,
+        31.18565216214468,
+        29.13489381368437,
+        32.60549718431466,
+        33.46817125051676,
+        33.31872332111038,
+        35.038925739226016,
+        35.50958056252169,
+        34.494143134313276,
+        37.3287570493601,
+        38.395154755585146,
+        36.36834738298638,
+        36.164847522394055,
+        38.51351273936841,
+        37.18352250350514,
+        40.43855748442549,
+        39.77421544446353,
+        36.59091319758673,
+        35.4502062340748,
+        32.60341877221448,
+        32.773409533168405,
+        32.39241485671539,
+        32.03550124211212,
+        31.545910494531448,
+        32.96706052644269,
+        33.4450784889808,
+        32.94325944013679,
+        33.24788638622225,
+        31.13645104073668,
+        31.18018344192437,
+        29.72249053631081,
+        29.531154182991994,
+        30.178197289517303,
+        28.770176245064818,
+        27.994732634775932,
+        28.847602980519177,
+        28.875996352951468,
+        24.74020605560716,
+        22.50346175407887,
+        21.22872697656939,
+        23.246723445832316
+      ]
+    ]
+  ],
+  "target_errors": {
+    "x": [
+      0.1,
+      0.01,
+      0.001
+    ],
+    "q": [
+      0.1,
+      0.5,
+      1
+    ],
+    "r": [
+      0.1,
+      0.5,
+      1
+    ]
+  },
+  "base_y": 5,
+  "base_x": 6,
+  "n_y": 1,
+  "n_x": 3,
+  "legend_width": 3,
+  "error_func": "se",
+  "known_enc": {
+    "other": "sample",
+    "invr": "sample"
+  },
+  "plans": {
+    "0": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "1": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "2": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "3": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "4": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "5": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "6": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "7": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "8": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "9": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "10": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "11": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "12": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "13": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "14": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "15": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "16": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "17": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "18": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "19": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "20": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "21": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "22": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "23": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "24": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "25": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "26": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "27": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "28": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "29": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "30": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "31": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "32": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "33": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "34": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "35": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "36": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "37": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "38": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "39": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "40": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "41": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "42": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "43": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "44": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "45": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "46": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "47": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "48": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "49": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "50": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "51": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "52": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "53": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "54": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "55": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "56": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "57": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "58": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "59": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "60": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "61": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "62": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "63": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "64": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "65": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "66": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "67": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "68": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "69": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "70": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "71": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "72": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "73": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "74": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "75": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "76": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "77": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "78": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "79": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "80": {
+      "plan": {
+        "x": "symbolic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "81": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "82": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "83": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "84": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "85": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "86": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "87": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "88": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "89": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "90": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "91": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "92": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "93": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "94": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "95": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "96": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "97": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "98": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "99": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "100": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "101": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "102": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "103": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "104": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "105": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "106": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "107": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "108": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "109": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "110": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "111": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "112": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "113": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "114": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "115": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "116": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "117": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "118": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "119": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "120": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "121": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "122": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "123": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "124": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "125": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "126": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "127": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "128": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "129": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "130": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "131": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "132": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "133": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "134": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "135": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "136": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "137": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "138": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "139": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "140": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "141": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "142": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "143": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "144": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "145": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "146": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "147": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "148": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "149": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "150": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "151": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "152": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "153": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "154": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "155": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "156": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "157": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "158": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "159": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "160": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "161": {
+      "plan": {
+        "x": "symbolic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "162": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "163": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "164": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "165": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "166": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "167": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "168": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "169": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "170": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "171": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "172": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "173": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "174": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "175": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "176": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "177": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "178": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "179": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "180": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "181": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "182": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "183": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "184": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "185": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "186": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "187": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "188": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "189": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "190": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "191": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "192": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "193": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "194": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "195": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "196": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "197": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "198": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "199": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "200": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "201": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "202": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "203": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "204": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "205": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "206": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "207": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "208": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "209": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "210": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "211": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "212": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "213": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "214": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "215": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "216": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "217": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "218": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "219": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "220": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "221": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "222": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "223": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "224": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "225": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "226": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "227": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "228": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "229": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "230": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "231": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "232": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "233": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "234": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "235": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "236": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "237": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "238": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "239": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "240": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "241": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "242": {
+      "plan": {
+        "x": "symbolic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "243": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "244": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "245": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "246": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "247": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "248": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "249": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "250": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "251": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "252": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "253": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "254": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "255": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "256": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "257": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "258": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "259": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "260": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "261": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "262": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "263": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "264": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "265": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "266": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "267": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "268": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "269": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "270": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "271": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "272": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "273": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "274": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "275": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "276": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "277": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "278": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "279": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "280": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "281": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "282": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "283": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "284": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "285": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "286": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "287": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "288": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "289": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "290": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "291": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "292": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "293": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "294": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "295": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "296": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "297": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "298": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "299": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "300": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "301": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "302": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "303": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "304": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "305": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "306": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "307": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "308": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "309": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "310": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "311": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "312": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "313": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "314": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "315": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "316": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "317": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "318": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "319": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "320": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "321": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "322": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "323": {
+      "plan": {
+        "x": "sample",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "324": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "325": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "326": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "327": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "328": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "329": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "330": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "331": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "332": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "333": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "334": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "335": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "336": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "337": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "338": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "339": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "340": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "341": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "342": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "343": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "344": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "345": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "346": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "347": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "348": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "349": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "350": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "351": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "352": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "353": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "354": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "355": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "356": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "357": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "358": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "359": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "360": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "361": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "362": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "363": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "364": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "365": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "366": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "367": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "368": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "369": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "370": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "371": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "372": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "373": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "374": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "375": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "376": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "377": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "378": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "379": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "380": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "381": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "382": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "383": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "384": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "385": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "386": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "387": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "388": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "389": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "390": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "391": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "392": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "393": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "394": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "395": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "396": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "397": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "398": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "399": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "400": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "401": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "402": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "403": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "404": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "405": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "406": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "407": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "408": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "409": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "410": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "411": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "412": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "413": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "414": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "415": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "416": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "417": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "418": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "419": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "420": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "421": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "422": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "423": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "424": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "425": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "426": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "427": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "428": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "429": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "430": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "431": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "432": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "433": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "434": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "435": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "436": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "437": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "438": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "439": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "440": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "441": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "442": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "443": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "444": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "445": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "446": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "447": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "448": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "449": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "450": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "451": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "452": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "453": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "454": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "455": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "456": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "457": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "458": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "459": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "460": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "461": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "462": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "463": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "464": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "465": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "466": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "467": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "468": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "469": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "470": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "471": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "472": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "473": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "474": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "475": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "476": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "477": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "478": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "479": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "480": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "481": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "482": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "483": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "484": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "485": {
+      "plan": {
+        "x": "sample",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "486": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "487": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "488": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "489": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "490": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "491": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "492": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "493": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "494": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "495": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "496": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "497": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "498": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "499": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "500": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "501": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "502": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "503": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "504": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "505": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "506": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "507": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "508": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "509": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "510": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "511": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "512": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "513": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "514": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "515": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "516": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "517": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "518": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "519": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "520": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "521": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "522": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "523": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "524": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "525": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "526": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "527": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "528": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "529": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "530": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "531": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "532": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "533": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "534": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "535": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "536": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "537": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "538": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "539": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "540": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "541": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "542": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "543": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "544": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "545": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "546": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "547": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "548": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "549": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "550": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "551": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "552": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "553": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "554": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "555": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "556": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "557": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "558": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "559": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "560": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "561": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "562": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "563": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "564": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "565": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "566": {
+      "plan": {
+        "x": "dynamic",
+        "env": "symbolic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "567": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "568": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "569": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "570": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "571": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "572": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "573": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "574": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "575": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "576": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "577": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "578": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "579": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "580": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "581": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "582": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "583": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "584": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "585": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "586": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "587": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "588": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "589": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "590": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "591": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "592": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "593": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "594": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "595": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "596": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "597": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "598": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "599": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "600": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "601": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "602": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "603": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "604": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "605": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "606": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "607": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "608": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "609": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "610": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "611": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "612": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "613": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "614": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "615": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "616": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "617": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "618": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "619": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "620": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "621": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "622": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "623": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "624": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "625": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "626": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "627": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "628": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "629": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "630": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "631": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "632": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "633": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "634": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "635": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "636": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "637": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "638": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "639": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "640": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "641": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "642": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "643": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "644": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "645": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "646": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "647": {
+      "plan": {
+        "x": "dynamic",
+        "env": "sample",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "648": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "649": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "650": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "651": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "652": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "653": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "654": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "655": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "656": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "657": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "658": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "659": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "660": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "661": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "662": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "663": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "664": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "665": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "666": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "667": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "668": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "669": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "670": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "671": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "672": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "673": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "674": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "symbolic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "675": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "676": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "677": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "678": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "679": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "680": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "681": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "682": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "683": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "684": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "685": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "686": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "687": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "688": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "689": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "690": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "691": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "692": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "693": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "694": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "695": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "696": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "697": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "698": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "699": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "700": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "701": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "sample",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "702": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "703": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "704": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "705": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "706": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "707": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "708": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "709": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "710": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "symbolic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "711": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "712": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "713": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "714": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "715": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "716": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "717": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "718": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "719": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "sample",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "720": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "721": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "sample"
+      },
+      "satisfiable": false
+    },
+    "722": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "symbolic",
+        "x0": "dynamic"
+      },
+      "satisfiable": false
+    },
+    "723": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "724": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "725": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "sample",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    },
+    "726": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "727": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "sample"
+      },
+      "satisfiable": true
+    },
+    "728": {
+      "plan": {
+        "x": "dynamic",
+        "env": "dynamic",
+        "other": "dynamic",
+        "invq": "dynamic",
+        "invr": "dynamic",
+        "x0": "dynamic"
+      },
+      "satisfiable": true
+    }
+  },
+  "variables": [
+    "x",
+    "env",
+    "other",
+    "invq",
+    "invr",
+    "x0"
+  ]
+}

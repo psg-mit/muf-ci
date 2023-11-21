@@ -1,9 +1,24 @@
 {
   "benchmark": "smsbehavior",
   "true_vars": [
-    ["tau", [44]],
-    ["lambda1", [17.749241151314294]],
-    ["lambda2", [22.72325027312415]]
+    [
+      "tau",
+      [
+        44
+      ]
+    ],
+    [
+      "lambda1",
+      [
+        17.749241151314294
+      ]
+    ],
+    [
+      "lambda2",
+      [
+        22.72325027312415
+      ]
+    ]
   ],
   "base_y": 5,
   "base_x": 6,
@@ -11,27 +26,80 @@
   "n_x": 3,
   "legend_width": 4,
   "error_func": "se",
-  "labels": [
-    "lambda1 symbolic",
-    "lambda2 symbolic",
-    "lambda1, lambda2 symbolic",
-    "None symbolic"
-  ],
-  "files": [
-    "smsbehavior_lambda1_exact.si",
-    "smsbehavior_lambda2_exact.si",
-    "smsbehavior_lambda_both_exact.si",
-    "smsbehavior_approx.si"
-  ],
-  "strats": [
-    {"tau": "APPROX", "lambda1": "EXACT", "lambda2": "APPROX"},
-    {"tau": "APPROX", "lambda1": "APPROX", "lambda2": "EXACT"},
-    {"tau": "APPROX", "lambda1": "EXACT", "lambda2": "EXACT"},
-    {"tau": "APPROX", "lambda1": "APPROX", "lambda2": "APPROX"}
-  ],
-  "vars": [
+  "plans": {
+    "0": {
+      "plan": {
+        "lambda1": "symbolic",
+        "lambda2": "symbolic",
+        "tau": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "1": {
+      "plan": {
+        "lambda1": "symbolic",
+        "lambda2": "symbolic",
+        "tau": "sample"
+      },
+      "satisfiable": true
+    },
+    "2": {
+      "plan": {
+        "lambda1": "symbolic",
+        "lambda2": "sample",
+        "tau": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "3": {
+      "plan": {
+        "lambda1": "symbolic",
+        "lambda2": "sample",
+        "tau": "sample"
+      },
+      "satisfiable": true
+    },
+    "4": {
+      "plan": {
+        "lambda1": "sample",
+        "lambda2": "symbolic",
+        "tau": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "5": {
+      "plan": {
+        "lambda1": "sample",
+        "lambda2": "symbolic",
+        "tau": "sample"
+      },
+      "satisfiable": true
+    },
+    "6": {
+      "plan": {
+        "lambda1": "sample",
+        "lambda2": "sample",
+        "tau": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "7": {
+      "plan": {
+        "lambda1": "sample",
+        "lambda2": "sample",
+        "tau": "sample"
+      },
+      "satisfiable": true
+    }
+  },
+  "variables": [
     "lambda1",
     "lambda2",
     "tau"
-  ]
+  ],
+  "target_errors": {
+    "tau": 324.0,
+    "lambda1": 0.9404866269558972,
+    "lambda2": 1.9555656699125805
+  }
 }

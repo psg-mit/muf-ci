@@ -1,72 +1,184 @@
 {
   "benchmark": "gaussianmixture",
   "true_vars": [
-    ["theta", [0.14555517884306435]],
-    ["mu1", [-10.994857395060004]],
-    ["mu2", [8.416249615895826]]
+    [
+      "theta",
+      [
+        0.14555517884306435
+      ]
+    ],
+    [
+      "mu1",
+      [
+        -10.994857395060004
+      ]
+    ],
+    [
+      "mu2",
+      [
+        8.416249615895826
+      ]
+    ]
   ],
+  "target_errors": {
+    "theta": 0.0005180928400134136,
+    "mu1": 0.09002242211571783,
+    "mu2": 1.7138203257795204
+  },
   "base_y": 5,
   "base_x": 6,
   "n_y": 1,
   "n_x": 3,
-  "legend_width": 4,
+  "legend_width": 3,
   "error_func": "se",
-  "labels": [
-    "theta symbolic",
-    "mu1 symbolic",
-    "mu2 symbolic",
-    "theta, mu1, mu2 symbolic",
-    "theta, mu1 symbolic",
-    "theta, mu2 symbolic",
-    "mu1, mu2 symbolic",
-    "None symbolic"
-  ],
-  "files": [
-    "gaussianmixture_theta_exact.si",
-    "gaussianmixture_mu1_exact.si",
-    "gaussianmixture_mu2_exact.si",
-    "gaussianmixture_mu1_mu2_theta_exact.si",
-    "gaussianmixture_mu1_theta_exact.si",
-    "gaussianmixture_mu2_theta_exact.si",
-    "gaussianmixture_mu_both_exact.si",
-    "gaussianmixture_approx.si"
-  ],
-  "strats": [
-    {"make_observations_switch": "APPROX", 
-    "mu1": "APPROX", 
-    "mu2": "APPROX", 
-    "theta": "EXACT"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "EXACT", 
-    "mu2": "APPROX", 
-    "theta": "APPROX"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "APPROX", 
-    "mu2": "EXACT", 
-    "theta": "APPROX"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "EXACT", 
-    "mu2": "EXACT", 
-    "theta": "EXACT"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "EXACT", 
-    "mu2": "APPROX", 
-    "theta": "EXACT"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "APPROX", 
-    "mu2": "EXACT", 
-    "theta": "EXACT"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "EXACT", 
-    "mu2": "EXACT", 
-    "theta": "APPROX"},
-    {"make_observations_switch": "APPROX", 
-    "mu1": "APPROX", 
-    "mu2": "APPROX", 
-    "theta": "APPROX"}
-  ],
-  "vars": [
-    "make_observations_switch",
+  "plans": {
+    "0": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "symbolic",
+        "mu1": "symbolic",
+        "mu2": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "1": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "symbolic",
+        "mu1": "symbolic",
+        "mu2": "sample"
+      },
+      "satisfiable": false
+    },
+    "2": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "symbolic",
+        "mu1": "sample",
+        "mu2": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "3": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "symbolic",
+        "mu1": "sample",
+        "mu2": "sample"
+      },
+      "satisfiable": false
+    },
+    "4": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "sample",
+        "mu1": "symbolic",
+        "mu2": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "5": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "sample",
+        "mu1": "symbolic",
+        "mu2": "sample"
+      },
+      "satisfiable": false
+    },
+    "6": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "sample",
+        "mu1": "sample",
+        "mu2": "symbolic"
+      },
+      "satisfiable": false
+    },
+    "7": {
+      "plan": {
+        "switch": "symbolic",
+        "theta": "sample",
+        "mu1": "sample",
+        "mu2": "sample"
+      },
+      "satisfiable": false
+    },
+    "8": {
+      "plan": {
+        "switch": "sample",
+        "theta": "symbolic",
+        "mu1": "symbolic",
+        "mu2": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "9": {
+      "plan": {
+        "switch": "sample",
+        "theta": "symbolic",
+        "mu1": "symbolic",
+        "mu2": "sample"
+      },
+      "satisfiable": true
+    },
+    "10": {
+      "plan": {
+        "switch": "sample",
+        "theta": "symbolic",
+        "mu1": "sample",
+        "mu2": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "11": {
+      "plan": {
+        "switch": "sample",
+        "theta": "symbolic",
+        "mu1": "sample",
+        "mu2": "sample"
+      },
+      "satisfiable": true
+    },
+    "12": {
+      "plan": {
+        "switch": "sample",
+        "theta": "sample",
+        "mu1": "symbolic",
+        "mu2": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "13": {
+      "plan": {
+        "switch": "sample",
+        "theta": "sample",
+        "mu1": "symbolic",
+        "mu2": "sample"
+      },
+      "satisfiable": true
+    },
+    "14": {
+      "plan": {
+        "switch": "sample",
+        "theta": "sample",
+        "mu1": "sample",
+        "mu2": "symbolic"
+      },
+      "satisfiable": true
+    },
+    "15": {
+      "plan": {
+        "switch": "sample",
+        "theta": "sample",
+        "mu1": "sample",
+        "mu2": "sample"
+      },
+      "satisfiable": true
+    }
+  },
+  "variables": [
+    "switch",
     "theta",
     "mu1",
     "mu2"

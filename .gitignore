@@ -7,6 +7,7 @@ tests/*.ml
 *.cmo
 
 venv/
+pyvenv/
 .DS_Store
 muf.log
 benchmarks/*/*.ml
@@ -14,3 +15,7 @@ benchmarks/*/output*/*.png
 benchmarks/*/output*/*.pdf
 benchmarks/*/all_programs/*.ml
 .vscode/
+
+__pycache__
+.mypy_cache
+.pytest_cache

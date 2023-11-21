@@ -1,0 +1,44 @@
+{
+  "n_plans": 8,
+  "n_vars": 3,
+  "plan": {
+    "0": {
+      "true_satisfied": false,
+      "infer_satisfied": false
+    },
+    "1": {
+      "true_satisfied": true,
+      "infer_satisfied": false
+    },
+    "2": {
+      "true_satisfied": false,
+      "infer_satisfied": false
+    },
+    "3": {
+      "true_satisfied": true,
+      "infer_satisfied": false
+    },
+    "4": {
+      "true_satisfied": false,
+      "infer_satisfied": false
+    },
+    "5": {
+      "true_satisfied": true,
+      "infer_satisfied": false
+    },
+    "6": {
+      "true_satisfied": false,
+      "infer_satisfied": false
+    },
+    "7": {
+      "true_satisfied": true,
+      "infer_satisfied": false
+    }
+  },
+  "n_true_satisfied": 4,
+  "n_inferred_satisfied": 0,
+  "n_satisfied_tp": 0,
+  "n_satisfied_fp": 0,
+  "n_satisfied_fn": 4,
+  "n_satisfied_tn": 4
+}
