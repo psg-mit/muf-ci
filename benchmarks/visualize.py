@@ -28,8 +28,6 @@ DEFAULT_METHODS = [
 
 N_INTERVALS = 30
 
-CWD = '/Users/ellieyhc/Documents/Research/siren'
-
 BENCHMARK_LATEX_NAMES = {
   'gaussianmixture': r"\bGaussianmix{}",
   'envnoise': r"\bEnvnoise{}",

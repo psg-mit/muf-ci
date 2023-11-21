@@ -32,7 +32,7 @@ DEFAULT_METHODS = [
 
 N_INTERVALS = 30
 
-CWD = '/Users/ellieyhc/Documents/Research/siren'
+CWD = '..'
 
 def calc_error(true_x, x):
   return (true_x - x) ** 2
