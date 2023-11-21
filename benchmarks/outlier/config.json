@@ -191,7 +191,7 @@
     "outlier_prob"
   ],
   "target_errors": {
-    "outlier_prob": 0.0002855515433255864,
+    "outlier_prob": 0.00023200175302307298,
     "xt": 0.04160691828946171
   }
 }
