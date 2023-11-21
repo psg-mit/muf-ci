@@ -11,7 +11,7 @@ BENCHMARK_DIR = 'benchmarks'
 
 DEFAULT_BENCHMARKS = [
   'gaussianmixture',
-  'envnoise'
+  'envnoise',
   'noise',
   'smsbehavior',
   'outlier',
@@ -54,7 +54,7 @@ N_INTERVALS = 30
 COLORS = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
 # red blue orange green purple indigo yellow brown magenta
 # colors = ["#f4827b", "#7cc7d2", "#feb140", "#9baa20", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
-EDGECOLORS = ["#b7575c", "#c0ab5f","#708200","#4d9aa4","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
+EDGECOLORS = ["#b7575c", "#c78200", "#708200","#4d9aa4","#7c5b83","#204f87", "#c0ab5f", "#56281b", "#9c0085", "#171616"]
 # edgecolors = ["#b7575c", "#4d9aa4", "#c0ab5f","#708200","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
 
 MARKERS = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
@@ -66,12 +66,28 @@ BARWIDTH = 0.25
 GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
 PLT_SETTINGS = {
-  'font.size': 24, 
+  # 'font.size': 24, 
   'font.family': 'serif', 
-  'font.serif': 'Times New Roman', 
+  # 'font.serif': 'Times New Roman', 
   # 'font.weight': 'bold',
   # 'axes.labelweight': 'bold',
   # 'figure.autolayout': True,
+  "pgf.texsystem": "pdflatex",        # change this if using xetex or lautex
+  "text.usetex": True,                # use LaTeX to write all text
+  "font.family": "serif",
+  "font.serif": [],                   # blank entries should cause plots to inherit fonts from the document
+  "font.sans-serif": [],
+  "font.monospace": [],
+  # "axes.labelsize": 10,               # LaTeX default is 10pt font.
+  # "font.size": 10,
+  # "legend.fontsize": 8,               # Make the legend/label fonts a little smaller
+  # "xtick.labelsize": 8,
+  # "ytick.labelsize": 8,
+  # "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
+  # "pgf.preamble": "\n".join([         # plots will use this preamble
+  #     r"\usepackage[utf8x]{inputenc}",    # use utf8 fonts becasue your computer can handle it :)
+  #     r"\usepackage[T1]{fontenc}",        # plots will be generated using this preamble
+      # ])
 }
 
 def table(statistics):
@@ -346,109 +362,120 @@ def plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x,
 
     plt.close(fig)
   
-def plot_accuracy_bar(benchmarks, output, methods):
+def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
-  for benchmark in args.benchmark:
-    print('Benchmark: {}'.format(benchmark))
+  spacing = 0.02
+  # barwidth = 1/(len(plans) + 1 + spacing * (len(plans) - 1)) 
+  barwidth = 0.1
 
-    with open(os.path.join(benchmark, 'config.json')) as f:
-      config = json.load(f)
+  # first 4 columns are metadata
+  # n_variables = data.columns[4:].shape[0]
+  variables = data.columns[4:]
 
-    plans: List[Tuple[str, Dict[str, str]]] = []
-    if args.plan_ids is None:
-      plans = [(plan_id, data['plan']) for plan_id, data in config['plans'].items() if data['satisfiable']]
-    else:
-      plans = [(plan_id, config[plan_id]['plan']) for plan_id in args.plan_ids]
+  for method_i, method in enumerate(methods):
+    fig = plt.figure(figsize=(base_x * n_x, base_y * n_y))
+    ax = fig.add_subplot(111)
 
-    output = os.path.join(benchmark, args.output)
+    # y axis is runtime in log seconds
+    # x axis is variable * plan
+    # plan x variable
 
-    n_vars = len(config['true_vars'])
-    base_x = int(config['base_x']) if 'base_x' in config else 5
-    base_y = int(config['base_y']) if 'base_y' in config else 6
+    # baseline
+    # median time over n runs
+    runtime = baseline.loc[baseline['method'] == method]['time'].median()
+    all_runtimes = [[runtime for _ in range(len(variables))]]
+    all_particles = [[1000 for _ in range(len(variables))]]
+    x_pos = [list(np.arange(len(variables)))]
+    labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
+ 
+    for var_i, var in enumerate(variables):
+      target_error = target_errors[var]
 
-    if os.path.exists(os.path.join(output, 'accuracy.csv')):
-      data = pd.read_csv(os.path.join(output, 'accuracy.csv'), delimiter=',')
-    else:
-      print('No accuracy.csv found')
-      continue
+      x_pos.append([x + barwidth + spacing for x in x_pos[-1]])
 
-    # first 4 columns are metadata
-    # n_variables = data.columns[4:].shape[0]
-    variables = data.columns[4:]
+      for plan_i, (plan_id, plan) in enumerate(plans):
+        plan_id = int(plan_id)
+        print(plan_id)
 
-    # collect max particle with 90th percentile error over n runs less than target error
-    # results = pd.DataFrame(columns=['method', 'var', 'target_error', 'plan_id', 'particles', 'runtime'])
-    results = []
+        # 90th percentile error over n runs
+        errors = data.loc[data['method'] == method]\
+                    .loc[data['plan_id'] == plan_id]\
+                    .groupby(['particles'])[var]\
+                    .quantile(0.9)
+        
+        # print(errors)
+        # print(errors[errors < target_error])
 
-    for method_i, method in enumerate(methods):
-      for var_i, var in enumerate(variables):
-        for target_error in target_errors[var]:
-          for plan_i, (plan_id, plan) in enumerate(plans):
-            plan_id = int(plan_id)
+        # get max particle with error less than target error
+        smallest_error_particle = errors[errors < 10].index.max()
 
-            # 90th percentile error over n runs
-            errors = data.loc[data['method'] == method]\
+        # print(smallest_error_particle)
+
+
+        if np.isnan(smallest_error_particle):
+          runtimes = data.loc[data['method'] == method]\
                         .loc[data['plan_id'] == plan_id]\
-                        .groupby(['particles'])[var]\
-                        .quantile(0.9)
-            
-            # print( errors[errors < target_error])
+                        .groupby(['particles'])['time']\
+                        .median()
+          
+          runtime = runtimes.max() + 1
 
-            # get max particle with error less than target error
-            smallest_error_particle = errors[errors < target_error].index.max()
+          all_runtimes.append([runtime for _ in range(len(variables))])
+          all_particles.append([None for _ in range(len(variables))])
 
-            # print(smallest_error_particle)
+        else:
+          # get runtime of max particle rows
+          runtimes = data.loc[data['method'] == method]\
+                          .loc[data['plan_id'] == plan_id]\
+                          .loc[data['particles'] == smallest_error_particle]\
+                          .groupby(['particles'])['time']\
+                          .median()
+          
+          all_runtimes.append(list(runtimes))
+          all_particles.append([smallest_error_particle for _ in range(len(variables))])
 
-            if np.isnan(smallest_error_particle):
-              runtimes = data.loc[data['method'] == method]\
-                            .loc[data['plan_id'] == plan_id]\
-                            .groupby(['particles'])['time']\
-                            .median()
-              
-              runtime = runtimes.max() + 1
-            else:
-              runtime = data.loc[data['method'] == method]\
-                              .loc[data['plan_id'] == plan_id]\
-                              .loc[data['particles'] == smallest_error_particle]\
-                              .groupby(['particles'])['time']\
-                              .median()
-              
-            results.append([method, var, target_error, plan_id, smallest_error_particle, runtime])
+    for i, (x_pos, runtimes, particles) in enumerate(zip(x_pos, all_runtimes, all_particles)):
+      p = ax.bar(x_pos, runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
 
-    results = pd.DataFrame(results, columns=['method', 'var', 'target_error', 'plan_id', 'particles', 'runtime'])
+      particles = [f'{p:,}' if p is not None else '> 1,000' for p in particles]
+      
+      ax.bar_label(p, labels=particles, padding=3, label_type = 'center', rotation=90)
+          
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+    # ax.set_yscale('symlog', linthresh=1e-10)
+    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5})
+    # ax.minorticks_on()
+    # ax.tick_params(axis='x', which='minor', bottom=False)
+    ax.tick_params(axis='x', which='major')
+    ax.tick_params(axis='y', which='minor')
+    # ax.tick_params(axis='both', color='gray', linestyle='--', alpha=0.5)
 
-    for method_i, method in enumerate(methods):
-      fig = plt.figure(figsize=(base_x, base_y))
-      ax = fig.add_subplot(1, 1, 1)
+    ax.set_xticks([r + barwidth for r in range(len(variables))], [var for var in variables])
 
-      for var_i, var in enumerate(variables):  
-        pass
+    print('Saving accuracy plots')
 
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    for spine in ax.spines.values():
+      spine.set_edgecolor('#696969')
 
-    # print('Saving accuracy plots')
-
-    # fig.suptitle(f'Variable Accuracy to Execution Time')
-    # # fig.tight_layout()
+    ax.set_title(f'{benchmark}')
+    # fig.tight_layout()
     # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    # lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.35))
+    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.2))
 
-    # # fig.supxlabel('Execution Time in s (log scale)')
-    # # fig.supylabel('Error (log scale)')
+    ax.set_ylabel('Execution Time in s (log scale)')
+    # ax.set_ylabel('Error (log scale)')
 
-    # if n_y == 1:
-    #   plt.setp(axes[1], xlabel='Execution Time in s (log scale)')
-    #   plt.setp(axes[0], ylabel='Error (log scale)')
-    # else:
-    #   plt.setp(axes[n_vars // 2, :], xlabel='Execution Time in s (log scale)')
-    #   plt.setp(axes[:, 0], ylabel='Error (log scale)')
+    fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
 
-    # fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_inches='tight')
-    # fig.savefig(os.path.join(output, f'accuracy.png'), bbox_inches='tight')
-    # # fig.savefig(os.path.join(output, f'particles.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    # # fig.savefig(os.path.join(output, f'particles.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-    # plt.close(fig)
+    plt.close(fig)
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
@@ -460,12 +487,11 @@ if __name__ == '__main__':
 
   sp = p.add_subparsers(dest='subparser_name')
 
-  accuracy_bar_parser = sp.add_parser('accuracybar')
   table_parser = sp.add_parser('table')
+  plot_parser = sp.add_parser('plot')
 
   args = p.parse_args()
 
-  all_statistics = {}
 
   methods = [method for method in args.methods if method in DEFAULT_METHODS]
 
@@ -473,6 +499,7 @@ if __name__ == '__main__':
 
   if args.subparser_name == 'table':
     # Load statistics
+    all_statistics = {}
 
     for benchmark in args.benchmark:
       output = os.path.join(benchmark, args.output)
@@ -481,9 +508,9 @@ if __name__ == '__main__':
       all_statistics[benchmark] = statistics
     table(all_statistics)
 
-  elif args.subparser_name == 'accuracybar':
-    plot_accuracy_bar(args.benchmark, args.output, methods)
   else:
+    print(args.benchmark)
+
     for benchmark in args.benchmark:
       print('Benchmark: {}'.format(benchmark))
 
@@ -506,17 +533,28 @@ if __name__ == '__main__':
       base_y = int(config['base_y']) if 'base_y' in config else 6
       legend_width = int(config['legend_width']) if 'legend_width' in config else n_vars
 
-      if os.path.exists(os.path.join(output, 'particles.csv')):
-        data = pd.read_csv(os.path.join(output, 'particles.csv'), delimiter=',')
 
-        plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, base_y, legend_width)
+      if os.path.exists(os.path.join(output, 'results.csv')):
+        data = pd.read_csv(os.path.join(output, 'results.csv'), delimiter=',')
 
-      if os.path.exists(os.path.join(output, 'accuracy.csv')):
-        data = pd.read_csv(os.path.join(output, 'accuracy.csv'), delimiter=',')
+        if os.path.exists(os.path.join(output, 'baseline.csv')):
+          baseline = pd.read_csv(os.path.join(output, 'baseline.csv'), delimiter=',')
 
-        target_errors = config['target_errors']
+          target_errors = config['target_errors']
 
-        plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
+          plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
+
+      # if os.path.exists(os.path.join(output, 'particles.csv')):
+      #   data = pd.read_csv(os.path.join(output, 'particles.csv'), delimiter=',')
+
+      #   plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, base_y, legend_width)
+
+      # if os.path.exists(os.path.join(output, 'accuracy.csv')):
+      #   data = pd.read_csv(os.path.join(output, 'accuracy.csv'), delimiter=',')
+
+      #   target_errors = config['target_errors']
+
+      #   plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
 
       
 
