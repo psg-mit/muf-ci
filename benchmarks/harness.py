@@ -513,13 +513,16 @@ if __name__ == '__main__':
       true_vars = config['true_vars']
 
       results_file = os.path.join(benchmark, args.output, 'baseline.csv')
-      with open(results_file, 'w') as f:
-        writer = csv.writer(f)
-        fieldnames = ['plan_id', 'method', 'particles', 'time']
-        fieldnames += [var[0] for var in true_vars]
-        writer.writerow(fieldnames)
 
-      run_particles([file], n, [particles], methods, true_vars, results_file)
+      # run baseline if it doesn't exist
+      if not os.path.exists(results_file):
+        with open(results_file, 'w') as f:
+          writer = csv.writer(f)
+          fieldnames = ['plan_id', 'method', 'particles', 'time']
+          fieldnames += [var[0] for var in true_vars]
+          writer.writerow(fieldnames)
+
+        run_particles([file], n, [particles], methods, true_vars, results_file)
 
       # get median accuracy of each variable without any annotations with 
       # 1000 particles
