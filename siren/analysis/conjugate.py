@@ -3,6 +3,60 @@ from typing import Optional, Tuple
 from siren.grammar import *
 from siren.analysis.interface import AbsSymState
 
+# If expr scales rv, returns the scaling factor
+# Not complete
+def is_scaled(state: AbsSymState, expr: AbsSymExpr, e: AbsSymExpr) -> Optional[AbsSymExpr]:
+  if expr == e:
+    return AbsConst(1)
+  
+  match expr:
+    case Const(_):
+      return None
+    case RandomVar(_):
+      return None
+    case Add(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is None or s2 is None:
+        return None
+      else:
+        return state.ex_add(s1, s2)
+    case Mul(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is None and s2 is None:
+        return None
+      elif s1 is None and s2 is not None:
+        return state.ex_mul(s2, e1)
+      elif s1 is not None and s2 is None:
+        return state.ex_mul(s1, e2)
+      else:
+        assert s1 is not None and s2 is not None
+        return state.ex_mul(s1, s2)
+    case Div(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is not None and s2 is not None:
+        return None # e cancels out
+      elif s1 is None and s2 is not None:
+        return state.ex_div(e1, s2)
+      elif s1 is not None and s2 is None:
+        return state.ex_div(s1, e2)
+      else:
+        return None
+    case Ite(_):
+      return None
+    case Eq(_):
+      return None
+    case Lt(_):
+      return None
+    case Lst(_):
+      return None
+    case Pair(_):
+      return None
+    case _:
+      raise ValueError(expr)
+
 def abs_is_affine(state: AbsSymState, expr: AbsSymExpr, rv: AbsRandomVar) -> Optional[Tuple[AbsSymExpr, AbsSymExpr]]:
   match expr:
     case AbsConst(_):
@@ -204,5 +258,59 @@ def gamma_normal_conjugate(state: AbsSymState, rv_par: AbsRandomVar, rv_child: A
         return (AbsStudentT(mu, tau2, nu), AbsGamma(a_new, b_new))
       else:
         return None
+    case _:
+      return None
+    
+def normal_inverse_gamma_normal_conjugate(state: AbsSymState, rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> Optional[Tuple[AbsStudentT, AbsNormal]]:
+  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  match prior, likelihood:
+    case AbsNormal(mu0, var1), AbsNormal(mu, var2):
+      # var2 must be a random variable of invgamma
+      # TODO: case of var2 being scaled invgamma
+      match var2:
+        case AbsDiv(AbsConst(1), var2_inner):
+          if isinstance(var2_inner, AbsRandomVar):
+            match state.distr(var2_inner):
+              case AbsGamma(a, b):
+                # var1 should be the invgamma scaled by 1/lambda
+                k = is_scaled(state, var1, var2)
+                if k is None:
+                  return None
+                else:
+                  match state.eval(k):
+                    case AbsConst(0):
+                      return None
+                    case AbsConst(_):
+                      lam = state.ex_div(AbsConst(1), k)
+
+                      if isinstance(mu0, Const) \
+                        and mu == rv_par \
+                        and not mu0.depends_on(rv_child, True) \
+                        and not var1.depends_on(rv_child, True):
+
+                        mu0_new = state.ex_div(state.ex_add(state.ex_mul(lam, mu0), rv_child), state.ex_add(lam, AbsConst(1)))
+                        lam_new = state.ex_add(lam, AbsConst(1))
+                        
+                        a_new = state.ex_add(a, AbsConst(0.5))
+                        b_inner = state.ex_add(rv_child, AbsConst(-mu0.v))
+                        b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, AbsConst(1))), state.ex_div(state.ex_mul(b_inner, b_inner), AbsConst(2))))
+
+                        state.set_distr(var2_inner, AbsGamma(a_new, b_new))
+
+                        var_new = state.ex_div(AbsConst(1), state.ex_mul(lam_new, var2_inner))
+
+                        mu_new = mu0
+                        tau2_new = state.ex_div(state.ex_mul(b, state.ex_add(lam, AbsConst(1))), state.ex_mul(a, lam))
+                        nu_new = state.ex_mul(AbsConst(2), a)
+
+                        return (AbsStudentT(mu_new, tau2_new, nu_new), AbsNormal(mu0_new, var_new))
+                    case _:
+                      return None
+              case _:
+                return None
+          else:
+            return None
+        case _:
+          return None
     case _:
       return None

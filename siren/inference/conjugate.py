@@ -3,6 +3,60 @@ from typing import Optional, Tuple
 from siren.grammar import *
 from siren.inference.interface import SymState
 
+# If expr scales rv, returns the scaling factor
+# Not complete
+def is_scaled(state: SymState, expr: SymExpr, e: SymExpr) -> Optional[SymExpr]:
+  if expr == e:
+    return Const(1)
+  
+  match expr:
+    case Const(_):
+      return None
+    case RandomVar(_):
+      return None
+    case Add(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is None or s2 is None:
+        return None
+      else:
+        return state.ex_add(s1, s2)
+    case Mul(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is None and s2 is None:
+        return None
+      elif s1 is None and s2 is not None:
+        return state.ex_mul(s2, e1)
+      elif s1 is not None and s2 is None:
+        return state.ex_mul(s1, e2)
+      else:
+        assert s1 is not None and s2 is not None
+        return state.ex_mul(s1, s2)
+    case Div(e1, e2):
+      s1 = is_scaled(state, e1, e)
+      s2 = is_scaled(state, e2, e)
+      if s1 is not None and s2 is not None:
+        return None # e cancels out
+      elif s1 is None and s2 is not None:
+        return state.ex_div(e1, s2)
+      elif s1 is not None and s2 is None:
+        return state.ex_div(s1, e2)
+      else:
+        return None
+    case Ite(_):
+      return None
+    case Eq(_):
+      return None
+    case Lt(_):
+      return None
+    case Lst(_):
+      return None
+    case Pair(_):
+      return None
+    case _:
+      raise ValueError(expr)
+
 def is_affine(state: SymState, expr: SymExpr, rv: RandomVar) -> Optional[Tuple[SymExpr, SymExpr]]:
   match expr:
     case Const(_):
@@ -185,6 +239,7 @@ def gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomV
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Gamma(a, b), Normal(mu, var):
+      # TODO: case of var being scaled invgamma
       if isinstance(mu, Const) \
         and var == state.ex_div(Const(1), rv_par) \
         and not a.depends_on(rv_child, True) \
@@ -204,3 +259,57 @@ def gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomV
     case _:
       return None
     
+def normal_inverse_gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Normal]]:
+  print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
+  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  match prior, likelihood:
+    case Normal(mu0, var1), Normal(mu, var2):
+      # var2 must be a random variable of invgamma
+      # TODO: case of var2 being scaled invgamma
+      match var2:
+        case Div(Const(1), var2_inner):
+          if isinstance(var2_inner, RandomVar):
+            match state.distr(var2_inner):
+              case Gamma(a, b):
+                # var1 should be the invgamma scaled by 1/lambda
+                k = is_scaled(state, var1, var2)
+                if k is None:
+                  return None
+                else:
+                  match state.eval(k):
+                    case Const(0):
+                      return None
+                    case Const(_):
+                      lam = state.ex_div(Const(1), k)
+
+                      if isinstance(mu0, Const) \
+                        and mu == rv_par \
+                        and not mu0.depends_on(rv_child, True) \
+                        and not var1.depends_on(rv_child, True):
+
+                        mu0_new = state.ex_div(state.ex_add(state.ex_mul(lam, mu0), rv_child), state.ex_add(lam, Const(1)))
+                        lam_new = state.ex_add(lam, Const(1))
+                        
+                        a_new = state.ex_add(a, Const(0.5))
+                        b_inner = state.ex_add(rv_child, Const(-mu0.v))
+                        b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
+
+                        state.set_distr(var2_inner, Gamma(a_new, b_new))
+
+                        var_new = state.ex_div(Const(1), state.ex_mul(lam_new, var2_inner))
+
+                        mu_new = mu0
+                        tau2_new = state.ex_div(state.ex_mul(b, state.ex_add(lam, Const(1))), state.ex_mul(a, lam))
+                        nu_new = state.ex_mul(Const(2), a)
+
+                        return (StudentT(mu_new, tau2_new, nu_new), Normal(mu0_new, var_new))
+                    case _:
+                      return None
+              case _:
+                return None
+          else:
+            return None
+        case _:
+          return None
+    case _:
+      return None

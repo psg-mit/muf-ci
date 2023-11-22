@@ -237,7 +237,10 @@ class SSIState(SymState):
 
       match self.distr(rv_par), self.distr(rv_child):
         case Normal(_), Normal(_):
-          return _update(conj.gaussian_conjugate(self, rv_par, rv_child))
+          if _update(conj.gaussian_conjugate(self, rv_par, rv_child)):
+            return True
+          else:
+            return _update(conj.normal_inverse_gamma_normal_conjugate(self, rv_par, rv_child))
         case Bernoulli(_), Bernoulli(_):
           return _update(conj.bernoulli_conjugate(self, rv_par, rv_child))
         case Beta(_), Bernoulli(_):
@@ -253,12 +256,12 @@ class SSIState(SymState):
 
     def _hoist_inner(rv_cur: RandomVar, ghost_roots: Set[RandomVar]) -> None:
       # Hoist parents
-      parents = _topo_sort(self.parents(rv_cur))[::-1]
+      parents = _topo_sort(self.parents(rv_cur))
+      ghost_roots1 = copy(ghost_roots)
       for rv_par in parents:
-        if rv_par not in ghost_roots:
-          _hoist_inner(rv_par, ghost_roots)
-        else:
-          ghost_roots.add(rv_par)
+        if rv_par not in ghost_roots1:
+          _hoist_inner(rv_par, ghost_roots1)
+          ghost_roots1.add(rv_par)
 
       # Hoist current node
       for rv_par in parents[::-1]:
