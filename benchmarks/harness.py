@@ -36,13 +36,28 @@ CWD = '..'
 
 def calc_error(true_x, x):
   return (true_x - x) ** 2
-  
-def close_to_target(target_error, program_output):
-  for var, error in program_output.items():
-    if log10(error) - log10(target_error[var]) > 0.5:
-      return False
 
+def close_to_target(target, value):
+  if value == 0:
+    return True
+  if log10(value) - log10(target) <= 0.5:
+    return True
+
+  return False
+  
+def close_to_target_error(target_error, program_output):
+  for var, error in program_output.items():
+    if not close_to_target(target_error[var], error):
+      return False
+    
   return True
+
+def close_to_target_runtime(target_runtime, runtime):
+  # target_runtime should be smaller than runtime
+  if log10(target_runtime) - log10(runtime) <= 0.1:
+    return True
+
+  return False
 
 def is_satisfiable(annotation, distr_enc):
   if annotation == 'dynamic':
@@ -178,6 +193,51 @@ def run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, resu
 
           # check if done
           if close_to_target(target_errors, program_output):
+            close += 1
+
+        if close / n >= 0.9:
+          break
+
+        if p > max_p:
+          print(f'ERROR: Could not reach target error')
+          break
+
+        # increase number of particles
+        p += 2
+
+# Run experiments to reach a given runtime
+def run_runtime(files, min_p, max_p, n, target_runtime, methods, true_vars, results_file):
+  for method in methods:
+    print(f'Running {method}...')
+
+    for file in files:
+      plan_id = get_plan_id(file)
+
+      p = min_p
+      while True:
+        print(f'Running with {p} particles')
+
+        # 90% of n runs need to be close to target for each variable
+        
+        close = 0
+        for i in range(n):
+          print(f'{plan_id} {method} - {p} particles - Run {i}')
+
+          t, program_output = run_siren(file, p, method, true_vars)
+
+          # write results to csv
+          with open(results_file, 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+              plan_id, 
+              method, 
+              p, 
+              t,
+              *program_output.values()
+            ])
+
+          # check if done
+          if close_to_target_runtime(target_runtime, t):
             close += 1
 
         if close / n >= 0.9:
@@ -378,6 +438,7 @@ if __name__ == '__main__':
   rp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
   rp.add_argument('--prange', '-pr', type=int, required=False, nargs=2, default=[1, 1000])
   rp.add_argument('--accuracy', '-a', action='store_true')
+  rp.add_argument('--runtime', '-r', action='store_true')
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   
   ap = sp.add_parser('analyze')
@@ -434,7 +495,39 @@ if __name__ == '__main__':
 
       true_vars = config['true_vars']
 
-      if not args.accuracy:
+      if args.accuracy and args.runtime:
+        raise Exception('Cannot run both accuracy and runtime')
+      elif args.runtime:
+        target_runtime = config['target_runtime']
+        min_p = config['min_particles'] if 'min_particles' in config else 1
+        max_p = config['max_particles'] if 'max_particles' in config else 1000
+
+        results_file = os.path.join(benchmark, args.output, 'results.csv')
+        if not os.path.exists(results_file):
+          with open(results_file, 'w') as f:
+            writer = csv.writer(f)
+            fieldnames = ['plan_id', 'method', 'particles', 'time']
+            fieldnames += [var[0] for var in true_vars]
+            writer.writerow(fieldnames)
+
+        run_runtime(files, min_p, max_p, n, target_runtime, methods, true_vars, results_file)
+
+      elif args.accuracy:
+        target_errors = config['target_errors']
+        min_p = config['min_particles'] if 'min_particles' in config else 1
+        max_p = config['max_particles'] if 'max_particles' in config else 1000
+
+        results_file = os.path.join(benchmark, args.output, 'results.csv')
+        if not os.path.exists(results_file):
+          with open(results_file, 'w') as f:
+            writer = csv.writer(f)
+            fieldnames = ['plan_id', 'method', 'particles', 'time']
+            fieldnames += [var[0] for var in true_vars]
+            writer.writerow(fieldnames)
+
+        run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, results_file)
+      else:
+        # Just run with given number of particles
         # Get list of particles
         if args.particles is None:
           particles = sorted([int(x) for x in np.unique(np.logspace(
@@ -456,20 +549,6 @@ if __name__ == '__main__':
             writer.writerow(fieldnames)
 
         run_particles(files, n, particles, methods, true_vars, results_file)
-      else:
-        target_errors = config['target_errors']
-        min_p = config['min_particles'] if 'min_particles' in config else 1
-        max_p = config['max_particles'] if 'max_particles' in config else 1000
-
-        results_file = os.path.join(benchmark, args.output, 'results.csv')
-        if not os.path.exists(results_file):
-          with open(results_file, 'w') as f:
-            writer = csv.writer(f)
-            fieldnames = ['plan_id', 'method', 'particles', 'time']
-            fieldnames += [var[0] for var in true_vars]
-            writer.writerow(fieldnames)
-
-        run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, results_file)
     elif args.subparser_name == 'analyze':
       filename = os.path.join(benchmark, args.output, 'statistics.json')
 
@@ -524,19 +603,26 @@ if __name__ == '__main__':
 
         run_particles([file], n, [particles], methods, true_vars, results_file)
 
-      # get median accuracy of each variable without any annotations with 
+      # get median accuracy of each variable and median runtime without any annotations with 
       # 1000 particles
       with open(results_file, 'r') as f:
         reader = csv.reader(f)
         next(reader)
-        data = np.array(list(reader))[:, 4:].astype(float)
+        data = np.array(list(reader))
 
-        acc = np.median(data, axis=0)
+        acc = np.median(data[:, 4:].astype(float), axis=0)
         
         print('Median accuracy:')
         print(acc)
 
+        runtimes = data[:, 3].astype(float)
+        runtime = np.median(runtimes)
+
+        print('Median runtime:')
+        print(runtime)
+
         config['target_errors'] = {var[0]: acc[i] for i, var in enumerate(true_vars)}
+        config['target_runtime'] = runtime
 
         with open(os.path.join(benchmark, 'config.json'), 'w') as f:
           json.dump(config, f, indent=2)
