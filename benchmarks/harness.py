@@ -195,7 +195,7 @@ def run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, resu
           if close_to_target(target_errors, program_output):
             close += 1
 
-        if close / n >= 0.9:
+        if close / n >= 0.5:
           break
 
         if p > max_p:

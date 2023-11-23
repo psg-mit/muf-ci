@@ -408,10 +408,9 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
         # print(errors[errors < target_error])
 
         # get max particle with error less than target error
-        smallest_error_particle = errors[errors < 10].index.max()
+        smallest_error_particle = errors[errors < target_error].index.max()
 
         # print(smallest_error_particle)
-
 
         if np.isnan(smallest_error_particle):
           runtimes = data.loc[data['method'] == method]\
@@ -437,6 +436,119 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
 
     for i, (x_pos, runtimes, particles) in enumerate(zip(x_pos, all_runtimes, all_particles)):
       p = ax.bar(x_pos, runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
+
+      particles = [f'{p:,}' if p is not None else '> 1,000' for p in particles]
+      
+      ax.bar_label(p, labels=particles, padding=3, label_type = 'center', rotation=90)
+          
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+    # ax.set_yscale('symlog', linthresh=1e-10)
+    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5})
+    # ax.minorticks_on()
+    # ax.tick_params(axis='x', which='minor', bottom=False)
+    ax.tick_params(axis='x', which='major')
+    ax.tick_params(axis='y', which='minor')
+    # ax.tick_params(axis='both', color='gray', linestyle='--', alpha=0.5)
+
+    ax.set_xticks([r + barwidth for r in range(len(variables))], [var for var in variables])
+
+    print('Saving accuracy plots')
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    for spine in ax.spines.values():
+      spine.set_edgecolor('#696969')
+
+    ax.set_title(f'{benchmark}')
+    # fig.tight_layout()
+    # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
+    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.2))
+
+    ax.set_ylabel('Execution Time in s (log scale)')
+    # ax.set_ylabel('Error (log scale)')
+
+    fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
+
+    plt.close(fig)
+
+def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y, n_x, base_x, base_y, legend_width):
+  plt.rcParams.update(PLT_SETTINGS)
+
+  spacing = 0.02
+  # barwidth = 1/(len(plans) + 1 + spacing * (len(plans) - 1)) 
+  barwidth = 0.1
+
+  # first 4 columns are metadata
+  # n_variables = data.columns[4:].shape[0]
+  variables = data.columns[4:]
+
+  for method_i, method in enumerate(methods):
+    fig = plt.figure(figsize=(base_x * n_x, base_y * n_y))
+    ax = fig.add_subplot(111)
+
+    # y axis is log error
+    # x axis is variable * plan
+    # plan x variable
+
+    # baseline
+    # median accuracy over n runs
+    accuracies = baseline.loc[baseline['method'] == method].iloc[:, 4:].median()
+    all_accuracies = [accuracies]
+    all_particles = [[1000 for _ in range(len(variables))]]
+    x_pos = [list(np.arange(len(variables)))]
+    labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
+ 
+
+    x_pos.append([x + barwidth + spacing for x in x_pos[-1]])
+
+    for plan_i, (plan_id, plan) in enumerate(plans):
+      plan_id = int(plan_id)
+      print(plan_id)
+
+      # median runtime over n runs
+      runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .median()
+      
+      # print(runtimes)
+      # print(errors[runtimes < target_runtime])
+
+      # get max particle with runtime less than target runtime
+      smallest_error_particle = runtimes[runtimes < target_runtime].index.max()
+
+      # print(smallest_error_particle)
+      if np.isnan(smallest_error_particle):
+        accuracy = data.loc[data['method'] == method]\
+                      .loc[data['plan_id'] == plan_id]\
+                      .groupby(['particles'])\
+                      .quantile(0.9)
+        
+        print(accuracy)
+
+        accuracy = accuracy.max(axis=0) + 1
+
+        all_accuracies.append(accuracy)
+        all_particles.append([None for _ in range(len(variables))])
+
+      else:
+        # get accuracy of max particle rows
+        accuracies = data.loc[data['method'] == method]\
+                        .loc[data['plan_id'] == plan_id]\
+                        .loc[data['particles'] == smallest_error_particle]\
+                        .groupby(['particles'])\
+                        .quantile(0.9)
+        
+        all_accuracies.append(list(accuracies))
+        all_particles.append([smallest_error_particle for _ in range(len(variables))])
+
+    for i, (x_pos, accuracies, particles) in enumerate(zip(x_pos, all_accuracies, all_particles)):
+      p = ax.bar(x_pos, accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
 
       particles = [f'{p:,}' if p is not None else '> 1,000' for p in particles]
       
@@ -543,6 +655,10 @@ if __name__ == '__main__':
           target_errors = config['target_errors']
 
           plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
+
+          target_runtime = config['target_runtime']
+
+          plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y, n_x, base_x, base_y, legend_width)
 
       # if os.path.exists(os.path.join(output, 'particles.csv')):
       #   data = pd.read_csv(os.path.join(output, 'particles.csv'), delimiter=',')
