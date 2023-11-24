@@ -4,25 +4,25 @@
     [
       "mu1",
       [
-        2.1921384385074987
+        2.909414567153178
       ]
     ],
     [
       "mu2",
       [
-        -1.6679387731399125
+        -1.788736827875175
       ]
     ],
     [
       "var1",
       [
-        0.21335468073917283
+        1.1065781758665068
       ]
     ],
     [
       "var2",
       [
-        0.1741233555754545
+        24.639802237844062
       ]
     ]
   ],
@@ -38,8 +38,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -48,8 +48,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -58,8 +58,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -68,8 +68,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -78,8 +78,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -88,8 +88,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -98,8 +98,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -108,8 +108,8 @@
         "switch": "symbolic",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -118,8 +118,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -128,8 +128,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -138,8 +138,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -148,8 +148,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -158,8 +158,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -168,8 +168,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -178,8 +178,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -188,8 +188,8 @@
         "switch": "symbolic",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -198,8 +198,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -208,8 +208,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -218,8 +218,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -228,8 +228,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": true
     },
@@ -238,8 +238,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -248,8 +248,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": false
     },
@@ -258,8 +258,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": true
     },
@@ -268,8 +268,8 @@
         "switch": "sample",
         "mu1": "symbolic",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": true
     },
@@ -278,8 +278,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -288,8 +288,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": true
     },
@@ -298,8 +298,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": false
     },
@@ -308,8 +308,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "symbolic",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": true
     },
@@ -318,8 +318,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "symbolic"
+        "invvar1": "symbolic",
+        "invvar2": "symbolic"
       },
       "satisfiable": true
     },
@@ -328,8 +328,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "symbolic",
-        "var2": "sample"
+        "invvar1": "symbolic",
+        "invvar2": "sample"
       },
       "satisfiable": true
     },
@@ -338,8 +338,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "symbolic"
+        "invvar1": "sample",
+        "invvar2": "symbolic"
       },
       "satisfiable": true
     },
@@ -348,8 +348,8 @@
         "switch": "sample",
         "mu1": "sample",
         "mu2": "sample",
-        "var1": "sample",
-        "var2": "sample"
+        "invvar1": "sample",
+        "invvar2": "sample"
       },
       "satisfiable": true
     }
@@ -358,8 +358,8 @@
     "switch",
     "mu1",
     "mu2",
-    "var1",
-    "var2"
+    "invvar1",
+    "invvar2"
   ],
   "target_errors": {
     "mu1": 1.116321868424731,

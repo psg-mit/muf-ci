@@ -81,7 +81,7 @@
     "19": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.004795074462890625
+      "analysis_time": 0.00144195556640625
     },
     "20": {
       "true_satisfied": false,
@@ -98,7 +98,7 @@
     "23": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0011210441589355469
+      "analysis_time": 0.0014269351959228516
     },
     "24": {
       "true_satisfied": false,
@@ -115,27 +115,27 @@
     "27": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0011179447174072266
+      "analysis_time": 0.0011241436004638672
     },
     "28": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0014531612396240234
+      "analysis_time": 0.0014219284057617188
     },
     "29": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0011119842529296875
+      "analysis_time": 0.0011148452758789062
     },
     "30": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0011262893676757812
+      "analysis_time": 0.0026760101318359375
     },
     "31": {
       "true_satisfied": true,
       "infer_satisfied": true,
-      "analysis_time": 0.0007688999176025391
+      "analysis_time": 0.0008099079132080078
     }
   },
   "n_true_satisfied": 9,

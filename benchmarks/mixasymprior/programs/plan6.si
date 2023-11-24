@@ -2,30 +2,21 @@
 switch - symbolic
 mu1 - symbolic
 mu2 - sample
-var1 - sample
-var2 - symbolic
-*)
-
-(* 
-  inference strategy
-  mu1 - approx
-  mu2 - approx
-  switch - approx
-  var1 - approx
-  var2 - approx
+invvar1 - sample
+invvar2 - symbolic
 *)
 
 val preprocess_data = fun entry -> List.hd(entry) in
 
-val make_observations = fun (yobs, (mu1, mu2, var1, var2)) ->
+val make_observations = fun (yobs, (mu1, mu2, invvar1, invvar2)) ->
   let symbolic switch <- bernoulli(0.3) in
 
   let mu = if switch then mu1 else mu2 in
-  let var = if switch then var1 else var2 in
-  let () = observe(gaussian(mu, 1/var), yobs) in
+  let invvar = if switch then invvar1 else invvar2 in
+  let () = observe(gaussian(mu, 1/invvar), yobs) in
 
   let () = resample() in
-  (mu1, mu2, var1, var2)
+  (mu1, mu2, invvar1, invvar2)
 in
 
 (* observations *)
@@ -34,8 +25,8 @@ let data = List.map(preprocess_data, File.read("data/processed_data.csv")) in
 let symbolic mu1 <- gaussian(2.75, 0.5) in
 let sample mu2 <- gaussian(-2.75, 0.5) in
 
-let sample var1 <- gamma(1., 1.) in
-let symbolic var2 <- gamma(1., 1.) in
+let sample invvar1 <- gamma(1., 1.) in
+let symbolic invvar2 <- gamma(1., 1.) in
 
-let out = fold(make_observations, data, (mu1, mu2, var1, var2)) in
-out
+let (mu1, mu2, invvar1, invvar2) = fold(make_observations, data, (mu1, mu2, invvar1, invvar2)) in
+(mu1, mu2, 1/invvar1, 1/invvar2)
