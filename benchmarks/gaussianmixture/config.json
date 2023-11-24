@@ -111,7 +111,9 @@
         "mu1": "symbolic",
         "mu2": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": true,
+      "min_particles": 1,
+      "max_particles": 200
     },
     "9": {
       "plan": {
@@ -120,7 +122,9 @@
         "mu1": "symbolic",
         "mu2": "sample"
       },
-      "satisfiable": true
+      "satisfiable": true,
+      "min_particles": 1,
+      "max_particles": 500
     },
     "10": {
       "plan": {
@@ -129,7 +133,9 @@
         "mu1": "sample",
         "mu2": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": true,
+      "min_particles": 1,
+      "max_particles": 500
     },
     "11": {
       "plan": {

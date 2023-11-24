@@ -32,6 +32,8 @@ DEFAULT_METHODS = [
 
 N_INTERVALS = 30
 
+INC = 1
+
 CWD = '..'
 
 def calc_error(true_x, x):
@@ -46,11 +48,14 @@ def close_to_target(target, value):
   return False
   
 def close_to_target_error(target_error, program_output):
+  checks = []
   for var, error in program_output.items():
     if not close_to_target(target_error[var], error):
-      return False
+      checks.append(False)
+    else:
+      checks.append(True)
     
-  return True
+  return checks
 
 def close_to_target_runtime(target_runtime, runtime):
   # target_runtime should be smaller than runtime
@@ -161,94 +166,162 @@ def run_particles(files, n, particles, methods, true_vars, results_file):
             ])
 
 # Run experiments to reach a given accuracy
-def run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, results_file):
+def run_accuracy(files, n, plans, target_errors, methods, true_vars, results_file):
   for method in methods:
     print(f'Running {method}...')
 
     for file in files:
       plan_id = get_plan_id(file)
+      min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
+      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 1000
 
-      p = min_p
-      while True:
-        print(f'Running with {p} particles')
+      # binary search for number of particles
+      attempted_p = set()
+      df = pd.read_csv(results_file)
+      existing_p = df.loc[df['method'] == method]\
+              .loc[df['plan_id'] == int(plan_id)]['particles'].unique()
+      for p in existing_p:
+        attempted_p.add(p)
 
-        # 90% of n runs need to be close to target for each variable
-        
-        close = 0
-        for i in range(n):
-          print(f'{plan_id} {method} - {p} particles - Run {i}')
+      print(existing_p)
 
-          t, program_output = run_siren(file, p, method, true_vars)
+      for var in target_errors:
+        print(f'Running for {var}')
+        lower_p = min_p
+        upper_p = max_p
 
-          # write results to csv
-          with open(results_file, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow([
-              plan_id, 
-              method, 
-              p, 
-              t,
-              *program_output.values()
-            ])
+        while True:
+          p = (lower_p + upper_p) // 2
+          print('Trying', p)
 
-          # check if done
-          if close_to_target(target_errors, program_output):
-            close += 1
+          # get errors for this p
+          if p in attempted_p:
+            print(f'Already ran {p} particles')
+            df = pd.read_csv(results_file)
+            df = df.loc[df['method'] == method]\
+                    .loc[df['plan_id'] == int(plan_id)]\
+                    .loc[df['particles'] == p][var]
+            
+            n_close = 0
+            for error in df:
+              if close_to_target(target_errors[var], error):
+                n_close += 1
 
-        if close / n >= 0.5:
-          break
+          else:
+            print(f'Running with {p} particles')
 
-        if p > max_p:
-          print(f'ERROR: Could not reach target error')
-          break
+            n_close = 0
+            for i in range(n):
+              print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-        # increase number of particles
-        p += 2
+              t, program_output = run_siren(file, p, method, true_vars)
+
+              # write results to csv
+              with open(results_file, 'a') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                  plan_id, 
+                  method, 
+                  p, 
+                  t,
+                  *program_output.values()
+                ])
+
+              if close_to_target(target_errors[var], program_output[var]):
+                n_close += 1
+
+            attempted_p.add(p)
+
+          if n_close / n > 0.9:
+            print('Too close to target')
+            # decrease number of particles
+            upper_p = p - 1
+          else:
+            print('Not close enough to target')
+            # increase number of particles
+            lower_p = p + 1
+
+          if lower_p > upper_p:
+            print('No more particles to try')
+            break
 
 # Run experiments to reach a given runtime
-def run_runtime(files, min_p, max_p, n, target_runtime, methods, true_vars, results_file):
+def run_runtime(files, n, plans, target_runtime, methods, true_vars, results_file):
   for method in methods:
     print(f'Running {method}...')
 
     for file in files:
       plan_id = get_plan_id(file)
+      min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
+      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 1000
 
-      p = min_p
+      # binary search for number of particles
+      attempted_p = set()
+      df = pd.read_csv(results_file)
+      existing_p = df.loc[df['method'] == method]\
+              .loc[df['plan_id'] == int(plan_id)]['particles'].unique()
+      for p in existing_p:
+        attempted_p.add(p)
+
+      print(existing_p)
+
+      lower_p = min_p
+      upper_p = max_p
+
       while True:
-        print(f'Running with {p} particles')
+        p = (lower_p + upper_p) // 2
+        print('Trying', p)
 
-        # 90% of n runs need to be close to target for each variable
-        
-        close = 0
-        for i in range(n):
-          print(f'{plan_id} {method} - {p} particles - Run {i}')
+        # get errors for this p
+        if p in attempted_p:
+          print(f'Already ran {p} particles')
+          df = pd.read_csv(results_file)
+          df = df.loc[df['method'] == method]\
+                  .loc[df['plan_id'] == int(plan_id)]\
+                  .loc[df['particles'] == p]['time']
+          
+          n_close = 0
+          for error in df:
+            if close_to_target_runtime(target_runtime, error):
+              n_close += 1
 
-          t, program_output = run_siren(file, p, method, true_vars)
+        else:
+          print(f'Running with {p} particles')
 
-          # write results to csv
-          with open(results_file, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow([
-              plan_id, 
-              method, 
-              p, 
-              t,
-              *program_output.values()
-            ])
+          n_close = 0
+          for i in range(n):
+            print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-          # check if done
-          if close_to_target_runtime(target_runtime, t):
-            close += 1
+            t, program_output = run_siren(file, p, method, true_vars)
 
-        if close / n >= 0.9:
+            # write results to csv
+            with open(results_file, 'a') as f:
+              writer = csv.writer(f)
+              writer.writerow([
+                plan_id, 
+                method, 
+                p, 
+                t,
+                *program_output.values()
+              ])
+
+            if close_to_target_runtime(target_runtime, t):
+              n_close += 1
+
+          attempted_p.add(p)
+
+        if n_close / n > 0.5:
+          print('Too close to target')
+          # decrease number of particles
+          upper_p = p - 1
+        else:
+          print('Not close enough to target')
+          # increase number of particles
+          lower_p = p + 1
+
+        if lower_p > upper_p:
+          print('No more particles to try')
           break
-
-        if p > max_p:
-          print(f'ERROR: Could not reach target error')
-          break
-
-        # increase number of particles
-        p += 2
 
 def find_satisfiable_plans(files, plans, knowns):
   print(plans)
@@ -499,8 +572,7 @@ if __name__ == '__main__':
         raise Exception('Cannot run both accuracy and runtime')
       elif args.runtime:
         target_runtime = config['target_runtime']
-        min_p = config['min_particles'] if 'min_particles' in config else 1
-        max_p = config['max_particles'] if 'max_particles' in config else 1000
+        plan_config = config['plans']
 
         results_file = os.path.join(benchmark, args.output, 'results.csv')
         if not os.path.exists(results_file):
@@ -510,12 +582,11 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_runtime(files, min_p, max_p, n, target_runtime, methods, true_vars, results_file)
+        run_runtime(files, n, plan_config, target_runtime, methods, true_vars, results_file)
 
       elif args.accuracy:
         target_errors = config['target_errors']
-        min_p = config['min_particles'] if 'min_particles' in config else 1
-        max_p = config['max_particles'] if 'max_particles' in config else 1000
+        plan_config = config['plans']
 
         results_file = os.path.join(benchmark, args.output, 'results.csv')
         if not os.path.exists(results_file):
@@ -525,7 +596,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_accuracy(files, min_p, max_p, n, target_errors, methods, true_vars, results_file)
+        run_accuracy(files, n, plan_config, target_errors, methods, true_vars, results_file)
       else:
         # Just run with given number of particles
         # Get list of particles
