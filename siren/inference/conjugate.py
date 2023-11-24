@@ -260,7 +260,7 @@ def gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomV
       return None
     
 def normal_inverse_gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Normal]]:
-  print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
+  # print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Normal(mu0, var1), Normal(mu, var2):
