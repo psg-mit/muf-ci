@@ -7,6 +7,7 @@ from matplotlib.ticker import FormatStrFormatter, LogFormatter, LogFormatterMath
 import pandas as pd
 from typing import List, Tuple, Dict
 import numpy as np
+from math import log10
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -87,6 +88,8 @@ MAGICSPACING = 0.8
 YLABELSIZE = 9
 XLABELSIZE = 12
 BARLABELSIZE = 6
+
+N = 100
 
 GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
@@ -183,6 +186,19 @@ def get_label(plan):
 
   return label
 
+def close_to_target_error(target, value):
+  if value == 0:
+    return True
+  if log10(value) - log10(target) <= 0.5:
+    return True
+  return False
+
+def close_to_target_runtime(target_runtime, runtime):
+  if log10(runtime) - log10(target_runtime) <= 0.1:
+    return True
+
+  return False
+  
 def plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
@@ -424,6 +440,7 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
 
     for plan_i, (plan_id, plan) in enumerate(plans):
       plan_id = int(plan_id)
+      # print('plan', plan_id)
 
       all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
  
@@ -432,27 +449,22 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
       for var_i, var in enumerate(variables):
         target_error = target_errors[var]
 
-        # 90th percentile error over n runs
         errors = data.loc[data['method'] == method]\
-                    .loc[data['plan_id'] == plan_id]\
-                    .groupby(['particles'])[var]\
-                    .quantile(0.9)
+                    .loc[data['plan_id'] == plan_id]
+        errors[var] = errors[var].map(lambda x: close_to_target_error(target_error, x))
+        n_close = errors[errors[var]].groupby(['particles'])[var].count()
         
+        # print(target_error)
         # print(errors)
-        # print(errors[errors < target_error])
+        # print(n_close)
+        # print(n_close[(n_close / N) >= 0.9])
 
         # get max particle with error less than target error
-        smallest_error_particle = errors[errors < target_error].index.max()
+        smallest_error_particle = n_close[(n_close / N) >= 0.9].index.min()
 
         # print(smallest_error_particle)
 
         if np.isnan(smallest_error_particle):
-          # runtimes = data.loc[data['method'] == method]\
-          #               .loc[data['plan_id'] == plan_id]\
-          #               .groupby(['particles'])['time']\
-          #               .median()
-          
-          # runtime = runtimes.max() + 1
 
           plan_runtimes.append(-1)
           plan_particles.append(None)
@@ -488,25 +500,24 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
           ax.bar_label(bars, labels=particle_labels, padding=3, label_type = 'edge', rotation=0, fontsize=BARLABELSIZE)
         else:
           particle_labels = ['$>$ 1000' if p is None else '' for p in particles]
-          ax.text(x_pos[j], 0.55*max_runtime, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
+          ax.text(x_pos[j], 0.2*max_runtime, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
           # ax.bar_label(bars, labels=particle_labels, padding=-500, label_type = 'center', rotation=90, clip_on=False)
 
     ax.set_yscale('log')
     ax_top.set_yscale('log')
-    ax.grid(**{'which': 'both', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
+    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
     ax.set_axisbelow(True)
 
     # add broken bars
     ax_top.set_ylim(max_runtime, 1.1*max_runtime)    
     ax.set_ylim(top=1.05*max_runtime)
 
-    ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
-                                                    minor_thresholds=(2, 0.4)))
+    # ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
+    #                                                 minor_thresholds=(3, 0.4)))
     ax.get_yaxis().set_major_formatter(LogFormatterMathtext())
     ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
     ax.tick_params(axis='x', which='minor', bottom=False)
     ax.tick_params(axis='x', which='major', labelsize=XLABELSIZE)
-    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
 
     # median of column of x_pos
     tick_pos = np.median(all_x_pos, axis=0)
@@ -574,20 +585,22 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
       plan_id = int(plan_id)
 
       all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
- 
-      # median runtime over n runs
+
       runtimes = data.loc[data['method'] == method]\
-                  .loc[data['plan_id'] == plan_id]\
-                  .groupby(['particles'])['time']\
-                  .median()
+                  .loc[data['plan_id'] == plan_id]
       
-      # print(errors)
-      # print(errors[errors < target_error])
+      # print(runtimes)
+      runtimes['time'] = runtimes['time'].map(lambda x: close_to_target_runtime(target_runtime, x))
+      n_close = runtimes[runtimes['time']].groupby(['particles'])['time'].count()
+      
+      # print(target_runtime)
+      # print(n_close)
+      # print(n_close[(n_close / N) >= 0.5])
 
-      # get max particle with error less than target error
-      smallest_runtime_particle = runtimes[runtimes < target_runtime].index.max()
+      # get max particle with runtime less than target runtime
+      smallest_runtime_particle = n_close[(n_close / N) >= 0.5].index.max()
 
-      # print(smallest_error_particle)
+      # print(smallest_runtime_particle)
 
       if np.isnan(smallest_runtime_particle):
         accuracy = data.loc[data['method'] == method]\

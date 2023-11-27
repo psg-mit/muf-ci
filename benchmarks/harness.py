@@ -58,8 +58,7 @@ def close_to_target_error(target_error, program_output):
   return checks
 
 def close_to_target_runtime(target_runtime, runtime):
-  # target_runtime should be smaller than runtime
-  if log10(target_runtime) - log10(runtime) <= 0.1:
+  if log10(runtime) - log10(target_runtime) <= 0.1:
     return True
 
   return False
