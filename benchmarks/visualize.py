@@ -3,6 +3,7 @@ import os
 import json
 import matplotlib.pyplot as plt
 import csv
+from matplotlib.ticker import FormatStrFormatter, LogFormatter, LogFormatterMathtext, MultipleLocator, ScalarFormatter
 import pandas as pd
 from typing import List, Tuple, Dict
 import numpy as np
@@ -50,23 +51,47 @@ TABLE_STR = r"""
 
 N_INTERVALS = 30
 
-# red orange green blue purple indigo yellow brown magenta
-COLORS = ["#f4827b", "#feb140", "#9baa20", "#7cc7d2", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
-# red blue orange green purple indigo yellow brown magenta
-# colors = ["#f4827b", "#7cc7d2", "#feb140", "#9baa20", "#9879a4", "#5999d3", "#f7dd73", "#865042", "#d146b6", "#303030"]
-EDGECOLORS = ["#b7575c", "#c78200", "#708200","#4d9aa4","#7c5b83","#204f87", "#c0ab5f", "#56281b", "#9c0085", "#171616"]
-# edgecolors = ["#b7575c", "#4d9aa4", "#c0ab5f","#708200","#7c5b83","#204f87", "#c78200", "#56281b", "#9c0085", "#171616"]
+COLORS = [
+  "#f4827b", # red
+  "#feb140", # orange
+  "#f7dd73", # yellow
+  "#9baa20", # green
+  "#7cc7d2", # blue
+  "#72b0e8", # indigo
+  "#c6abd1", # purple
+  "#f288de", # magenta
+  "#c78f77", # brown
+  "#969595", # gray
+]
+EDGECOLORS = [
+  "#b7575c", # red
+  "#c78200", # orange
+  "#c0ab5f", # yellow
+  "#708200", # green
+  "#4d9aa4", # blue
+  "#204f87", # indigo
+  "#7c5b83", # purple
+  "#9c0085", # magenta
+  "#56281b", # brown
+  "#171616", # gray
+]
 
 MARKERS = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
 
 MARKERSSIZE = 50
 
 BARWIDTH = 0.25
+BARSPACING = 0.03
+MAGICSPACING = 0.8
+
+YLABELSIZE = 9
+XLABELSIZE = 12
+BARLABELSIZE = 6
 
 GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
 PLT_SETTINGS = {
-  # 'font.size': 24, 
+  # 'font.size': 14, 
   'font.family': 'serif', 
   # 'font.serif': 'Times New Roman', 
   # 'font.weight': 'bold',
@@ -150,11 +175,11 @@ def get_label(plan):
   else:
     label += 'None'
 
-  label += ' | '
-  if len(dynamic) > 0:
-    label += ', '.join(dynamic)
-  else:
-    label += 'None'
+  # label += ' | '
+  # if len(dynamic) > 0:
+  #   label += ', '.join(dynamic)
+  # else:
+  #   label += 'None'
 
   return label
 
@@ -365,17 +390,25 @@ def plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x,
 def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
-  spacing = 0.02
-  # barwidth = 1/(len(plans) + 1 + spacing * (len(plans) - 1)) 
-  barwidth = 0.1
+  spacing = BARSPACING
+  barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
 
   # first 4 columns are metadata
   # n_variables = data.columns[4:].shape[0]
   variables = data.columns[4:]
 
   for method_i, method in enumerate(methods):
-    fig = plt.figure(figsize=(base_x * n_x, base_y * n_y))
-    ax = fig.add_subplot(111)
+    # fig = plt.figure()
+    fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
+                                      gridspec_kw={'height_ratios': [1, 25]})
+    fig.subplots_adjust(hspace=0.03)
+
+    ax.spines['top'].set_visible(False)
+    ax_top.spines['top'].set_visible(False)
+    ax_top.spines['right'].set_visible(False)
+    ax_top.spines['left'].set_visible(False)
+    ax_top.spines['bottom'].set_visible(False)
+    ax_top.tick_params(axis='both', which='both', bottom=False, left=False, labelbottom=False, labelleft=False)
 
     # y axis is runtime in log seconds
     # x axis is variable * plan
@@ -386,17 +419,18 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
     runtime = baseline.loc[baseline['method'] == method]['time'].median()
     all_runtimes = [[runtime for _ in range(len(variables))]]
     all_particles = [[1000 for _ in range(len(variables))]]
-    x_pos = [list(np.arange(len(variables)))]
+    all_x_pos = [list(np.arange(len(variables)))]
     labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
+
+    for plan_i, (plan_id, plan) in enumerate(plans):
+      plan_id = int(plan_id)
+
+      all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
  
-    for var_i, var in enumerate(variables):
-      target_error = target_errors[var]
-
-      x_pos.append([x + barwidth + spacing for x in x_pos[-1]])
-
-      for plan_i, (plan_id, plan) in enumerate(plans):
-        plan_id = int(plan_id)
-        print(plan_id)
+      plan_runtimes = []
+      plan_particles = []
+      for var_i, var in enumerate(variables):
+        target_error = target_errors[var]
 
         # 90th percentile error over n runs
         errors = data.loc[data['method'] == method]\
@@ -413,45 +447,70 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
         # print(smallest_error_particle)
 
         if np.isnan(smallest_error_particle):
-          runtimes = data.loc[data['method'] == method]\
-                        .loc[data['plan_id'] == plan_id]\
-                        .groupby(['particles'])['time']\
-                        .median()
+          # runtimes = data.loc[data['method'] == method]\
+          #               .loc[data['plan_id'] == plan_id]\
+          #               .groupby(['particles'])['time']\
+          #               .median()
           
-          runtime = runtimes.max() + 1
+          # runtime = runtimes.max() + 1
 
-          all_runtimes.append([runtime for _ in range(len(variables))])
-          all_particles.append([None for _ in range(len(variables))])
+          plan_runtimes.append(-1)
+          plan_particles.append(None)
 
         else:
           # get runtime of max particle rows
-          runtimes = data.loc[data['method'] == method]\
+          runtime = data.loc[data['method'] == method]\
                           .loc[data['plan_id'] == plan_id]\
-                          .loc[data['particles'] == smallest_error_particle]\
-                          .groupby(['particles'])['time']\
+                          .loc[data['particles'] == smallest_error_particle]['time']\
                           .median()
+          # print(runtime)
           
-          all_runtimes.append(list(runtimes))
-          all_particles.append([smallest_error_particle for _ in range(len(variables))])
+          plan_runtimes.append(runtime)
+          plan_particles.append(smallest_error_particle)
 
-    for i, (x_pos, runtimes, particles) in enumerate(zip(x_pos, all_runtimes, all_particles)):
-      p = ax.bar(x_pos, runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
+      all_runtimes.append(plan_runtimes)
+      all_particles.append(plan_particles)
 
-      particles = [f'{p:,}' if p is not None else '> 1,000' for p in particles]
-      
-      ax.bar_label(p, labels=particles, padding=3, label_type = 'center', rotation=90)
-          
-    # ax.set_xscale('log')
+    # print(all_runtimes)
+
+    max_runtime = max(all_runtimes, key=lambda x: max(x))[0]
+    for i, (x_pos, runtimes, particles) in enumerate(zip(all_x_pos, all_runtimes, all_particles)):
+      # replace -1 with max runtime
+      bot_runtimes = [1.1*max_runtime if r == -1 else r for i, r in enumerate(runtimes)]
+      bars = ax.bar(x_pos, bot_runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
+
+      top_runtimes = [1.1*max_runtime if r == -1 else 0 for i, r in enumerate(runtimes)]
+      ax_top.bar(x_pos, top_runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i])
+
+      for j, p in enumerate(particles):
+        if p is not None:
+          particle_labels = [f'{p:}' if p is not None else '' for p in particles]
+          ax.bar_label(bars, labels=particle_labels, padding=3, label_type = 'edge', rotation=0, fontsize=BARLABELSIZE)
+        else:
+          particle_labels = ['$>$ 1000' if p is None else '' for p in particles]
+          ax.text(x_pos[j], 0.55*max_runtime, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
+          # ax.bar_label(bars, labels=particle_labels, padding=-500, label_type = 'center', rotation=90, clip_on=False)
+
     ax.set_yscale('log')
-    # ax.set_yscale('symlog', linthresh=1e-10)
-    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5})
-    # ax.minorticks_on()
-    # ax.tick_params(axis='x', which='minor', bottom=False)
-    ax.tick_params(axis='x', which='major')
-    ax.tick_params(axis='y', which='minor')
-    # ax.tick_params(axis='both', color='gray', linestyle='--', alpha=0.5)
+    ax_top.set_yscale('log')
+    ax.grid(**{'which': 'both', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
+    ax.set_axisbelow(True)
 
-    ax.set_xticks([r + barwidth for r in range(len(variables))], [var for var in variables])
+    # add broken bars
+    ax_top.set_ylim(max_runtime, 1.1*max_runtime)    
+    ax.set_ylim(top=1.05*max_runtime)
+
+    ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
+                                                    minor_thresholds=(2, 0.4)))
+    ax.get_yaxis().set_major_formatter(LogFormatterMathtext())
+    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
+    ax.tick_params(axis='x', which='minor', bottom=False)
+    ax.tick_params(axis='x', which='major', labelsize=XLABELSIZE)
+    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
+
+    # median of column of x_pos
+    tick_pos = np.median(all_x_pos, axis=0)
+    ax.set_xticks(tick_pos, [var for var in variables])
 
     print('Saving accuracy plots')
 
@@ -462,12 +521,12 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
     for spine in ax.spines.values():
       spine.set_edgecolor('#696969')
 
-    ax.set_title(f'{benchmark}')
+    ax_top.set_title(f'{benchmark}')
     # fig.tight_layout()
     # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.2))
+    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.5, -0.4))
 
-    ax.set_ylabel('Execution Time in s (log scale)')
+    ax.set_ylabel('Execution Time in s (log scale)', fontsize=12)
     # ax.set_ylabel('Error (log scale)')
 
     fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -479,19 +538,27 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
 def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
-  spacing = 0.02
-  # barwidth = 1/(len(plans) + 1 + spacing * (len(plans) - 1)) 
-  barwidth = 0.1
+  spacing = BARSPACING
+  barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
 
   # first 4 columns are metadata
   # n_variables = data.columns[4:].shape[0]
   variables = data.columns[4:]
 
   for method_i, method in enumerate(methods):
-    fig = plt.figure(figsize=(base_x * n_x, base_y * n_y))
-    ax = fig.add_subplot(111)
+    # fig = plt.figure()
+    fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
+                                      gridspec_kw={'height_ratios': [1, 25]})
+    fig.subplots_adjust(hspace=0.03)
 
-    # y axis is log error
+    ax.spines['top'].set_visible(False)
+    ax_top.spines['top'].set_visible(False)
+    ax_top.spines['right'].set_visible(False)
+    ax_top.spines['left'].set_visible(False)
+    ax_top.spines['bottom'].set_visible(False)
+    ax_top.tick_params(axis='both', which='both', bottom=False, left=False, labelbottom=False, labelleft=False)
+
+    # y axis is runtime in log seconds
     # x axis is variable * plan
     # plan x variable
 
@@ -500,38 +567,35 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
     accuracies = baseline.loc[baseline['method'] == method].iloc[:, 4:].median()
     all_accuracies = [accuracies]
     all_particles = [[1000 for _ in range(len(variables))]]
-    x_pos = [list(np.arange(len(variables)))]
+    all_x_pos = [list(np.arange(len(variables)))]
     labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
- 
-
-    x_pos.append([x + barwidth + spacing for x in x_pos[-1]])
 
     for plan_i, (plan_id, plan) in enumerate(plans):
       plan_id = int(plan_id)
-      print(plan_id)
 
+      all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
+ 
       # median runtime over n runs
       runtimes = data.loc[data['method'] == method]\
                   .loc[data['plan_id'] == plan_id]\
                   .groupby(['particles'])['time']\
                   .median()
       
-      # print(runtimes)
-      # print(errors[runtimes < target_runtime])
+      # print(errors)
+      # print(errors[errors < target_error])
 
-      # get max particle with runtime less than target runtime
-      smallest_error_particle = runtimes[runtimes < target_runtime].index.max()
+      # get max particle with error less than target error
+      smallest_runtime_particle = runtimes[runtimes < target_runtime].index.max()
 
       # print(smallest_error_particle)
-      if np.isnan(smallest_error_particle):
+
+      if np.isnan(smallest_runtime_particle):
         accuracy = data.loc[data['method'] == method]\
                       .loc[data['plan_id'] == plan_id]\
                       .groupby(['particles'])\
                       .quantile(0.9)
         
-        print(accuracy)
-
-        accuracy = accuracy.max(axis=0) + 1
+        accuracy = [-1 for _ in range(len(variables))]
 
         all_accuracies.append(accuracy)
         all_particles.append([None for _ in range(len(variables))])
@@ -540,33 +604,54 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
         # get accuracy of max particle rows
         accuracies = data.loc[data['method'] == method]\
                         .loc[data['plan_id'] == plan_id]\
-                        .loc[data['particles'] == smallest_error_particle]\
+                        .loc[data['particles'] == smallest_runtime_particle]\
+                        .drop(columns=['method', 'plan_id', 'time'])\
                         .groupby(['particles'])\
                         .quantile(0.9)
         
-        all_accuracies.append(list(accuracies))
-        all_particles.append([smallest_error_particle for _ in range(len(variables))])
+        all_accuracies.append(list(accuracies.iloc[0]))
+        all_particles.append([smallest_runtime_particle for _ in range(len(variables))])
 
-    for i, (x_pos, accuracies, particles) in enumerate(zip(x_pos, all_accuracies, all_particles)):
-      p = ax.bar(x_pos, accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
+    max_accuracy = np.array(all_accuracies).max()
+    for i, (x_pos, accuracies, particles) in enumerate(zip(all_x_pos, all_accuracies, all_particles)):
+      # replace -1 with max runtime
+      bot_accuracies = [1.1*max_accuracy if r == -1 else r for i, r in enumerate(accuracies)]
+      bars = ax.bar(x_pos, bot_accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
 
-      particles = [f'{p:,}' if p is not None else '> 1,000' for p in particles]
-      
-      ax.bar_label(p, labels=particles, padding=3, label_type = 'center', rotation=90)
-          
-    # ax.set_xscale('log')
+      top_accuracies = [1.1*max_accuracy if r == -1 else 0 for i, r in enumerate(accuracies)]
+      ax_top.bar(x_pos, top_accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i])
+
+      for j, p in enumerate(particles):
+        if p is not None:
+          particle_labels = [f'{p:}' if p is not None else '' for p in particles]
+          ax.bar_label(bars, labels=particle_labels, padding=3, label_type = 'edge', rotation=0, fontsize=BARLABELSIZE)
+        else:
+          particle_labels = ['$>$ 1000' if p is None else '' for p in particles]
+          ax.text(x_pos[j], 0.55*max_accuracy, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
+          # ax.bar_label(bars, labels=particle_labels, padding=-500, label_type = 'center', rotation=90, clip_on=False)
+
     ax.set_yscale('log')
-    # ax.set_yscale('symlog', linthresh=1e-10)
-    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5})
-    # ax.minorticks_on()
-    # ax.tick_params(axis='x', which='minor', bottom=False)
-    ax.tick_params(axis='x', which='major')
-    ax.tick_params(axis='y', which='minor')
-    # ax.tick_params(axis='both', color='gray', linestyle='--', alpha=0.5)
+    # ax_top.set_yscale('log')
+    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
+    ax.set_axisbelow(True)
 
-    ax.set_xticks([r + barwidth for r in range(len(variables))], [var for var in variables])
+    # add broken bars
+    ax_top.set_ylim(max_accuracy, 1.1*max_accuracy)    
+    ax.set_ylim(top=1.05*max_accuracy)
 
-    print('Saving accuracy plots')
+    ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
+                                                    minor_thresholds=(2, 0.04)))
+    ax.get_yaxis().set_major_formatter(LogFormatterMathtext())
+    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
+    ax.tick_params(axis='x', which='minor', bottom=False)
+    ax.tick_params(axis='x', which='major', labelsize=XLABELSIZE)
+    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
+
+    # median of column of x_pos
+    tick_pos = np.median(all_x_pos, axis=0)
+    ax.set_xticks(tick_pos, [var for var in variables])
+
+    print('Saving time plots')
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -575,17 +660,16 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
     for spine in ax.spines.values():
       spine.set_edgecolor('#696969')
 
-    ax.set_title(f'{benchmark}')
+    ax_top.set_title(f'{benchmark}')
     # fig.tight_layout()
     # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.2))
+    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.5, -0.4))
 
-    ax.set_ylabel('Execution Time in s (log scale)')
-    # ax.set_ylabel('Error (log scale)')
+    ax.set_ylabel('Error (log scale)', fontsize=12)
 
-    fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
+    fig.savefig(os.path.join(output, f'runtime.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'runtime.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'runtime.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
 
     plt.close(fig)
 
