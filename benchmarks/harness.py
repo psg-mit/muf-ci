@@ -235,11 +235,6 @@ def run_accuracy(files, n, plans, target_errors, methods, true_vars, results_fil
             print('Too close to target')
             # decrease number of particles
             upper_p = p - 1
-
-            # probably close enough
-            if abs(lower_p - upper_p) <= 2:
-              print('No more particles to try')
-              break
           else:
             print('Not close enough to target')
             # increase number of particles
