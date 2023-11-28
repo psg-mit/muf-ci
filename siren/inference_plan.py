@@ -52,9 +52,9 @@ class DistrEnc(Enum):
         raise ValueError(ann)
       
 class InferencePlan(object):
-  def __init__(self):
+  def __init__(self, plan=None):
     super().__init__()
-    self.plan: Dict[Identifier, DistrEnc] = {}
+    self.plan: Dict[Identifier, DistrEnc] = plan if plan is not None else {}
 
   def __str__(self):
     s = '\n'.join(f"{k}: {v.name}" for k, v in self.plan.items())
@@ -91,6 +91,15 @@ class InferencePlan(object):
         break
 
     return lt
+  
+  def __eq__(self, other):
+    eq = True
+    for x in self.plan:
+      if x not in other.plan or self.plan[x] != other.plan[x]:
+        eq = False
+        break
+
+    return eq
 
   def __or__(self, __value: Any) -> 'InferencePlan':
     if isinstance(__value, InferencePlan):
