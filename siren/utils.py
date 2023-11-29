@@ -8,7 +8,7 @@ def get_lst(l: Expr[SymExpr]) -> List[SymExpr]:
       return exprs
     case Const(exprs):
       if isinstance(exprs, list):
-        return exprs
+        return [Const(e) for e in exprs]
       else:
         raise ValueError(exprs)
     case _:
@@ -51,7 +51,7 @@ def get_abs_lst(l: Expr[AbsSymExpr]) -> List[AbsSymExpr] | UnkE:
       return exprs
     case AbsConst(exprs):
       if isinstance(exprs, list):
-        return list(exprs)
+        return [AbsConst(e) for e in exprs]
       else:
         raise ValueError(exprs)
     case UnkE(parents):
