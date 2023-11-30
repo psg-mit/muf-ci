@@ -265,8 +265,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
               lines = f.readlines()
               for line in lines[1:]:
                 line_list = line.strip().split(',')
-                line_list = list(map(lambda x: Const(float(x)), line_list))
-                data.append(Const(line_list))
+                line_list = list(map(lambda x: float(x), line_list))
+                data.append(line_list)
             return p1.update(cont=Const(data), finished=True)
           case _:
             raise ValueError(new_args)
