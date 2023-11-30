@@ -118,198 +118,479 @@ def is_affine(state: SymState, expr: SymExpr, rv: RandomVar) -> Optional[Tuple[S
     case _:
       raise ValueError(expr)
     
+### Affine Gaussian Conjugate ###
+
+def gaussian_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr, 
+                             rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  match prior, likelihood:
+    case Normal(mu0, var0), Normal(mu, var):
+      coefs = is_affine(state, mu, rv_par)
+      if coefs is None:
+        return False
+
+      return not mu0.depends_on(rv_child, True) \
+            and not var0.depends_on(rv_child, True) \
+            and not var.depends_on(rv_par, True)
+    case _:
+      return False
+    
+def gaussian_marginal(state: SymState, prior: Normal, likelihood: Normal, 
+                      rv_par: RandomVar, rv_child: RandomVar) -> Optional[Normal]:
+  
+  if not gaussian_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  mu0, var0 = prior.mu, prior.var
+  mu, var = likelihood.mu, likelihood.var
+
+  coefs = is_affine(state, mu, rv_par)
+  if coefs is None:
+    return None
+  
+  a, b = coefs
+
+  mu01 = state.ex_add(state.ex_mul(a, mu0), b)
+  var01 = state.ex_mul(state.ex_mul(a, a), var0)
+
+  mu0_new = mu01
+  var0_new = state.ex_add(var01, var)
+
+  return Normal(mu0_new, var0_new)
+    
+def gaussian_posterior(state: SymState, prior: Normal, likelihood: Normal, 
+                      rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Normal]:
+  if not gaussian_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+    
+  mu0, var0 = prior.mu, prior.var
+  mu, var = likelihood.mu, likelihood.var
+
+  coefs = is_affine(state, mu, rv_par)
+  if coefs is None:
+    return None
+  
+  a, b = coefs
+
+  x = rv_child if obs is None else obs
+
+  mu01 = state.ex_add(state.ex_mul(a, mu0), b)
+  var01 = state.ex_mul(state.ex_mul(a, a), var0)
+
+  denom = state.ex_add(state.ex_div(Const(1), var01), state.ex_div(Const(1), var))
+  var02 = state.ex_div(Const(1), denom)
+
+  sum1 = state.ex_add(state.ex_div(mu01, var01), state.ex_div(x, var))
+  mu02 = state.ex_mul(sum1, var02)
+
+  mu1_new = state.ex_div(state.ex_add(mu02, state.ex_mul(Const(-1), b)), a)
+  var1_new = state.ex_div(var02, state.ex_mul(a, a))
+
+  return Normal(mu1_new, var1_new)
+
 # Returns (marginal, posterior) distributions
 def gaussian_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Normal, Normal]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Normal(mu0, var0), Normal(mu, var):
-      coefs = is_affine(state, mu, rv_par)
-      if coefs is None:
+      marginal = gaussian_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = gaussian_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
         return None
-      else:
-        a, b = coefs
-        if not mu0.depends_on(rv_child, True) \
-          and not var0.depends_on(rv_child, True) \
-          and not var.depends_on(rv_par, True):
-
-          mu01 = state.ex_add(state.ex_mul(a, mu0), b)
-          var01 = state.ex_mul(state.ex_mul(a, a), var0)
-
-          denom = state.ex_add(state.ex_div(Const(1), var01), state.ex_div(Const(1), var))
-          var02 = state.ex_div(Const(1), denom)
-
-          sum1 = state.ex_add(state.ex_div(mu01, var01), state.ex_div(rv_child, var))
-          mu02 = state.ex_mul(sum1, var02)
-
-          mu1_new = state.ex_div(state.ex_add(mu02, state.ex_mul(Const(-1), b)), a)
-          var1_new = state.ex_div(var02, state.ex_mul(a, a))
-
-          mu0_new = mu01
-          var0_new = state.ex_add(var01, var)
-
-          return (Normal(mu0_new, var0_new), Normal(mu1_new, var1_new))
-        else:
-          return None
+      return (marginal, posterior)
     case _:
       return None
+    
+### Bernoulli Conjugate ###
+    
+def bernoulli_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr,
+                              rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  match prior, likelihood:
+    case Bernoulli(p1), Bernoulli(p2):
+      return p2.depends_on(rv_par, False) and \
+            not p1.depends_on(rv_child, True)
+    case _:
+      return False
+    
+def bernoulli_marginal(state: SymState, prior: Bernoulli, likelihood: Bernoulli, 
+                       rv_par: RandomVar, rv_child: RandomVar) -> Optional[Bernoulli]:
+  if not bernoulli_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  p1, p2 = prior.p, likelihood.p
+  p2_new = state.ex_add(state.ex_mul(p1, p2.subst_rv(rv_par, Const(True))),
+                        state.ex_mul(state.ex_add(Const(1), state.ex_mul(Const(-1), p1)),
+                                    p2.subst_rv(rv_par, Const(False))))
+  return Bernoulli(p2_new)
+    
+def bernoulli_posterior(state: SymState, prior: Bernoulli, likelihood: Bernoulli, 
+                        rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Bernoulli]:
+  if not bernoulli_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  x = rv_child if obs is None else obs
+  
+  p1, p2 = prior.p, likelihood.p
+  p2_new = state.ex_add(state.ex_mul(p1, p2.subst_rv(rv_par, Const(True))),
+                        state.ex_mul(state.ex_add(Const(1), state.ex_mul(Const(-1), p1)),
+                                    p2.subst_rv(rv_par, Const(False))))
+  
+  p1_num_sub = state.ex_ite(x, p2, state.ex_add(Const(1), state.ex_mul(Const(-1), p2)))
+  p1_num = state.ex_mul(p1, p1_num_sub.subst_rv(rv_par, Const(True)))
+  p1_denom = state.ex_ite(x, p2_new, state.ex_add(Const(1), state.ex_mul(Const(-1), p2_new)))
+  p1_new = state.ex_div(p1_num, p1_denom)
+
+  return Bernoulli(p1_new)
     
 def bernoulli_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Bernoulli, Bernoulli]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Bernoulli(p1), Bernoulli(p2):
-      if p2.depends_on(rv_par, False) and \
-        not p1.depends_on(rv_child, True):
-
-        p2_new = state.ex_add(state.ex_mul(p1, p2.subst_rv(rv_par, Const(True))),
-                              state.ex_mul(state.ex_add(Const(1), state.ex_mul(Const(-1), p1)),
-                                          p2.subst_rv(rv_par, Const(False))))
-        
-        p1_num_sub = state.ex_ite(rv_child, p2, state.ex_add(Const(1), state.ex_mul(Const(-1), p2)))
-        p1_num = state.ex_mul(p1, p1_num_sub.subst_rv(rv_par, Const(True)))
-        p1_denom = state.ex_ite(rv_child, p2_new, state.ex_add(Const(1), state.ex_mul(Const(-1), p2_new)))
-        p1_new = state.ex_div(p1_num, p1_denom)
-
-        return (Bernoulli(p2_new), Bernoulli(p1_new))
-      else:
+      marginal = bernoulli_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = bernoulli_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
         return None
+      return (marginal, posterior)
     case _:
       return None
+    
+### Beta Bernoulli Conjugate ###
+
+def beta_bernoulli_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr,
+                                    rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  
+  match prior, likelihood:
+    case Beta(a, b), Bernoulli(p):
+      return rv_par == p \
+            and not a.depends_on(rv_child, True) \
+            and not b.depends_on(rv_child, True)
+    case _:
+      return False
+    
+def beta_bernoulli_marginal(state: SymState, prior: Beta, likelihood: Bernoulli,
+                            rv_par: RandomVar, rv_child: RandomVar) -> Optional[Bernoulli]:
+  if not beta_bernoulli_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  p_new = state.ex_div(a, state.ex_add(a, b))
+
+  return Bernoulli(p_new)
+
+def beta_bernoulli_posterior(state: SymState, prior: Beta, likelihood: Bernoulli,
+                              rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Beta]:
+  if not beta_bernoulli_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+
+  x = rv_child if obs is None else obs
+
+  a_new = state.ex_add(a, state.ex_ite(x, Const(1), Const(0)))
+  b_new = state.ex_add(b, state.ex_ite(x, Const(0), Const(1)))
+
+  return Beta(a_new, b_new)
     
 def beta_bernoulli_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Bernoulli, Beta]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Beta(a, b), Bernoulli(p):
-      if rv_par == p \
-        and not a.depends_on(rv_child, True) \
-        and not b.depends_on(rv_child, True):
-
-        p_new = state.ex_div(a, state.ex_add(a, b))
-
-        a_new = state.ex_add(a, state.ex_ite(rv_child, Const(1), Const(0)))
-        b_new = state.ex_add(b, state.ex_ite(rv_child, Const(0), Const(1)))
-
-        return (Bernoulli(p_new), Beta(a_new, b_new))
-      else:
+      marginal = beta_bernoulli_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = beta_bernoulli_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
         return None
+      return (marginal, posterior)
     case _:
       return None
+    
+### Beta Binomial Conjugate ###
+
+def beta_binomial_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr,
+                                    rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  
+  match prior, likelihood:
+    case Beta(a, b), Binomial(n, p):
+      return isinstance(n, Const) \
+            and isinstance(a, Const)\
+            and rv_par == p \
+            and not a.depends_on(rv_child, True) \
+            and not b.depends_on(rv_child, True)
+    case _:
+      return False
+    
+def beta_binomial_marginal(state: SymState, prior: Beta, likelihood: Binomial,
+                            rv_par: RandomVar, rv_child: RandomVar) -> Optional[BetaBinomial]:
+  if not beta_binomial_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  n, p = likelihood.n, likelihood.p
+
+  return BetaBinomial(n, a, b)
+
+def beta_binomial_posterior(state: SymState, prior: Beta, likelihood: Binomial, 
+                              rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Beta]:
+  if not beta_binomial_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  n, p = likelihood.n, likelihood.p
+
+  assert isinstance(n, Const)
+
+  a_new = state.ex_add(a, rv_child)
+  b_new = state.ex_add(b, state.ex_add(Const(float(n.v)), state.ex_mul(Const(-1), rv_child)))
+
+  return Beta(a_new, b_new)
     
 def beta_binomial_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[BetaBinomial, Beta]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Beta(a, b), Binomial(n, p):
-      if isinstance(n, Const) \
-        and isinstance(a, Const)\
-        and rv_par == p \
-        and not a.depends_on(rv_child, True) \
-        and not b.depends_on(rv_child, True):
-
-        a_new = state.ex_add(a, rv_child)
-        b_new = state.ex_add(b, state.ex_add(Const(float(n.v)), state.ex_mul(Const(-1), rv_child)))
-
-        return (BetaBinomial(n, a, b), Beta(a_new, b_new))
-      else:
+      marginal = beta_binomial_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = beta_binomial_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
         return None
+      return (marginal, posterior)
     case _:
       return None
+    
+### Gamma Poisson Conjugate ###
+
+def gamma_poisson_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr,
+                                    rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  match prior, likelihood:
+    case Gamma(a, b), Poisson(l):
+      return isinstance(a, Const) \
+            and bool(np.isclose(round(a.v), a.v)) \
+            and rv_par == l \
+            and not b.depends_on(rv_child, True)
+    case _:
+      return False
+
+def gamma_poisson_marginal(state: SymState, prior: Gamma, likelihood: Poisson,
+                            rv_par: RandomVar, rv_child: RandomVar) -> Optional[NegativeBinomial]:
+  if not gamma_poisson_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  l = likelihood.l
+
+  assert isinstance(a, Const)
+
+  n_new = Const(int(a.v))
+  p_new = state.ex_div(b, state.ex_add(Const(1), b))
+
+  return NegativeBinomial(n_new, p_new)
+
+def gamma_poisson_posterior(state: SymState, prior: Gamma, likelihood: Poisson,
+                              rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Gamma]:
+  if not gamma_poisson_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+
+  x = rv_child if obs is None else obs
+
+  a_new = state.ex_add(a, x)
+  b_new = state.ex_add(b, Const(1))
+
+  return Gamma(a_new, b_new)
     
 def gamma_poisson_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[NegativeBinomial, Gamma]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Gamma(a, b), Poisson(l):
-      # a is an integer 
-      if isinstance(a, Const) \
-        and np.isclose(round(a.v), a.v) \
-        and rv_par == l \
-        and not b.depends_on(rv_child, True):
-
-        n_new = Const(int(a.v))
-        p_new = state.ex_div(b, state.ex_add(Const(1), b))
-
-        a_new = state.ex_add(a, rv_child)
-        b_new = state.ex_add(b, Const(1))
-
-        return (NegativeBinomial(n_new, p_new), Gamma(a_new, b_new))
-      else:
+      marginal = gamma_poisson_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = gamma_poisson_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
         return None
+      return (marginal, posterior)
     case _:
       return None
+    
+### Gamma Normal Conjugate ###
+# TODO: case of var being scaled invgamma
+
+def gamma_normal_conjugate_check(state: SymState, prior: Gamma, likelihood: Normal,
+                                    rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  
+  a, b = prior.a, prior.b
+  mu, var = likelihood.mu, likelihood.var
+
+  return isinstance(mu, Const) \
+        and var == state.ex_div(Const(1), rv_par) \
+        and not a.depends_on(rv_child, True) \
+        and not b.depends_on(rv_child, True)
+
+def gamma_normal_marginal(state: SymState, prior: Gamma, likelihood: Normal,
+                            rv_par: RandomVar, rv_child: RandomVar) -> Optional[StudentT]:
+  if not gamma_normal_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  mu, var = likelihood.mu, likelihood.var
+
+  tau2 = state.ex_div(b, a)
+  nu = state.ex_mul(Const(2), a)
+
+  return StudentT(mu, tau2, nu)
+
+def gamma_normal_posterior(state: SymState, prior: Gamma, likelihood: Normal,
+                            rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Gamma]:
+  if not gamma_normal_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  a, b = prior.a, prior.b
+  mu, var = likelihood.mu, likelihood.var
+
+  x = rv_child if obs is None else obs
+
+  assert isinstance(mu, Const)
+
+  a_new = state.ex_add(a, Const(0.5))
+  b_inner = state.ex_add(x, Const(-mu.v))
+  b_new = state.ex_add(b, state.ex_mul(Const(0.5), state.ex_mul(b_inner, b_inner)))
+
+  return Gamma(a_new, b_new)
     
 def gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Gamma]]:
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Gamma(a, b), Normal(mu, var):
-      # TODO: case of var being scaled invgamma
-      if isinstance(mu, Const) \
-        and var == state.ex_div(Const(1), rv_par) \
-        and not a.depends_on(rv_child, True) \
-        and not b.depends_on(rv_child, True):
+      marginal = gamma_normal_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = gamma_normal_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
+        return None
+      return (marginal, posterior)
+    case _:
+      return None
+    
+### Normal-Inverse-Gamma Normal Conjugate ###
 
-        tau2 = state.ex_div(b, a)
-        nu = state.ex_mul(Const(2), a)
+def normal_inverse_gamma_normal_conjugate_check(state: SymState, prior: SymDistr, likelihood: SymDistr,
+                                    rv_par: RandomVar, rv_child: RandomVar) -> bool:
+  
+  match prior, likelihood:
+    case Normal(mu0, var1), Normal(mu, var2):
+      match var2:
+        case Div(Const(1), var2_inner):
+          if isinstance(var2_inner, RandomVar):
+            # TODO: should this be passed in
+            match state.distr(var2_inner):
+              case Gamma(a, b):
+                # var1 should be the invgamma scaled by 1/lambda
+                k = is_scaled(state, var1, var2)
+                if k is None:
+                  return False
+                else:
+                  match state.eval(k):
+                    case Const(0):
+                      return False
+                    case Const(_):
+                      return isinstance(mu0, Const) \
+                              and mu == rv_par \
+                              and not mu0.depends_on(rv_child, True) \
+                              and not var1.depends_on(rv_child, True)
+                    case _:
+                      return False
+              case _:
+                return False
+          else:
+            return False
+        case _:
+          return False
+    case _:
+      return False
+    
+def normal_inverse_gamma_normal_marginal(state: SymState, prior: Normal, likelihood: Normal,
+                            rv_par: RandomVar, rv_child: RandomVar) -> Optional[StudentT]:
+  if not normal_inverse_gamma_normal_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  mu0, var1 = prior.mu, prior.var
+  mu, var2 = likelihood.mu, likelihood.var
 
-        a_new = state.ex_add(a, Const(0.5))
-        b_inner = state.ex_add(rv_child, Const(-mu.v))
-        b_new = state.ex_add(b, state.ex_mul(Const(0.5), 
-                                            state.ex_mul(b_inner, b_inner)))
-        
-        return (StudentT(mu, tau2, nu), Gamma(a_new, b_new))
+  match var2:
+    case Div(Const(1), var2_inner):
+      if isinstance(var2_inner, RandomVar):
+        match state.distr(var2_inner):
+          case Gamma(a, b):
+            k = is_scaled(state, var1, var2)
+            assert k is not None
+            assert isinstance(mu0, Const)
+
+            lam = state.ex_div(Const(1), k)
+
+            a_new = state.ex_add(a, Const(0.5))
+            b_inner = state.ex_add(rv_child, Const(-mu0.v))
+            b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
+
+            state.set_distr(var2_inner, Gamma(a_new, b_new))
+
+
+            mu_new = mu0
+            tau2_new = state.ex_div(state.ex_mul(b, state.ex_add(lam, Const(1))), state.ex_mul(a, lam))
+            nu_new = state.ex_mul(Const(2), a)
+
+            return StudentT(mu_new, tau2_new, nu_new)
+          case _:
+            return None
       else:
         return None
     case _:
       return None
+    
+def normal_inverse_gamma_normal_posterior(state: SymState, prior: Normal, likelihood: Normal,
+                            rv_par: RandomVar, rv_child: RandomVar, obs: Optional[SymExpr]=None) -> Optional[Normal]:
+  if not normal_inverse_gamma_normal_conjugate_check(state, prior, likelihood, rv_par, rv_child):
+    return None
+  
+  mu0, var1 = prior.mu, prior.var
+  mu, var2 = likelihood.mu, likelihood.var
+
+  x = rv_child if obs is None else obs
+
+  match var2:
+    case Div(Const(1), var2_inner):
+      # var2 must be a random variable of invgamma
+      if isinstance(var2_inner, RandomVar):
+        match state.distr(var2_inner):
+          case Gamma(a, b):
+            k = is_scaled(state, var1, var2)
+            assert k is not None
+            assert isinstance(mu0, Const)
+
+            lam = state.ex_div(Const(1), k)
+
+            mu0_new = state.ex_div(state.ex_add(state.ex_mul(lam, mu0), x), state.ex_add(lam, Const(1)))
+            lam_new = state.ex_add(lam, Const(1))
+            
+            a_new = state.ex_add(a, Const(0.5))
+            b_inner = state.ex_add(x, Const(-mu0.v))
+            b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
+
+            state.set_distr(var2_inner, Gamma(a_new, b_new))
+
+            var_new = state.ex_div(Const(1), state.ex_mul(lam_new, var2_inner))
+
+            return Normal(mu0_new, var_new)
+          case _:
+            return None
+      else:
+        return None
+    case _:
+      return None
+            
     
 def normal_inverse_gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Normal]]:
   # print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case Normal(mu0, var1), Normal(mu, var2):
-      # var2 must be a random variable of invgamma
-      # TODO: case of var2 being scaled invgamma
-      match var2:
-        case Div(Const(1), var2_inner):
-          if isinstance(var2_inner, RandomVar):
-            match state.distr(var2_inner):
-              case Gamma(a, b):
-                # var1 should be the invgamma scaled by 1/lambda
-                k = is_scaled(state, var1, var2)
-                if k is None:
-                  return None
-                else:
-                  match state.eval(k):
-                    case Const(0):
-                      return None
-                    case Const(_):
-                      lam = state.ex_div(Const(1), k)
-
-                      if isinstance(mu0, Const) \
-                        and mu == rv_par \
-                        and not mu0.depends_on(rv_child, True) \
-                        and not var1.depends_on(rv_child, True):
-
-                        mu0_new = state.ex_div(state.ex_add(state.ex_mul(lam, mu0), rv_child), state.ex_add(lam, Const(1)))
-                        lam_new = state.ex_add(lam, Const(1))
-                        
-                        a_new = state.ex_add(a, Const(0.5))
-                        b_inner = state.ex_add(rv_child, Const(-mu0.v))
-                        b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
-
-                        state.set_distr(var2_inner, Gamma(a_new, b_new))
-
-                        var_new = state.ex_div(Const(1), state.ex_mul(lam_new, var2_inner))
-
-                        mu_new = mu0
-                        tau2_new = state.ex_div(state.ex_mul(b, state.ex_add(lam, Const(1))), state.ex_mul(a, lam))
-                        nu_new = state.ex_mul(Const(2), a)
-
-                        return (StudentT(mu_new, tau2_new, nu_new), Normal(mu0_new, var_new))
-                    case _:
-                      return None
-              case _:
-                return None
-          else:
-            return None
-        case _:
-          return None
+      marginal = normal_inverse_gamma_normal_marginal(state, prior, likelihood, rv_par, rv_child)
+      posterior = normal_inverse_gamma_normal_posterior(state, prior, likelihood, rv_par, rv_child)
+      if marginal is None or posterior is None:
+        return None
+      return (marginal, posterior)
     case _:
       return None

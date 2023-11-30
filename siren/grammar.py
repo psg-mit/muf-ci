@@ -1100,19 +1100,19 @@ class UnkD(AbsSymDistr[T]):
 @dataclass(frozen=True)
 class AbsNormal(AbsSymDistr[float]):
   mu: 'AbsSymExpr[float]'
-  sigma: 'AbsSymExpr[float]'
+  var: 'AbsSymExpr[float]'
 
   def __str__(self):
-    return f"Normal({self.mu}, {self.sigma})"
+    return f"Normal({self.mu}, {self.var})"
   
   def rvs(self) -> List['AbsRandomVar']:
-    return self.mu.rvs() + self.sigma.rvs()
+    return self.mu.rvs() + self.var.rvs()
   
   def rename(self, old: 'AbsRandomVar', new: 'AbsRandomVar') -> 'AbsNormal':
-    return AbsNormal(self.mu.rename(old, new), self.sigma.rename(old, new))
+    return AbsNormal(self.mu.rename(old, new), self.var.rename(old, new))
   
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsNormal':
-    return AbsNormal(self.mu.subst_rv(rv, value), self.sigma.subst_rv(rv, value))
+    return AbsNormal(self.mu.subst_rv(rv, value), self.var.subst_rv(rv, value))
 
 @dataclass(frozen=True)
 class AbsBernoulli(AbsSymDistr[bool]):

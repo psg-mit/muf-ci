@@ -6,8 +6,8 @@ import cProfile
 import pstats
 
 from siren import parser, evaluate, analyze
-from siren.inference import SSIState
-from siren.analysis import AbsSSIState
+from siren.inference import SSIState, DSState
+from siren.analysis import AbsSSIState, AbsDSState
 from siren.inference_plan import runtime_inference_plan
 
 class methods(Enum):
@@ -17,8 +17,8 @@ class methods(Enum):
   dis = 'dis'
 
 method_states = {
-  methods.ssi: (SSIState, AbsSSIState)
-  # methods.ds: (DSState, AbsDSState)
+  methods.ssi: (SSIState, AbsSSIState),
+  methods.ds: (DSState, AbsDSState)
 }
 
 def main():

@@ -17,6 +17,14 @@ class SymState(object):
     self.annotations: Dict[Identifier, Annotation] = {}
     self.rng = np.random.default_rng()
 
+  def __copy__(self):
+    new_state = type(self)()
+    new_state.state = copy(self.state)
+    new_state.ctx = copy(self.ctx)
+    new_state.counter = self.counter
+    new_state.annotations = self.annotations
+    return new_state
+
   def new_var(self) -> RandomVar:
     self.counter += 1
     return RandomVar(f"rv{self.counter}")
@@ -571,10 +579,12 @@ class ProbState(object):
     def _get_mean(res: Mixture) -> Const:
       if res.is_pair_mixture:
         fst, snd = res.get_pair_mixture()
-        return Const((_get_mean(fst), _get_mean(snd)))
+        fst = _get_mean(fst)
+        snd = _get_mean(snd)
+        return Const((fst.v, snd.v))
       elif res.is_lst_mixture:
         lst = res.get_lst_mixture()
-        return Const(list(map(lambda x: _get_mean(x), lst)))
+        return Const(list(map(lambda x: _get_mean(x).v, lst)))
       else:
         return Const(res.mean())
       

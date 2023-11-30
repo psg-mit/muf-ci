@@ -16,14 +16,6 @@ class SSIState(SymState):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"SSIState(\n\t{s}\n)" if s else "SSIState()"
 
-  def __copy__(self):
-    new_state = SSIState()
-    new_state.state = copy(self.state)
-    new_state.ctx = copy(self.ctx)
-    new_state.counter = self.counter
-    new_state.annotations = self.annotations
-    return new_state
-
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     rv = self.new_var()
     if annotation is not None:

@@ -17,15 +17,6 @@ class AbsSSIState(AbsSymState):
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsSSIState(\n\t{s}\n)" if s else "AbsSSIState()"
-  
-  def __copy__(self):
-    new_state = AbsSSIState()
-    new_state.state = copy(self.state)
-    new_state.ctx = copy(self.ctx)
-    new_state.counter = self.counter
-    new_state.annotations = self.annotations
-    new_state.plan = copy(self.plan)
-    return new_state
 
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     rv = self.new_var()
@@ -36,7 +27,6 @@ class AbsSSIState(AbsSymState):
       else:
         self.annotations[name] = annotation
     self.state[rv] = (pv, distribution)
-    # self.plan[rv] = DistrEnc.symbolic
     return rv
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> None:

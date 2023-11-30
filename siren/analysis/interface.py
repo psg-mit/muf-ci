@@ -16,6 +16,15 @@ class AbsSymState(object):
     self.counter: int = 0
     self.annotations: Dict[Identifier, Annotation] = {}
 
+  def __copy__(self):
+    new_state = type(self)()
+    new_state.state = copy(self.state)
+    new_state.ctx = copy(self.ctx)
+    new_state.counter = self.counter
+    new_state.annotations = self.annotations
+    new_state.plan = copy(self.plan)
+    return new_state
+
   def new_var(self, min_counter: Optional[int] = None) -> AbsRandomVar:
     if min_counter is not None:
       self.counter = max(self.counter, min_counter)
