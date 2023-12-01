@@ -114,7 +114,9 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         def _make_cons(fst, snd):
           l = get_abs_lst(snd)
           if isinstance(l, UnkE):
-            parents = fst.parents | l.parents
+            parents = []
+            for p in fst.rvs() + l.rvs():
+              parents += [p]
             return UnkE(parents)
           return AbsLst([fst] + l)
         return _evaluate_binops(particle, _make_cons, args)

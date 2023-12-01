@@ -581,6 +581,16 @@ def join_expr(e1: AbsSymExpr, e2: AbsSymExpr) -> AbsSymExpr:
       return AbsEq(join_expr(e11, e21), join_expr(e12, e22))
     case AbsLt(e11, e12), AbsLt(e21, e22):
       return AbsLt(join_expr(e11, e21), join_expr(e12, e22))
+    case AbsConst(c), AbsLst(es):
+      if isinstance(c, UnkC) or isinstance(c, list):
+        return join_expr(AbsLst([]), e2)
+      else:
+        raise ValueError(c)
+    case AbsLst(es), AbsConst(c):
+      if isinstance(c, UnkC) or isinstance(c, list):
+        return join_expr(e1, AbsLst([]))
+      else:
+        raise ValueError(c)
     case AbsLst(es1), AbsLst(es2):
       es = []
       max_len = max(len(es1), len(es2))
@@ -594,19 +604,34 @@ def join_expr(e1: AbsSymExpr, e2: AbsSymExpr) -> AbsSymExpr:
             rest_parents = AbsLst(es2[i:]).rvs()
 
           # Collapse with the last element if it's just UnkE
-          match es[-1]:
-            case UnkE(parents):
-              new_parents = []
-              for p in parents + rest_parents:
-                if p in new_parents:
-                  continue
-                new_parents.append(p)
-              es[-1] = UnkE(new_parents)
-            case _:
-              es.append(UnkE(rest_parents))
-          break
+          if len(es) > 0:
+            match es[-1]:
+              case UnkE(parents):
+                new_parents = []
+                for p in parents + rest_parents:
+                  if p in new_parents:
+                    continue
+                  new_parents.append(p)
+                es[-1] = UnkE(new_parents)
+              case _:
+                es.append(UnkE(rest_parents))
+            break
 
-      return AbsLst(es)          
+      return AbsLst(es)     
+    case AbsConst(c), AbsPair(e21, e22):
+      if isinstance(c, UnkC):
+        return join_expr(AbsPair(AbsConst(UnkC()), AbsConst(UnkC())), e2)
+      elif isinstance(c, tuple):
+        return join_expr(AbsPair(AbsConst(c[0]), AbsConst(c[1])), e2)
+      else:
+        raise ValueError(c)
+    case AbsPair(e11, e12), AbsConst(c):
+      if isinstance(c, UnkC):
+        return join_expr(e1, AbsPair(AbsConst(UnkC()), AbsConst(UnkC())))
+      elif isinstance(c, tuple):
+        return join_expr(e1, AbsPair(AbsConst(c[0]), AbsConst(c[1])))
+      else:
+        raise ValueError(c)
     case AbsPair(e11, e12), AbsPair(e21, e22):
       return AbsPair(join_expr(e11, e21), join_expr(e12, e22))
     case _, _:

@@ -115,8 +115,12 @@ def abs_is_affine(state: AbsSymState, expr: AbsSymExpr, rv: AbsRandomVar) -> Opt
       return None
     case AbsPair(_):
       return None
-    case UnkE(_):
-      return None
+    case UnkE(s):
+      # Doesn't depend on rv so it's affine
+      if len(s) == 0:
+        return (AbsConst(0), expr)
+      else:
+        return None
     case _:
       raise ValueError(expr)
     
