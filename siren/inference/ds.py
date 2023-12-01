@@ -283,4 +283,4 @@ class DSState(SymState):
     if rv_child is not None:
       self.prune(rv_child)
     
-    self.do_sample(rv)
+    self.value(rv)

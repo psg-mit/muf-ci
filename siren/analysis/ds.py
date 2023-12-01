@@ -89,7 +89,7 @@ class AbsDSState(AbsSymState):
     self.realize(rv, AbsDelta(value, sampled=False))
     return
 
-  def value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     # Turn rv into terminal node
     self.graft(rv)
     return self.do_sample(rv)
@@ -271,4 +271,4 @@ class AbsDSState(AbsSymState):
     if rv_child is not None:
       self.prune(rv_child)
     
-    self.do_sample(rv)
+    self.value(rv)
