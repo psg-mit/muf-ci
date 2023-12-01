@@ -1,5 +1,12 @@
 # Siren
 
+## Run
+```bash
+python siren.py path/to/program.si -m {method} -p {particles}
+python siren.py path/to/program.si -m {method} -p {particles} --analyze
+python siren.py path/to/program.si -m {method} --analyze-only
+```
+
 ## Requirements
 `>= Python3.10`
 
