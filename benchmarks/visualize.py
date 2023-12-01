@@ -18,12 +18,12 @@ DEFAULT_BENCHMARKS = [
   'smsbehavior',
   'outlier',
   'mixasymprior',
-  # "outliernolist",
+  'gtree',
 ]
 
 DEFAULT_METHODS = [
   'ssi',
-  # 'ds',
+  'ds',
   # 'ft',
   # 'dis',
 ]
@@ -87,7 +87,7 @@ MAGICSPACING = 0.8
 
 YLABELSIZE = 9
 XLABELSIZE = 12
-BARLABELSIZE = 6
+BARLABELSIZE = 8
 
 N = 100
 

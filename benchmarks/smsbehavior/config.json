@@ -33,7 +33,10 @@
         "lambda2": "symbolic",
         "tau": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "1": {
       "plan": {
@@ -41,7 +44,10 @@
         "lambda2": "symbolic",
         "tau": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "2": {
       "plan": {
@@ -49,7 +55,10 @@
         "lambda2": "sample",
         "tau": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "3": {
       "plan": {
@@ -57,7 +66,10 @@
         "lambda2": "sample",
         "tau": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "4": {
       "plan": {
@@ -65,7 +77,10 @@
         "lambda2": "symbolic",
         "tau": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "5": {
       "plan": {
@@ -73,7 +88,10 @@
         "lambda2": "symbolic",
         "tau": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "6": {
       "plan": {
@@ -81,7 +99,10 @@
         "lambda2": "sample",
         "tau": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "7": {
       "plan": {
@@ -89,7 +110,10 @@
         "lambda2": "sample",
         "tau": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     }
   },
   "variables": [

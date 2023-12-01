@@ -1,49 +1,97 @@
 {
   "n_plans": 8,
   "n_vars": 3,
-  "plan": {
-    "0": {
-      "true_satisfied": false,
-      "infer_satisfied": false
+  "ssi": {
+    "plan": {
+      "0": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "1": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "2": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "3": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0040569305419921875
+      },
+      "4": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0015292167663574219
+      },
+      "5": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.002624988555908203
+      },
+      "6": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0008382797241210938
+      },
+      "7": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0006301403045654297
+      }
     },
-    "1": {
-      "true_satisfied": false,
-      "infer_satisfied": false
-    },
-    "2": {
-      "true_satisfied": false,
-      "infer_satisfied": false
-    },
-    "3": {
-      "true_satisfied": true,
-      "infer_satisfied": true,
-      "analysis_time": 0.0012328624725341797
-    },
-    "4": {
-      "true_satisfied": true,
-      "infer_satisfied": true,
-      "analysis_time": 0.0009279251098632812
-    },
-    "5": {
-      "true_satisfied": true,
-      "infer_satisfied": true,
-      "analysis_time": 0.0007879734039306641
-    },
-    "6": {
-      "true_satisfied": true,
-      "infer_satisfied": true,
-      "analysis_time": 0.0008089542388916016
-    },
-    "7": {
-      "true_satisfied": true,
-      "infer_satisfied": true,
-      "analysis_time": 0.0006091594696044922
-    }
+    "n_true_satisfied": 5,
+    "n_inferred_satisfied": 5,
+    "n_satisfied_tp": 5,
+    "n_satisfied_fp": 0,
+    "n_satisfied_fn": 0,
+    "n_satisfied_tn": 3
   },
-  "n_true_satisfied": 5,
-  "n_inferred_satisfied": 5,
-  "n_satisfied_tp": 5,
-  "n_satisfied_fp": 0,
-  "n_satisfied_fn": 0,
-  "n_satisfied_tn": 3
+  "ds": {
+    "plan": {
+      "0": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "1": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "2": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "3": {
+        "true_satisfied": true,
+        "infer_satisfied": false
+      },
+      "4": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.000949859619140625
+      },
+      "5": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0008137226104736328
+      },
+      "6": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0007982254028320312
+      },
+      "7": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0006101131439208984
+      }
+    },
+    "n_true_satisfied": 5,
+    "n_inferred_satisfied": 4,
+    "n_satisfied_tp": 4,
+    "n_satisfied_fp": 0,
+    "n_satisfied_fn": 1,
+    "n_satisfied_tn": 3
+  }
 }

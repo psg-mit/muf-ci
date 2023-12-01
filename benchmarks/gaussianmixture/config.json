@@ -25,8 +25,8 @@
     "mu1": 0.5470021588365197,
     "mu2": 0.18215960608261172
   },
-  "base_y": 5,
-  "base_x": 6,
+  "base_y": 2,
+  "base_x": 3,
   "n_y": 1,
   "n_x": 3,
   "legend_width": 3,
@@ -39,7 +39,10 @@
         "mu1": "symbolic",
         "mu2": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "1": {
       "plan": {
@@ -48,7 +51,10 @@
         "mu1": "symbolic",
         "mu2": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "2": {
       "plan": {
@@ -57,7 +63,10 @@
         "mu1": "sample",
         "mu2": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "3": {
       "plan": {
@@ -66,7 +75,10 @@
         "mu1": "sample",
         "mu2": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "4": {
       "plan": {
@@ -75,7 +87,10 @@
         "mu1": "symbolic",
         "mu2": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "5": {
       "plan": {
@@ -84,7 +99,10 @@
         "mu1": "symbolic",
         "mu2": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "6": {
       "plan": {
@@ -93,7 +111,10 @@
         "mu1": "sample",
         "mu2": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "7": {
       "plan": {
@@ -102,7 +123,10 @@
         "mu1": "sample",
         "mu2": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "8": {
       "plan": {
@@ -111,9 +135,10 @@
         "mu1": "symbolic",
         "mu2": "symbolic"
       },
-      "satisfiable": true,
-      "min_particles": 1,
-      "max_particles": 200
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "9": {
       "plan": {
@@ -122,9 +147,10 @@
         "mu1": "symbolic",
         "mu2": "sample"
       },
-      "satisfiable": true,
-      "min_particles": 1,
-      "max_particles": 500
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "10": {
       "plan": {
@@ -133,9 +159,10 @@
         "mu1": "sample",
         "mu2": "symbolic"
       },
-      "satisfiable": true,
-      "min_particles": 1,
-      "max_particles": 500
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "11": {
       "plan": {
@@ -144,7 +171,10 @@
         "mu1": "sample",
         "mu2": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "12": {
       "plan": {
@@ -153,7 +183,10 @@
         "mu1": "symbolic",
         "mu2": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "13": {
       "plan": {
@@ -162,7 +195,10 @@
         "mu1": "symbolic",
         "mu2": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "14": {
       "plan": {
@@ -171,7 +207,10 @@
         "mu1": "sample",
         "mu2": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "15": {
       "plan": {
@@ -180,7 +219,10 @@
         "mu1": "sample",
         "mu2": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     }
   },
   "variables": [

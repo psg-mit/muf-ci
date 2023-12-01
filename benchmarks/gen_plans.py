@@ -9,10 +9,10 @@ benchmarks = [
   'mixasymprior',
   'noise',
   'outlier',
-  # 'outliernolist',
   # 'serosurvey',
   # 'slam',
   'smsbehavior',
+  'gtree',
 ]
 
 ANNOTATIONS = ['symbolic', 'sample']

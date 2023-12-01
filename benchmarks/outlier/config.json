@@ -126,7 +126,10 @@
         "is_outlier": "symbolic",
         "outlier_prob": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "1": {
       "plan": {
@@ -134,7 +137,10 @@
         "is_outlier": "symbolic",
         "outlier_prob": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "2": {
       "plan": {
@@ -142,7 +148,10 @@
         "is_outlier": "sample",
         "outlier_prob": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "3": {
       "plan": {
@@ -150,7 +159,10 @@
         "is_outlier": "sample",
         "outlier_prob": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "4": {
       "plan": {
@@ -158,7 +170,10 @@
         "is_outlier": "symbolic",
         "outlier_prob": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "5": {
       "plan": {
@@ -166,7 +181,10 @@
         "is_outlier": "symbolic",
         "outlier_prob": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "6": {
       "plan": {
@@ -174,7 +192,10 @@
         "is_outlier": "sample",
         "outlier_prob": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "7": {
       "plan": {
@@ -182,7 +203,10 @@
         "is_outlier": "sample",
         "outlier_prob": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     }
   },
   "variables": [

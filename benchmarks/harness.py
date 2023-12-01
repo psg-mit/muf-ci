@@ -20,12 +20,12 @@ DEFAULT_BENCHMARKS = [
   'smsbehavior',
   'outlier',
   'mixasymprior',
-  # "outliernolist",
+  'gtree',
 ]
 
 DEFAULT_METHODS = [
   'ssi',
-  # 'ds',
+  'ds',
   # 'ft',
   # 'dis',
 ]
@@ -322,178 +322,195 @@ def run_runtime(files, n, plans, target_runtime, methods, true_vars, results_fil
           print('No more particles to try')
           break
 
-def find_satisfiable_plans(files, plans, knowns):
+def find_satisfiable_plans(files, methods, plans, knowns):
   print(plans)
   files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
-  satisfiable_plans = []
+  satisfiable_plans = {}
 
   # Get runtime inference plan
   print('MAKE SURE TO MANUALLY CHECK RUNTIME INFERENCE PLAN!!!\n')
-  for file in files:
-    plan_id = get_plan_id(file)
+  for method in methods:
+    print(f'For {method}...')
+    satisfiable_plans[method] = []
 
-    print(f'Checking {file}...')
+    for file in files:
+      plan_id = get_plan_id(file)
 
-    if knowns is not None:
-      # Use known checks
-      pre_check = False
-      for var in knowns:
-        if not is_satisfiable(plans[plan_id]['plan'][var], knowns[var]):
+      print(f'Checking {file}...')
+
+      if knowns is not None:
+        # Use known checks
+        pre_check = False
+        for var in knowns:
+          if not is_satisfiable(plans[plan_id]['plan'][var], knowns[var]):
+            print('> Not satisfiable')
+            pre_check = True
+            break
+        if pre_check:
+          continue
+
+      # get analysis output
+      cmd = f'{sys.executable} siren.py {file} -p 10 -m {method}'
+      print('>', cmd)
+      try:
+        out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+      except subprocess.CalledProcessError as e:
+        output = e.output.decode("utf-8")
+        if 'RuntimeViolatedAnnotationError' in output:
           print('> Not satisfiable')
-          pre_check = True
-          break
-      if pre_check:
-        continue
+          continue
+        else:
+          print(output)
+          raise RuntimeError()
 
-    # get analysis output
-    cmd = f'{sys.executable} siren.py {file} -p 10'
-    print('>', cmd)
-    try:
-      out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-      output = e.output.decode("utf-8")
-      if 'RuntimeViolatedAnnotationError' in output:
-        print('> Not satisfiable')
-        continue
-      else:
-        print(output)
-        raise RuntimeError()
-
-    satisfiable_plans.append(plan_id)
-    print('> Satisfiable')    
+      satisfiable_plans[method].append(plan_id)
+      print('> Satisfiable')    
 
 
-    # parse output
-    lines = out.strip().split('\n')
+      # parse output
+      lines = out.strip().split('\n')
 
-    # get outputs after ===== Runtime Inference Plan =====
-    true_plan = {}
-    start = False
-    for line in lines:
-      line = line.strip()
-      if line == '===== Runtime Inference Plan =====':
-        start = True
-      elif start:
-        if line != '':
-          var, enc = line.split(': ')[:2]
-          true_plan[var] = enc.strip()
+      # get outputs after ===== Runtime Inference Plan =====
+      true_plan = {}
+      start = False
+      for line in lines:
+        line = line.strip()
+        if line == '===== Runtime Inference Plan =====':
+          start = True
+        elif start:
+          if line != '':
+            var, enc = line.split(': ')[:2]
+            true_plan[var] = enc.strip()
 
-    # compare annotated and real plans
-    # only for the ones that show up
-    for var in plans[plan_id]['plan']:
-      if var in true_plan:
-        if not is_satisfiable(plans[plan_id]['plan'][var], true_plan[var]):
-          print()
-          print(f'ERROR: {file}')
-          print('Annotated:', plans[plan_id]['plan'])
-          print('Real:', true_plan)
-          print()
-          break
+      # compare annotated and real plans
+      # only for the ones that show up
+      for var in plans[plan_id]['plan']:
+        if var in true_plan:
+          if not is_satisfiable(plans[plan_id]['plan'][var], true_plan[var]):
+            print()
+            print(f'ERROR: {file}')
+            print('Annotated:', plans[plan_id]['plan'])
+            print('Real:', true_plan)
+            print()
+            break
 
   return satisfiable_plans
 
-def analyze(files, variables, satisfied_plans):
+def analyze(files, methods, variables, plans):
   results = {}
   # Number of plans
   results['n_plans'] = len(files)
   # Number of variables
   results['n_vars'] = len(variables)
 
-  results['plan'] = {}
+  for method in methods:
+    print(f'For {method}...')
+    method_results = {}
+    method_results['plan'] = {}
 
-  n_true_satisfied = len(satisfied_plans.keys())
-  n_inferred_satisfied = 0
+    satisfied_plans = {}
+    for plan_id, plan_data in plans.items():
+      if plan_data['satisfiable'][method]:
+        satisfied_plans[plan_id] = plan_data['plan']
 
-  for file in files:
-    plan_id = get_plan_id(file)
-    results['plan'][plan_id] = {}
+    print(f'Satisfied plans: {list(satisfied_plans.keys())}')
+    print(satisfied_plans)
 
-    results['plan'][plan_id]['true_satisfied'] = plan_id in satisfied_plans
+    n_true_satisfied = len(satisfied_plans.keys())
+    n_inferred_satisfied = 0
 
-    print(f'Analyzing {file}...')
+    for file in files:
+      plan_id = get_plan_id(file)
+      method_results['plan'][plan_id] = {}
 
-    # get analysis output
-    cmd = f'{sys.executable} siren.py {file} --analyze-only'
-    print('>', cmd)
-    try:
-      out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-      output = e.output.decode("utf-8")
-      results['plan'][plan_id]['infer_satisfied'] = False
-      continue
+      method_results['plan'][plan_id]['true_satisfied'] = plan_id in satisfied_plans
 
-    results['plan'][plan_id]['infer_satisfied'] = True
-    n_inferred_satisfied += 1
+      print(f'Analyzing {file}...')
 
-    # parse output
-    lines = out.strip().split('\n')
+      # get analysis output
+      cmd = f'{sys.executable} siren.py {file} -m {method} --analyze-only'
+      print('>', cmd)
+      try:
+        out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+      except subprocess.CalledProcessError as e:
+        output = e.output.decode("utf-8")
+        method_results['plan'][plan_id]['infer_satisfied'] = False
+        continue
 
-    analysis_time = -1
-    for i, line in enumerate(lines):
-      line = line.strip()
-      if line == '===== Analysis Time =====':
-        analysis_time = float(lines[i + 1])
-        break
+      method_results['plan'][plan_id]['infer_satisfied'] = True
+      n_inferred_satisfied += 1
 
-    if analysis_time == -1:
-      raise RuntimeError('Analysis time not found')
-    
-    results['plan'][plan_id]['analysis_time'] = analysis_time
+      # parse output
+      lines = out.strip().split('\n')
 
-    # get outputs after ===== Inferred Inference Plan =====
-    inferred_plan = {}
-    start = False
-    for line in lines:
-      line = line.strip()
-      if line == '===== Inferred Inference Plan =====':
-        start = True
-      elif '=====' in line:
-        break
-      elif start:
-        if line != '':
-          var, enc = line.split(': ')
-          inferred_plan[var] = enc.strip()
+      analysis_time = -1
+      for i, line in enumerate(lines):
+        line = line.strip()
+        if line == '===== Analysis Time =====':
+          analysis_time = float(lines[i + 1])
+          break
 
-    # double check annotated and real plans match since satisfied
-    for var in variables:
-      if var not in inferred_plan:
-        print()
-        print(f'ERROR: {file} missing {var}')
-        print('Inferred:', inferred_plan)
-      elif not is_satisfiable(satisfied_plans[plan_id][var], inferred_plan[var]):
-        print()
-        print(f'ERROR: {file}')
-        print('Annotated:', satisfied_plans[plan_id][var])
-        print('Inferred:', inferred_plan)
-        print()
-        break
+      if analysis_time == -1:
+        raise RuntimeError('Analysis time not found')
+      
+      method_results['plan'][plan_id]['analysis_time'] = analysis_time
 
-  results['n_true_satisfied'] = n_true_satisfied
-  results['n_inferred_satisfied'] = n_inferred_satisfied
+      # get outputs after ===== Inferred Inference Plan =====
+      inferred_plan = {}
+      start = False
+      for line in lines:
+        line = line.strip()
+        if line == '===== Inferred Inference Plan =====':
+          start = True
+        elif '=====' in line:
+          break
+        elif start:
+          if line != '':
+            var, enc = line.split(': ')
+            inferred_plan[var] = enc.strip()
 
-  n_satisfied_tp = 0
-  n_satisfied_fp = 0
-  n_satisfied_tn = 0
-  n_satisfied_fn = 0
+      # double check annotated and real plans match since satisfied
+      for var in variables:
+        if var not in inferred_plan:
+          print()
+          print(f'ERROR: {file} missing {var}')
+          print('Inferred:', inferred_plan)
+        elif not is_satisfiable(satisfied_plans[plan_id][var], inferred_plan[var]):
+          print()
+          print(f'ERROR: {file}')
+          print('Annotated:', satisfied_plans[plan_id])
+          print('Inferred:', inferred_plan)
+          print()
+          break
 
-  for file in files:
-    plan_id = get_plan_id(file)
-    inferred_satisfied = results['plan'][plan_id]['infer_satisfied']
-    true_satisfied = plan_id in satisfied_plans
+    method_results['n_true_satisfied'] = n_true_satisfied
+    method_results['n_inferred_satisfied'] = n_inferred_satisfied
 
-    if inferred_satisfied and true_satisfied:
-      n_satisfied_tp += 1
-    elif inferred_satisfied and not true_satisfied:
-      n_satisfied_fp += 1
-    elif not inferred_satisfied and true_satisfied:
-      n_satisfied_fn += 1
-    else:
-      n_satisfied_tn += 1
+    n_satisfied_tp = 0
+    n_satisfied_fp = 0
+    n_satisfied_tn = 0
+    n_satisfied_fn = 0
 
-  results['n_satisfied_tp'] = n_satisfied_tp
-  results['n_satisfied_fp'] = n_satisfied_fp
-  results['n_satisfied_fn'] = n_satisfied_fn
-  results['n_satisfied_tn'] = n_satisfied_tn
+    for file in files:
+      plan_id = get_plan_id(file)
+      inferred_satisfied = method_results['plan'][plan_id]['infer_satisfied']
+      true_satisfied = plan_id in satisfied_plans
+
+      if inferred_satisfied and true_satisfied:
+        n_satisfied_tp += 1
+      elif inferred_satisfied and not true_satisfied:
+        n_satisfied_fp += 1
+      elif not inferred_satisfied and true_satisfied:
+        n_satisfied_fn += 1
+      else:
+        n_satisfied_tn += 1
+
+    method_results['n_satisfied_tp'] = n_satisfied_tp
+    method_results['n_satisfied_fp'] = n_satisfied_fp
+    method_results['n_satisfied_fn'] = n_satisfied_fn
+    method_results['n_satisfied_tn'] = n_satisfied_tn
+
+    results[method] = method_results
 
   return results
   
@@ -624,15 +641,7 @@ if __name__ == '__main__':
 
       variables = config['variables']
 
-      satisfied_plans = {}
-      for plan_id, plan_data in config['plans'].items():
-        if plan_data['satisfiable']:
-          satisfied_plans[plan_id] = plan_data['plan']
-
-      print(f'Satisfied plans: {list(satisfied_plans.keys())}')
-      print(satisfied_plans)
-
-      results = analyze(files, variables, satisfied_plans)
+      results = analyze(files, methods, variables, config['plans'])
 
       os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -642,10 +651,12 @@ if __name__ == '__main__':
 
     elif args.subparser_name == 'check':
       knowns = config['known_enc'] if 'known_enc' in config else None
-      satisfied_plan_ids = find_satisfiable_plans(files, config['plans'], knowns)
+      satisfied_plan_ids = find_satisfiable_plans(files, methods, config['plans'], knowns)
       
       for plan_id, plan_data in config['plans'].items():
-        plan_data['satisfiable'] = plan_id in satisfied_plan_ids
+        plan_data['satisfiable'] = {}
+        for method in methods:
+          plan_data['satisfiable'][method] = (plan_id in satisfied_plan_ids[method])
 
       with open(os.path.join(benchmark, 'config.json'), 'w') as f:
         json.dump(config, f, indent=2)

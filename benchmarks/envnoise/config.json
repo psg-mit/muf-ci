@@ -124,11 +124,11 @@
     "q": 2.9121933929754507,
     "r": 0.01959294068263657
   },
-  "base_y": 5,
-  "base_x": 6,
+  "base_y": 3,
+  "base_x": 3,
   "n_y": 1,
   "n_x": 3,
-  "legend_width": 3,
+  "legend_width": 2,
   "error_func": "se",
   "known_enc": {
     "other": "sample",
@@ -144,7 +144,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "1": {
       "plan": {
@@ -155,7 +158,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "2": {
       "plan": {
@@ -166,7 +172,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "3": {
       "plan": {
@@ -177,7 +186,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "4": {
       "plan": {
@@ -188,7 +200,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "5": {
       "plan": {
@@ -199,7 +214,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "6": {
       "plan": {
@@ -210,7 +228,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "7": {
       "plan": {
@@ -221,7 +242,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "8": {
       "plan": {
@@ -232,7 +256,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "9": {
       "plan": {
@@ -243,7 +270,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "10": {
       "plan": {
@@ -254,7 +284,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "11": {
       "plan": {
@@ -265,7 +298,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "12": {
       "plan": {
@@ -276,7 +312,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "13": {
       "plan": {
@@ -287,7 +326,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "14": {
       "plan": {
@@ -298,7 +340,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "15": {
       "plan": {
@@ -309,7 +354,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "16": {
       "plan": {
@@ -320,7 +368,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "17": {
       "plan": {
@@ -331,7 +382,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "18": {
       "plan": {
@@ -342,7 +396,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "19": {
       "plan": {
@@ -353,7 +410,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "20": {
       "plan": {
@@ -364,7 +424,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "21": {
       "plan": {
@@ -375,7 +438,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "22": {
       "plan": {
@@ -386,7 +452,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "23": {
       "plan": {
@@ -397,7 +466,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "24": {
       "plan": {
@@ -408,7 +480,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "25": {
       "plan": {
@@ -419,7 +494,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "26": {
       "plan": {
@@ -430,7 +508,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "27": {
       "plan": {
@@ -441,7 +522,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "28": {
       "plan": {
@@ -452,7 +536,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "29": {
       "plan": {
@@ -463,7 +550,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "30": {
       "plan": {
@@ -474,7 +564,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "31": {
       "plan": {
@@ -485,7 +578,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "32": {
       "plan": {
@@ -496,7 +592,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "33": {
       "plan": {
@@ -507,7 +606,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "34": {
       "plan": {
@@ -518,7 +620,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "35": {
       "plan": {
@@ -529,7 +634,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "36": {
       "plan": {
@@ -540,7 +648,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "37": {
       "plan": {
@@ -551,7 +662,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "38": {
       "plan": {
@@ -562,7 +676,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "39": {
       "plan": {
@@ -573,7 +690,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "40": {
       "plan": {
@@ -584,7 +704,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "41": {
       "plan": {
@@ -595,7 +718,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "42": {
       "plan": {
@@ -606,7 +732,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "43": {
       "plan": {
@@ -617,7 +746,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "44": {
       "plan": {
@@ -628,7 +760,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "45": {
       "plan": {
@@ -639,7 +774,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "46": {
       "plan": {
@@ -650,7 +788,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "47": {
       "plan": {
@@ -661,7 +802,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "48": {
       "plan": {
@@ -672,7 +816,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "49": {
       "plan": {
@@ -683,7 +830,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "50": {
       "plan": {
@@ -694,7 +844,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "51": {
       "plan": {
@@ -705,7 +858,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "52": {
       "plan": {
@@ -716,7 +872,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "53": {
       "plan": {
@@ -727,7 +886,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "54": {
       "plan": {
@@ -738,7 +900,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "55": {
       "plan": {
@@ -749,7 +914,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "56": {
       "plan": {
@@ -760,7 +928,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "57": {
       "plan": {
@@ -771,7 +942,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "58": {
       "plan": {
@@ -782,7 +956,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "59": {
       "plan": {
@@ -793,7 +970,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "60": {
       "plan": {
@@ -804,7 +984,10 @@
         "invr": "symbolic",
         "x0": "symbolic"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "61": {
       "plan": {
@@ -815,7 +998,10 @@
         "invr": "symbolic",
         "x0": "sample"
       },
-      "satisfiable": false
+      "satisfiable": {
+        "ssi": false,
+        "ds": false
+      }
     },
     "62": {
       "plan": {
@@ -826,7 +1012,10 @@
         "invr": "sample",
         "x0": "symbolic"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     },
     "63": {
       "plan": {
@@ -837,7 +1026,10 @@
         "invr": "sample",
         "x0": "sample"
       },
-      "satisfiable": true
+      "satisfiable": {
+        "ssi": true,
+        "ds": true
+      }
     }
   },
   "variables": [
