@@ -446,6 +446,9 @@ class AbsSymState(object):
               case _:
                 if var not in parents:
                   parents.append(var)
+          # If no parents, then it's a constant
+          if len(parents) == 0:
+            return AbsConst(UnkC())
           return UnkE(parents)
         case _:
           raise ValueError(expr)

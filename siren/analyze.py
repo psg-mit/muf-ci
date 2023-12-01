@@ -155,9 +155,14 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         a, b = get_abs_pair(args)
         # For now, uniform only takes constants
         # [a, b]
-        match (particle.state.eval(a), particle.state.eval(a)):
-          case (Const(a), Const(b)):
-            assert round(a) == a and round(b) == b and a <= b
+        a, b = particle.state.eval(a), particle.state.eval(b)
+        match (a, b):
+          case (AbsConst(a), AbsConst(b)):
+            if isinstance(a, UnkC) or isinstance(b, UnkC):
+              return _evaluate_ops(particle, Operator.categorical, 
+                                  AbsPair(AbsConst(a), AbsPair(AbsConst(b), AbsConst(UnkC()))))
+            assert isinstance(a, Number) and isinstance(b, Number)\
+              and round(a) == a and round(b) == b and a <= b
             a, b = int(a), int(b)
             probs = AbsConst(list(np.ones(b - a + 1) / (b - a + 1)))
             return _evaluate_ops(particle, Operator.categorical, 
@@ -209,7 +214,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         
         exprs = get_abs_lst(new_args)
         if isinstance(exprs, UnkE):
-          return p1.update(cont=UnkE([]))
+          return p1.update(cont=AbsConst(UnkC()))
         return p1.update(cont=AbsConst(len(exprs)))
       case 'range':
         (p1, old_args, new_args) = _evaluate_args(particle, args, [])

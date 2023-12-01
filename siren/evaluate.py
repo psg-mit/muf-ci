@@ -152,7 +152,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         # [a, b]
         match (particle.state.eval(a), particle.state.eval(b)):
           case (Const(a), Const(b)):
-            assert round(a) == a and round(b) == b and a <= b
+            assert isinstance(a, Number) and isinstance(b, Number)\
+              and round(a) == a and round(b) == b and a <= b
             a, b = int(a), int(b)
             probs = Const(list(np.ones(b - a + 1) / (b - a + 1)))
             return _evaluate_ops(particle, Operator.categorical, 
