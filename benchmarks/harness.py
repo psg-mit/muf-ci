@@ -76,7 +76,10 @@ def is_satisfiable(annotation, distr_enc):
 def get_plan_id(file):
   if os.path.basename(file) == 'baseline.si':
     return '-1'
-  return str(int(os.path.basename(file)[4:-3]))
+  try:
+    return str(int(os.path.basename(file)[4:-3]))
+  except Exception:
+    return None
 
 # Runs benchmark executable and computes the absolute error of each variable
 def run_siren(file, p, method, true_vars):
@@ -85,7 +88,13 @@ def run_siren(file, p, method, true_vars):
   
   print('>', cmd)
 
-  out = subprocess.check_output(cmd, cwd=CWD, shell=True).decode("utf-8")
+  try:
+    out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+  except subprocess.CalledProcessError as e:
+    output = e.output.decode("utf-8")
+    print(output)
+    return None
+  
 
   program_output = {}
 
@@ -151,7 +160,12 @@ def run_particles(files, n, particles, methods, true_vars, results_file):
         for i in range(n):
           print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-          t, program_output = run_siren(file, p, method, true_vars)
+          run_outputs = None
+          while run_outputs is None:
+            run_outputs = run_siren(file, p, method, true_vars)
+            if run_outputs is not None:
+              break
+          t, program_output = run_outputs
 
           # write results to csv
           with open(results_file, 'a') as f:
@@ -165,14 +179,36 @@ def run_particles(files, n, particles, methods, true_vars, results_file):
             ])
 
 # Run experiments to reach a given accuracy
-def run_accuracy(files, n, plans, target_errors, methods, true_vars, results_file):
+def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, results_file):
+  if len(files) == 0:
+    # If no files specified, get all files in programs directory
+    files = []
+    for file in os.listdir(os.path.join(benchmark, 'programs')):
+      if file.endswith('.si'):
+        files.append(file)
+
+    # harness in benchmarks directory already
+    for file in files:
+      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+        raise Exception(f'File not found: {file}')
+
+    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
+    files = list(files)
+
   for method in methods:
     print(f'Running {method}...')
+    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
+    files = list(files)
+    print(files)
 
     for file in files:
       plan_id = get_plan_id(file)
+      if plan_id is None:
+        print(f'Invalid file: {file}')
+        continue
       min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
-      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 1000
+      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 10
 
       # binary search for number of particles
       attempted_p = set()
@@ -213,7 +249,12 @@ def run_accuracy(files, n, plans, target_errors, methods, true_vars, results_fil
             for i in range(n):
               print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-              t, program_output = run_siren(file, p, method, true_vars)
+              run_outputs = None
+              while run_outputs is None:
+                run_outputs = run_siren(file, p, method, true_vars)
+                if run_outputs is not None:
+                  break
+              t, program_output = run_outputs
 
               # write results to csv
               with open(results_file, 'a') as f:
@@ -245,12 +286,34 @@ def run_accuracy(files, n, plans, target_errors, methods, true_vars, results_fil
             break
 
 # Run experiments to reach a given runtime
-def run_runtime(files, n, plans, target_runtime, methods, true_vars, results_file):
+def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, results_file):
+  if len(files) == 0:
+    # If no files specified, get all files in programs directory
+    files = []
+    for file in os.listdir(os.path.join(benchmark, 'programs')):
+      if file.endswith('.si'):
+        files.append(file)
+
+    # harness in benchmarks directory already
+    for file in files:
+      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+        raise Exception(f'File not found: {file}')
+
+    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
+    files = list(files)
+
   for method in methods:
     print(f'Running {method}...')
+    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
+    files = list(files)
+    print(files)
 
     for file in files:
       plan_id = get_plan_id(file)
+      if plan_id is None:
+        print(f'Invalid file: {file}')
+        continue
       min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
       max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 1000
 
@@ -291,7 +354,12 @@ def run_runtime(files, n, plans, target_runtime, methods, true_vars, results_fil
           for i in range(n):
             print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-            t, program_output = run_siren(file, p, method, true_vars)
+            run_outputs = None
+            while run_outputs is None:
+              run_outputs = run_siren(file, p, method, true_vars)
+              if run_outputs is not None:
+                break
+            t, program_output = run_outputs
 
             # write results to csv
             with open(results_file, 'a') as f:
@@ -550,20 +618,12 @@ if __name__ == '__main__':
     # If no files specified, get all files in programs directory
     if args.files is None:
       files = []
-      for file in os.listdir(os.path.join(benchmark, 'programs')):
-        if file.endswith('.si'):
-          files.append(file)
     else: 
       files = [f.strip() for f in args.files.split(',')]
 
-    # harness in benchmarks directory already
     for file in files:
-      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+      if not os.path.exists(file):
         raise Exception(f'File not found: {file}')
-
-    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
-    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
-    files = list(files)
 
     methods = [method for method in methods if method in DEFAULT_METHODS]
 
@@ -571,15 +631,7 @@ if __name__ == '__main__':
       # make output directory
       outdir = os.path.join(benchmark, args.output)
       os.makedirs(outdir, exist_ok=True)
-
-      if args.files is None:
-        # using all files
-        # Filter for files that are satisfiable
-        files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"], files)
-        files = list(files)
-
-      print(files)
-
+      
       n = args.n
 
       true_vars = config['true_vars']
@@ -598,7 +650,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_runtime(files, n, plan_config, target_runtime, methods, true_vars, results_file)
+        run_runtime(benchmark, files, n, plan_config, target_runtime, methods, true_vars, results_file)
 
       elif args.accuracy:
         target_errors = config['target_errors']
@@ -612,7 +664,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_accuracy(files, n, plan_config, target_errors, methods, true_vars, results_file)
+        run_accuracy(benchmark, files, n, plan_config, target_errors, methods, true_vars, results_file)
       else:
         # Just run with given number of particles
         # Get list of particles
