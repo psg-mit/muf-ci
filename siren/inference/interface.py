@@ -608,5 +608,7 @@ class ProbState(object):
       else:
         new_particles.append(copy(particles[idx]))
     self.particles = new_particles
+    for p in self.particles:
+      p.update(score=0.)
     return self
   
