@@ -292,7 +292,7 @@ def plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, ba
 
     plt.close(fig)
 
-def plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
+def plot_accuracy(data, output, methods, plan_ids, all_plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
   # first 4 columns are metadata
@@ -310,6 +310,12 @@ def plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x,
     ax.set_visible(False)
 
   for method_i, method in enumerate(methods):
+    plans: List[Tuple[str, Dict[str, str]]] = []
+    if plan_ids is None:
+      plans = [(plan_id, plan_data['plan']) for plan_id, plan_data in all_plans.items() if plan_data['satisfiable'][method]]
+    else:
+      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
+
     use_label = True
     for var_i, var in enumerate(variables):
       plot_i = var_i % n_x
@@ -396,24 +402,31 @@ def plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x,
       plt.setp(axes[n_vars // 2, :], xlabel='Execution Time in s (log scale)')
       plt.setp(axes[:, 0], ylabel='Error (log scale)')
 
-    fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'accuracy.png'), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_accuracy.pdf'), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_accuracy.png'), bbox_inches='tight')
     # fig.savefig(os.path.join(output, f'particles.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
     # fig.savefig(os.path.join(output, f'particles.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     plt.close(fig)
   
-def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
+def plot_accuracy_bar(data, baseline, output, methods, plan_ids, all_plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
 
-  spacing = BARSPACING
-  barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
 
   # first 4 columns are metadata
   # n_variables = data.columns[4:].shape[0]
   variables = data.columns[4:]
 
   for method_i, method in enumerate(methods):
+    plans: List[Tuple[str, Dict[str, str]]] = []
+    if plan_ids is None:
+      plans = [(plan_id, plan_data['plan']) for plan_id, plan_data in all_plans.items() if plan_data['satisfiable'][method]]
+    else:
+      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
+
+    spacing = BARSPACING
+    barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
+    
     # fig = plt.figure()
     fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
                                       gridspec_kw={'height_ratios': [1, 25]})
@@ -440,7 +453,7 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
 
     for plan_i, (plan_id, plan) in enumerate(plans):
       plan_id = int(plan_id)
-      # print('plan', plan_id)
+      print('plan', plan_id)
 
       all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
  
@@ -449,13 +462,12 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
       for var_i, var in enumerate(variables):
         target_error = target_errors[var]
 
-        errors = data.loc[data['method'] == method]\
-                    .loc[data['plan_id'] == plan_id]
-        errors[var] = errors[var].map(lambda x: close_to_target_error(target_error, x))
+        errors = data[(data['method'] == method) & (data['plan_id'] == plan_id) ]
+        errors.loc[:, var] = errors[var].map(lambda x: close_to_target_error(target_error, x))
+        # print(errors)
         n_close = errors[errors[var]].groupby(['particles'])[var].count()
         
         # print(target_error)
-        # print(errors)
         # print(n_close)
         # print(n_close[(n_close / N) >= 0.9])
 
@@ -540,23 +552,32 @@ def plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y
     ax.set_ylabel('Execution Time in s (log scale)', fontsize=12)
     # ax.set_ylabel('Error (log scale)')
 
-    fig.savefig(os.path.join(output, f'accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
+    fig.savefig(os.path.join(output, f'{method}_accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
 
     plt.close(fig)
 
-def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y, n_x, base_x, base_y, legend_width):
+def plot_runtime_bar(data, baseline, output, methods, plan_ids, all_plans, target_runtime, n_y, n_x, base_x, base_y, legend_width):
   plt.rcParams.update(PLT_SETTINGS)
-
-  spacing = BARSPACING
-  barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
 
   # first 4 columns are metadata
   # n_variables = data.columns[4:].shape[0]
   variables = data.columns[4:]
 
+  data = data.loc[data['particles'] <= 512]
+  # baseline = baseline.loc[baseline['particles'] <= 512]
+
   for method_i, method in enumerate(methods):
+    plans: List[Tuple[str, Dict[str, str]]] = []
+    if plan_ids is None:
+      plans = [(plan_id, data['plan']) for plan_id, data in all_plans.items() if data['satisfiable'][method]]
+    else:
+      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
+
+    spacing = BARSPACING
+    barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
+
     # fig = plt.figure()
     fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
                                       gridspec_kw={'height_ratios': [1, 25]})
@@ -575,7 +596,7 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
 
     # baseline
     # median accuracy over n runs
-    accuracies = baseline.loc[baseline['method'] == method].iloc[:, 4:].median()
+    accuracies = baseline.loc[baseline['method'] == method].iloc[:, 4:].quantile(0.9)
     all_accuracies = [accuracies]
     all_particles = [[1000 for _ in range(len(variables))]]
     all_x_pos = [list(np.arange(len(variables)))]
@@ -586,11 +607,10 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
 
       all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
 
-      runtimes = data.loc[data['method'] == method]\
-                  .loc[data['plan_id'] == plan_id]
+      runtimes = data[(data['method'] == method) & (data['plan_id'] == plan_id)]
       
       # print(runtimes)
-      runtimes['time'] = runtimes['time'].map(lambda x: close_to_target_runtime(target_runtime, x))
+      runtimes.loc[:, 'time'] = runtimes['time'].map(lambda x: close_to_target_runtime(target_runtime, x))
       n_close = runtimes[runtimes['time']].groupby(['particles'])['time'].count()
       
       # print(target_runtime)
@@ -680,9 +700,9 @@ def plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y
 
     ax.set_ylabel('Error (log scale)', fontsize=12)
 
-    fig.savefig(os.path.join(output, f'runtime.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'runtime.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'runtime.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
+    fig.savefig(os.path.join(output, f'{method}_runtime.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_runtime.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{method}_runtime.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
 
     plt.close(fig)
 
@@ -726,12 +746,6 @@ if __name__ == '__main__':
       with open(os.path.join(benchmark, 'config.json')) as f:
         config = json.load(f)
 
-      plans: List[Tuple[str, Dict[str, str]]] = []
-      if args.plan_ids is None:
-        plans = [(plan_id, data['plan']) for plan_id, data in config['plans'].items() if data['satisfiable']]
-      else:
-        plans = [(plan_id, config[plan_id]['plan']) for plan_id in args.plan_ids]
-
       output = os.path.join(benchmark, args.output)
 
       n_vars = len(config['true_vars'])
@@ -751,11 +765,11 @@ if __name__ == '__main__':
 
           target_errors = config['target_errors']
 
-          plot_accuracy_bar(data, baseline, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
+          plot_accuracy_bar(data, baseline, output, methods, args.plan_ids, config['plans'], target_errors, n_y, n_x, base_x, base_y, legend_width)
 
           target_runtime = config['target_runtime']
 
-          plot_runtime_bar(data, baseline, output, methods, plans, target_runtime, n_y, n_x, base_x, base_y, legend_width)
+          plot_runtime_bar(data, baseline, output, methods, args.plan_ids, config['plans'], target_runtime, n_y, n_x, base_x, base_y, legend_width)
 
       # if os.path.exists(os.path.join(output, 'particles.csv')):
       #   data = pd.read_csv(os.path.join(output, 'particles.csv'), delimiter=',')

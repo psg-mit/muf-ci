@@ -10,6 +10,7 @@ import numpy as np
 import csv
 import sys
 import pandas as pd
+import ast
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -80,9 +81,20 @@ def get_plan_id(file):
     return str(int(os.path.basename(file)[4:-3]))
   except Exception:
     return None
+  
+def flatten_nested(structure):
+  flattened_list = []
+  for element in structure:
+    if isinstance(element, tuple):
+      flattened_list.extend(flatten_nested(element))
+    elif isinstance(element, list):
+      flattened_list.append(element)
+    else:
+      flattened_list.append([element])
+  return flattened_list
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_siren(file, p, method, true_vars):
+def run_siren(file, p, method, true_vars, error_func):
   # run siren file
   cmd = f'{sys.executable} siren.py {file} -m {method} -p {p}'
   
@@ -120,34 +132,35 @@ def run_siren(file, p, method, true_vars):
       break
 
   # eg format (0.1782178217821782, (-11.323677393073108, 8.861234052059762))
-  # or (0.1782178217821782, (-11.323677393073108, [0; 1; 2]))
-  split_output = output.strip().split(', ')
+  # or (0.1782178217821782, (-11.323677393073108, [0, 1, 2]))
+  split_output = ast.literal_eval(output)
 
   # parse line into dict
+  split_output = flatten_nested(split_output)
 
   for true_var, out in zip(true_vars, split_output):
     var, true_vals = true_var
-    out = out.strip(' )(')
-    
-    # parse out into list of values
-    if '[' in out:
-      out = out.strip('[]')
-      out = out.split('; ')
-      out = [float(x) for x in out]
-    else:
-      out = [float(out)]
 
-    # compute error
-    error = 0
-    for true_val, val in zip(true_vals, out):
-      error += calc_error(true_val, val) 
+    if error_func == 'mse':
+      # compute MSE error
+      error = 0
+      for true_val, val in zip(true_vals, out):
+        error += calc_error(true_val, val) 
+      error /= len(true_vals)
+    else:
+      # print('compute max error')
+      # compute max error
+      error = 0
+      for true_val, val in zip(true_vals, out):
+        # print(true_val, val)
+        error = max(error, calc_error(true_val, val))
 
     program_output[var] = error
 
   return eval_time, program_output
 
 # Run experiments for each given number of particles
-def run_particles(files, n, particles, methods, true_vars, results_file):
+def run_particles(files, n, particles, methods, true_vars, results_file, error_func):
   for method in methods:
     print(f'Running {method}...')
 
@@ -162,7 +175,7 @@ def run_particles(files, n, particles, methods, true_vars, results_file):
 
           run_outputs = None
           while run_outputs is None:
-            run_outputs = run_siren(file, p, method, true_vars)
+            run_outputs = run_siren(file, p, method, true_vars, error_func)
             if run_outputs is not None:
               break
           t, program_output = run_outputs
@@ -179,7 +192,7 @@ def run_particles(files, n, particles, methods, true_vars, results_file):
             ])
 
 # Run experiments to reach a given accuracy
-def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, results_file):
+def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, results_file, error_func):
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -251,7 +264,7 @@ def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, 
 
               run_outputs = None
               while run_outputs is None:
-                run_outputs = run_siren(file, p, method, true_vars)
+                run_outputs = run_siren(file, p, method, true_vars, error_func)
                 if run_outputs is not None:
                   break
               t, program_output = run_outputs
@@ -286,7 +299,7 @@ def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, 
             break
 
 # Run experiments to reach a given runtime
-def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, results_file):
+def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, results_file, error_func):
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -356,7 +369,7 @@ def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, 
 
             run_outputs = None
             while run_outputs is None:
-              run_outputs = run_siren(file, p, method, true_vars)
+              run_outputs = run_siren(file, p, method, true_vars, error_func)
               if run_outputs is not None:
                 break
             t, program_output = run_outputs
@@ -597,12 +610,14 @@ if __name__ == '__main__':
   rp.add_argument('--accuracy', '-a', action='store_true')
   rp.add_argument('--runtime', '-r', action='store_true')
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
+  rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
   
   ap = sp.add_parser('analyze')
 
   rp = sp.add_parser('check')
 
   bp = sp.add_parser('baseline')
+  bp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
 
   args = p.parse_args()
 
@@ -650,7 +665,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_runtime(benchmark, files, n, plan_config, target_runtime, methods, true_vars, results_file)
+        run_runtime(benchmark, files, n, plan_config, target_runtime, methods, true_vars, results_file, args.error_func)
 
       elif args.accuracy:
         target_errors = config['target_errors']
@@ -664,7 +679,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_accuracy(benchmark, files, n, plan_config, target_errors, methods, true_vars, results_file)
+        run_accuracy(benchmark, files, n, plan_config, target_errors, methods, true_vars, results_file, args.error_func)
       else:
         # Just run with given number of particles
         # Get list of particles
@@ -687,7 +702,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_particles(files, n, particles, methods, true_vars, results_file)
+        run_particles(files, n, particles, methods, true_vars, results_file, args.error_func)
     elif args.subparser_name == 'analyze':
       filename = os.path.join(benchmark, args.output, 'statistics.json')
 
@@ -734,28 +749,34 @@ if __name__ == '__main__':
           fieldnames += [var[0] for var in true_vars]
           writer.writerow(fieldnames)
 
-        run_particles([file], n, [particles], methods, true_vars, results_file)
+        run_particles([file], n, [particles], methods, true_vars, results_file, args.error_func)
 
       # get median accuracy of each variable and median runtime without any annotations with 
       # 1000 particles
+      config['target_errors'] = {}
+      config['target_runtime'] = {}
+      
       with open(results_file, 'r') as f:
         reader = csv.reader(f)
         next(reader)
-        data = np.array(list(reader))
+        all_data = np.array(list(reader))
 
-        acc = np.median(data[:, 4:].astype(float), axis=0)
-        
-        print('Median accuracy:')
-        print(acc)
+        for method in methods:
+          data = all_data[all_data[:, 1] == method]
 
-        runtimes = data[:, 3].astype(float)
-        runtime = np.median(runtimes)
+          acc = np.median(data[:, 4:].astype(float), axis=0)
+          
+          print('Median accuracy:')
+          print(acc)
 
-        print('Median runtime:')
-        print(runtime)
+          runtimes = data[:, 3].astype(float)
+          runtime = np.median(runtimes)
 
-        config['target_errors'] = {var[0]: acc[i] for i, var in enumerate(true_vars)}
-        config['target_runtime'] = runtime
+          print('Median runtime:')
+          print(runtime)
+
+          config['target_errors'][method] = {var[0]: acc[i] for i, var in enumerate(true_vars)}
+          config['target_runtime'][method] = runtime
 
         with open(os.path.join(benchmark, 'config.json'), 'w') as f:
           json.dump(config, f, indent=2)
