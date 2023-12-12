@@ -408,7 +408,8 @@ class Normal(SymDistr[float]):
   def draw(self, rng: np.random.Generator) -> float:
     mu, var = self.marginal_parameters()
     # return stats.norm.rvs(mu, np.sqrt(var))
-    return statistics.NormalDist(mu, np.sqrt(var)).samples(1)[0]
+    # return statistics.NormalDist(mu, np.sqrt(var)).samples(1)[0]
+    return rng.normal(mu, np.sqrt(var))
 
   def score(self, v: float) -> float:
     mu, var = self.marginal_parameters()

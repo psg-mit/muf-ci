@@ -14,7 +14,7 @@ class methods(Enum):
   ssi = 'ssi'
   ds = 'ds'
   ft = 'ft'
-  dis = 'dis'
+  # di = 'di'
 
 method_states = {
   methods.ssi: (SSIState, AbsSSIState),
@@ -31,6 +31,7 @@ def main():
   p.add_argument('--method', '-m', type=methods, default=methods.ssi)
   p.add_argument('--multiprocess', '-mp', action='store_true')
   p.add_argument('--profile', '-pr', action='store_true')
+  p.add_argument('--seed', '-s', type=int, default=None)
   args = p.parse_args()
 
   profiler = cProfile.Profile()
@@ -61,6 +62,7 @@ def main():
       inference_method, 
       file_dir, 
       args.multiprocess,
+      args.seed,
     )
     t2 = time.time()
     print('===== Evaluation Time =====')

@@ -9,13 +9,13 @@ class RuntimeViolatedAnnotationError(Exception):
   pass
 
 class SymState(object):
-  def __init__(self) -> None:
+  def __init__(self, seed=None) -> None:
     super().__init__()
     self.state: Dict[RandomVar, Tuple[Optional[Identifier], SymDistr]] = {}
     self.ctx: Context = Context()
     self.counter: int = 0
     self.annotations: Dict[Identifier, Annotation] = {}
-    self.rng = np.random.default_rng()
+    self.rng = np.random.default_rng(seed=seed)
 
   def __copy__(self):
     new_state = type(self)()
@@ -374,9 +374,12 @@ class Context(object):
       i += 1
 
 class Particle(object):
-  def __init__(self, cont: Expr[SymExpr], state: SymState = SymState(),
-               score: float = 0.,
-               finished: bool = False) -> None:
+  def __init__(
+    self, cont: Expr[SymExpr], 
+    state: SymState = SymState(),
+    score: float = 0.,
+    finished: bool = False,
+  ) -> None:
     super().__init__()
     self.cont: Expr[SymExpr] = cont
     self.state: SymState = state
@@ -510,10 +513,10 @@ def mean(expr: SymExpr, state: SymState) -> float:
       raise ValueError(expr)
 
 class ProbState(object):
-  def __init__(self, n_particles: int, cont: Expr, method: type[SymState]) -> None:
+  def __init__(self, n_particles: int, cont: Expr, method: type[SymState], seed: Optional[int] = None) -> None:
     super().__init__()
     self.particles: List[Particle] = [
-        Particle(cont, method()) for i in range(n_particles)
+        Particle(cont, method(seed=seed)) for i in range(n_particles)
     ]
 
   @staticmethod
@@ -563,7 +566,8 @@ class ProbState(object):
 
     unique_values = {}
     for v, state, prob in zip(values, states, probabilities):
-      key = str(state.eval(v))
+      v = state.eval(v)
+      key = str(v)
       
       if key not in unique_values:
         unique_values[key] = (v, state, prob)

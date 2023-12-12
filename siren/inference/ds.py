@@ -11,8 +11,8 @@ class DSType(Enum):
   REALIZED = 3
 
 class DSState(SymState):
-  def __init__(self) -> None:
-    super().__init__()
+  def __init__(self, seed=None) -> None:
+    super().__init__(seed)
     self.type : Dict[RandomVar, DSType] = {}
     self.children : Dict[RandomVar, List[RandomVar]] = {}
     self.parent : Dict[RandomVar, RandomVar] = {}

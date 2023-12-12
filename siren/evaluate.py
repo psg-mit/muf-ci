@@ -464,13 +464,14 @@ def evaluate(
   method: type[SymState], 
   file_dir: str,
   multiprocess: bool = False,
+  seed: Optional[int] = None,
 ) -> Tuple[SymExpr, ProbState]:
   functions, expression = program.functions, program.main
 
   # Make lookup for functions
   functions = {f.name: f for f in functions}
 
-  particles = ProbState(n_particles, expression, method)
+  particles = ProbState(n_particles, expression, method, seed)
 
   if multiprocess:
     n_processes = cpu_count() - 1
