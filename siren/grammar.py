@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Tuple, TypeVar, Generic, List
 import numpy as np
-import statistics
 import math
 
 from siren.probability import logbeta, logcomb

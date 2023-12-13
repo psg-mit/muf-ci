@@ -72,6 +72,7 @@ def main():
     print(res)
 
     if args.verbose:
+      particles.simplify()
       print('===== Mixture =====')
       print(particles.mixture())
       print('===== Particles =====')

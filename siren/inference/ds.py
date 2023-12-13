@@ -16,6 +16,8 @@ class DSState(SymState):
     self.type : Dict[RandomVar, DSType] = {}
     self.children : Dict[RandomVar, List[RandomVar]] = {}
     self.parent : Dict[RandomVar, RandomVar] = {}
+    # self.state holds the marginal distribution q(x) (when done)
+    # this holds the original (conditional) distribution 
     self.original_distr : Dict[RandomVar, SymDistr] = {}
 
   def __copy__(self):
@@ -56,8 +58,6 @@ class DSState(SymState):
       else:
         self.annotations[name] = annotation
     distribution = self.eval_distr(distribution)
-    self.state[rv] = (name, distribution)
-    self.original_distr[rv] = distribution
 
     self.children[rv] = []
     if len(distribution.rvs()) == 0:
@@ -71,17 +71,21 @@ class DSState(SymState):
           parents.append(rv_par)
 
       # keep if conjugate, else sample it
+      has_parent = False
       for rv_par in parents:
-        if _check_conjugacy(self.original_distr[rv_par], distribution, rv_par, rv):
+        if not has_parent and _check_conjugacy(self.original_distr[rv_par], distribution, rv_par, rv):
           if rv_par not in self.children:
             self.children[rv_par] = []
           self.children[rv_par].append(rv)
 
           self.parent[rv] = rv_par
+          has_parent = True
         else:
           self.value(rv_par)
           distribution = self.eval_distr(distribution)
-          
+
+    self.state[rv] = (name, distribution)
+    self.original_distr[rv] = distribution
 
     return rv
 
@@ -100,30 +104,30 @@ class DSState(SymState):
     return self.do_sample(rv)
   
   # Make rv marginal
-  def marginalize(self, expr: RandomVar) -> None:
-    match self.type[expr]:
+  def marginalize(self, rv: RandomVar) -> None:
+    match self.type[rv]:
       case DSType.REALIZED:
         return
       case DSType.MARGINALIZED:
         return
       case DSType.INITIALIZED:
-        if expr not in self.parent:
-          raise ValueError(f'Cannot marginalize {expr} because it has no parent')
+        if rv not in self.parent:
+          raise ValueError(f'Cannot marginalize {rv} because it has no parent')
         
-        rv_par = self.parent[expr]
+        rv_par = self.parent[rv]
         match self.type[rv_par]:
           case DSType.REALIZED:
-            self.set_distr(expr, self.eval_distr(self.distr(expr)))
+            self.set_distr(rv, self.eval_distr(self.distr(rv)))
           case DSType.MARGINALIZED:
-            if not self.make_marginal(rv_par, expr):
+            if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
-              self.set_distr(expr, self.eval_distr(self.distr(expr)))
+              self.set_distr(rv, self.eval_distr(self.distr(rv)))
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
           case DSType.INITIALIZED:
             self.marginalize(rv_par)
-            if not self.make_marginal(rv_par, expr):
+            if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
-              self.set_distr(expr, self.eval_distr(self.distr(expr)))
+              self.set_distr(rv, self.eval_distr(self.distr(rv)))
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
     
   ########################################################################
@@ -140,11 +144,14 @@ class DSState(SymState):
         raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not marginalized')
       case DSType.REALIZED:
         d = self.distr(rv_par)
+        # simplify delta
         match d:
           case Delta(_, _):
             self.set_distr(rv, self.eval_distr(d))
           case _:
             raise ValueError(d)
+        # convert to marginal
+        self.set_distr(rv, self.eval_distr(self.distr(rv)))
       case DSType.MARGINALIZED:
         if self.make_marginal(rv_par, rv):
           self.set_distr(rv, self.eval_distr(self.distr(rv)))
@@ -188,7 +195,7 @@ class DSState(SymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.distr(rv_child)
+    likelihood = self.original_distr[rv_child]
     match prior, likelihood:
       case Normal(_), Normal(_):
         if _update(conj.gaussian_marginal(self, prior, likelihood, rv_par, rv_child)):
@@ -207,45 +214,44 @@ class DSState(SymState):
         return _update(conj.gamma_normal_marginal(self, prior, likelihood, rv_par, rv_child))
       case _:
         return False
+      
+  def make_conditional(self, rv_par: RandomVar, rv_child: RandomVar, x: SymExpr) -> bool:
+    def _update(posterior: Optional[SymDistr]) -> bool:
+      if posterior is None:
+        return False
+      
+      posterior = self.eval_distr(posterior)
+      self.set_distr(rv_par, posterior)
+      return True
+
+    prior = self.distr(rv_par)
+    likelihood = self.original_distr[rv_child]
+    match prior, likelihood:
+      case Normal(_), Normal(_):
+        if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x)):
+          return True
+        else:
+          return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case Bernoulli(_), Bernoulli(_):
+        return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case Beta(_), Bernoulli(_):
+        return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case Beta(_), Binomial(_):
+        return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case Gamma(_), Poisson(_):
+        return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case Gamma(_), Normal(_):
+        return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
+      case _:
+        return False
 
   def realize(self, rv: RandomVar, x: Delta) -> None:
-    def _make_conditional(rv_par: RandomVar, rv_child: RandomVar) -> bool:
-      def _update(posterior: Optional[SymDistr]) -> bool:
-        if posterior is None:
-          return False
-        
-        posterior = self.eval_distr(posterior)
-        self.set_distr(rv_par, posterior)
-        # Update original distr
-        return True
-
-      prior = self.distr(rv_par)
-      likelihood = self.original_distr[rv_child]
-      match prior, likelihood:
-        case Normal(_), Normal(_):
-          if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x.v)):
-            return True
-          else:
-            return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case Bernoulli(_), Bernoulli(_):
-          return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case Beta(_), Bernoulli(_):
-          return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case Beta(_), Binomial(_):
-          return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case Gamma(_), Poisson(_):
-          return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case Gamma(_), Normal(_):
-          return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case _:
-          return False
-
     assert self.type[rv] == DSType.MARGINALIZED
     self.type[rv] = DSType.REALIZED
+
     if rv in self.parent:
       rv_par = self.parent[rv]
-      # condition parent on child
-      if _make_conditional(rv_par, rv):
+      if self.make_conditional(rv_par, rv, x.v):
         self.type[rv_par] = DSType.MARGINALIZED
         self.children[rv_par].remove(rv)
         del self.parent[rv]
@@ -255,7 +261,6 @@ class DSState(SymState):
         # raise ValueError(f'Cannot realize {rv} because {rv_par} is not conjugate')
 
     self.intervene(rv, x)
-    self.original_distr[rv] = self.distr(rv)
     # new roots from children
     for rv_child in self.children[rv]:
       self.do_marginalize(rv_child)

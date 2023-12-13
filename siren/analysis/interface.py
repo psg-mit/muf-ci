@@ -295,6 +295,10 @@ class AbsSymState(object):
         return self.ex_add(s, e2)
       case AbsAdd(AbsConst(v1), e2), e3:
         return self.ex_add(AbsConst(v1), self.ex_add(e2, e3))
+      case AbsConst(0), e2:
+        return e2
+      case e1, AbsConst(0):
+        return e1
       case _:
         return AbsAdd(e1, e2)
 
@@ -322,6 +326,10 @@ class AbsSymState(object):
         else:
           s = AbsConst(v1 * v2)
         return self.ex_add(s, self.ex_mul(AbsConst(v1), e3))
+      case AbsConst(0), _:
+        return AbsConst(0)
+      case _, AbsConst(0):
+        return AbsConst(0)
       case _:
         return AbsMul(e1, e2)
 
@@ -331,6 +339,8 @@ class AbsSymState(object):
         if isinstance(v1, UnkC) or isinstance(v2, UnkC):
           return AbsConst(UnkC())
         return AbsConst(v1 / v2)
+      case e1, AbsConst(1):
+        return e1
       case _:
         return AbsDiv(e1, e2)
 
@@ -399,7 +409,7 @@ class AbsSymState(object):
       for e in es:
         if not isinstance(e, AbsConst):
           return None
-        consts.append(e)
+        consts.append(e.v)
 
       return AbsConst(consts)
     

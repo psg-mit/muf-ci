@@ -23,6 +23,7 @@ class SymState(object):
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
     new_state.annotations = self.annotations
+    new_state.rng = self.rng
     return new_state
 
   def new_var(self) -> RandomVar:
@@ -142,6 +143,10 @@ class SymState(object):
         return self.ex_add(Const(v1 + v3), e2)
       case Add(Const(v1), e2), e3:
         return self.ex_add(Const(v1), self.ex_add(e2, e3))
+      case Const(0), e2:
+        return e2
+      case e1, Const(0):
+        return e1
       case _:
         return Add(e1, e2)
 
@@ -155,6 +160,10 @@ class SymState(object):
         return self.ex_mul(Const(v1 * v3), e2)
       case Const(v1), Add(Const(v2), e3):
         return self.ex_add(Const(v1 * v2), self.ex_mul(Const(v1), e3))
+      case Const(0), _:
+        return Const(0)
+      case _, Const(0):
+        return Const(0)
       case _:
         return Mul(e1, e2)
 
@@ -162,6 +171,8 @@ class SymState(object):
     match e1, e2:
       case Const(v1), Const(v2):
         return Const(v1 / v2)
+      case e1, Const(1):
+        return e1
       case _:
         return Div(e1, e2)
 
@@ -192,7 +203,7 @@ class SymState(object):
       for e in es:
         if not isinstance(e, Const):
           return None
-        consts.append(e)
+        consts.append(e.v)
 
       return Const(consts)
     
@@ -265,29 +276,6 @@ class SymState(object):
   
   def marginalize(self, expr: RandomVar) -> None:
     raise NotImplementedError()
-  
-  def marginal_expr(self, expr: SymExpr) -> SymExpr:
-    expr = self.eval(expr)
-    match expr:
-      case Const(_):
-        return expr
-      case RandomVar(_):
-        self.marginalize(expr)
-        return expr
-      case Add(left, right):
-        return Add(self.marginal_expr(left), self.marginal_expr(right))
-      case Mul(left, right):
-        return Mul(self.marginal_expr(left), self.marginal_expr(right))
-      case Div(left, right):
-        return Div(self.marginal_expr(left), self.marginal_expr(right))
-      case Ite(cond, true, false):
-        return Ite(self.marginal_expr(cond), self.marginal_expr(true), self.marginal_expr(false))
-      case Lst(es):
-        return Lst([self.marginal_expr(e) for e in es])
-      case Pair(e1, e2):
-        return Pair(self.marginal_expr(e1), self.marginal_expr(e2))
-      case _:
-        return self.value_expr(expr)
       
   def value_expr(self, expr: SymExpr) -> Const:
     match expr:
@@ -418,6 +406,11 @@ class Particle(object):
       self.score,
       self.finished,
     )
+  
+  def simplify(self) -> 'Particle':
+    for rv in self.state.vars():
+      self.state.set_distr(rv, self.state.eval_distr(self.state.distr(rv)))
+    return self
 
 class Mixture(object):
   def __init__(self, mixture: List[Tuple[SymExpr, SymState, float]]):
@@ -491,13 +484,13 @@ class Mixture(object):
     return acc
 
 def mean(expr: SymExpr, state: SymState) -> float:
-  expr = state.marginal_expr(expr)
   expr = state.eval(expr)
 
   match expr:
     case Const(value):
       return value
     case RandomVar(_):
+      state.marginalize(expr)
       return state.distr(expr).mean()
     case Add(left, right):
       return mean(left, state) + mean(right, state)
@@ -515,15 +508,10 @@ def mean(expr: SymExpr, state: SymState) -> float:
 class ProbState(object):
   def __init__(self, n_particles: int, cont: Expr, method: type[SymState], seed: Optional[int] = None) -> None:
     super().__init__()
+    self.rng = np.random.default_rng(seed=seed)
     self.particles: List[Particle] = [
-        Particle(cont, method(seed=seed)) for i in range(n_particles)
+      Particle(cont, method(seed=seed)) for i in range(n_particles)
     ]
-
-  @staticmethod
-  def from_particles(particles: List[Particle]) -> 'ProbState':
-    res = ProbState(0, Const(0), SymState)
-    res.particles = particles
-    return res
 
   def __getitem__(self, index: int) -> Particle:
     return self.particles[index]
@@ -536,6 +524,11 @@ class ProbState(object):
 
   def __iter__(self):
     return iter(self.particles)
+  
+  def simplify(self) -> 'ProbState':
+    for p in self.particles:
+      p.simplify()
+    return self
 
   def __str__(self) -> str:
     particles_indices = {}
@@ -601,7 +594,7 @@ class ProbState(object):
   def resample(self) -> 'ProbState':
     particles = self.particles
     probabilities = self.normalized_probabilities()
-    idxs = np.random.choice(np.arange(len(particles)), size=len(particles),
+    idxs = self.rng.choice(np.arange(len(particles)), size=len(particles),
                             replace=True, p=probabilities)
     used_idxs = set()
     new_particles = []

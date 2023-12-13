@@ -394,69 +394,69 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       
   return _evaluate(particle)
 
-def set_seed(x) -> None:
-  np.random.seed(x)
+# def set_seed(x) -> None:
+#   np.random.seed(x)
 
-def evaluate_consumer(in_queue: Queue, out_queue: Queue,  functions, file_dir) -> None:
-  np.random.seed((os.getpid() * int(time.time())) % 1234)
-  while True:
-    particle_chunk = in_queue.get()
-    if particle_chunk is None:
-      # print('evaluate bye')
-      break
-    # print('start particle', particle.id)
-    new_chunk = []
-    for particle in particle_chunk:
-      if particle.finished:
-        raise ValueError(particle)
-      if not particle.finished:
-        particle = evaluate_particle(particle, functions, file_dir)
-        # print('evaluated', particle.id)
-        new_chunk.append(particle)
-    out_queue.put(new_chunk)
+# def evaluate_consumer(in_queue: Queue, out_queue: Queue,  functions, file_dir) -> None:
+#   np.random.seed((os.getpid() * int(time.time())) % 1234)
+#   while True:
+#     particle_chunk = in_queue.get()
+#     if particle_chunk is None:
+#       # print('evaluate bye')
+#       break
+#     # print('start particle', particle.id)
+#     new_chunk = []
+#     for particle in particle_chunk:
+#       if particle.finished:
+#         raise ValueError(particle)
+#       if not particle.finished:
+#         particle = evaluate_particle(particle, functions, file_dir)
+#         # print('evaluated', particle.id)
+#         new_chunk.append(particle)
+#     out_queue.put(new_chunk)
 
-def resample_consumer(
-    in_queue: Queue, 
-    finished_queue: Queue, 
-    continue_queue: Queue, 
-    n_particles: int,
-    chunksize: int = 1,
-) -> None:
-  np.random.seed((os.getpid() * int(time.time())) % 1234)
-  particles = []
-  while True:
-    particle_chunk = in_queue.get()
-    # print('got a particle', particle.id)
-    particles += particle_chunk
+# def resample_consumer(
+#     in_queue: Queue, 
+#     finished_queue: Queue, 
+#     continue_queue: Queue, 
+#     n_particles: int,
+#     chunksize: int = 1,
+# ) -> None:
+#   np.random.seed((os.getpid() * int(time.time())) % 1234)
+#   particles = []
+#   while True:
+#     particle_chunk = in_queue.get()
+#     # print('got a particle', particle.id)
+#     particles += particle_chunk
 
-    if len(particles) == n_particles:
-      # print('got all particles')
-      # print('\n'.join(map(str, particles)))
-      # print()
-      new_particles = ProbState.from_particles(particles)
-      if new_particles.finished:
-        finished_queue.put(new_particles)
-        # print('resample bye')
-        break
-      else:
-        new_particles.resample()
-        # print('resampled particles')
-        # print('\n'.join(map(str, new_particles)))
-        # print()
-        particles = []
-        chunk = []
-        for p in new_particles:
-          if p.finished:
-            # print('particle finished', p.id)
-            particles.append(p)
-          else:
-            # print('particle not finished', p.id)
-            chunk.append(p)
-            if len(chunk) == chunksize:
-              continue_queue.put(chunk)
-              chunk = []
-        if len(chunk) > 0:
-          continue_queue.put(chunk)
+#     if len(particles) == n_particles:
+#       # print('got all particles')
+#       # print('\n'.join(map(str, particles)))
+#       # print()
+#       new_particles = ProbState.from_particles(particles)
+#       if new_particles.finished:
+#         finished_queue.put(new_particles)
+#         # print('resample bye')
+#         break
+#       else:
+#         new_particles.resample()
+#         # print('resampled particles')
+#         # print('\n'.join(map(str, new_particles)))
+#         # print()
+#         particles = []
+#         chunk = []
+#         for p in new_particles:
+#           if p.finished:
+#             # print('particle finished', p.id)
+#             particles.append(p)
+#           else:
+#             # print('particle not finished', p.id)
+#             chunk.append(p)
+#             if len(chunk) == chunksize:
+#               continue_queue.put(chunk)
+#               chunk = []
+#         if len(chunk) > 0:
+#           continue_queue.put(chunk)
 
 def evaluate(
   program: Program, 
@@ -473,61 +473,59 @@ def evaluate(
 
   particles = ProbState(n_particles, expression, method, seed)
 
-  if multiprocess:
-    n_processes = cpu_count() - 1
-    chunksize = n_particles // n_processes
-    in_queue, out_queue = Queue(), Queue()
-    done_queue = Queue()
-    processes = [Process(target=evaluate_consumer, args=(in_queue, out_queue, functions, file_dir)) for _ in range(n_processes)]
-    resample_process = Process(target=resample_consumer, args=(out_queue, done_queue, in_queue, n_particles, chunksize))
+  # if multiprocess:
+  #   n_processes = cpu_count() - 1
+  #   chunksize = n_particles // n_processes
+  #   in_queue, out_queue = Queue(), Queue()
+  #   done_queue = Queue()
+  #   processes = [Process(target=evaluate_consumer, args=(in_queue, out_queue, functions, file_dir)) for _ in range(n_processes)]
+  #   resample_process = Process(target=resample_consumer, args=(out_queue, done_queue, in_queue, n_particles, chunksize))
 
-    n_particles_per_process = [n_particles // n_processes] * n_processes
-    leftover = n_particles % n_processes
-    for i in range(leftover):
-      n_particles_per_process[i] += 1
+  #   n_particles_per_process = [n_particles // n_processes] * n_processes
+  #   leftover = n_particles % n_processes
+  #   for i in range(leftover):
+  #     n_particles_per_process[i] += 1
 
-    for p in processes:
-      p.start()
-    resample_process.start()
+  #   for p in processes:
+  #     p.start()
+  #   resample_process.start()
 
-    curr = 0
-    for p in range(n_processes):
-      particles_chunk = particles.particles[curr:curr+n_particles_per_process[p]]
-      curr += n_particles_per_process[p]
-      in_queue.put(particles_chunk)
+  #   curr = 0
+  #   for p in range(n_processes):
+  #     particles_chunk = particles.particles[curr:curr+n_particles_per_process[p]]
+  #     curr += n_particles_per_process[p]
+  #     in_queue.put(particles_chunk)
 
-    # for particle in particles:
-    #   in_queue.put(particle)
+  #   # for particle in particles:
+  #   #   in_queue.put(particle)
 
-    while True:
-      if not done_queue.empty():
-        # print('done')
-        particles = done_queue.get()
-        break
+  #   while True:
+  #     if not done_queue.empty():
+  #       # print('done')
+  #       particles = done_queue.get()
+  #       break
 
-    for p in processes:
-      in_queue.put(None)
+  #   for p in processes:
+  #     in_queue.put(None)
 
-    for p in processes:
-      p.join()
-    resample_process.join()
+  #   for p in processes:
+  #     p.join()
+  #   resample_process.join()
 
-    particles = ProbState.from_particles(particles)
+  #   particles = ProbState.from_particles(particles)
     # print('hello')
 
-  else:
-    while True:
-      new_particles = []
-      for particle in particles:
-        if particle.finished:
-          new_particles.append(particle)
-        else:
-          new_particles.append(evaluate_particle(particle, functions, file_dir))
-      particles = ProbState.from_particles(new_particles)
-
-      if particles.finished:
-        break
+  # else:
+  while True:
+    for i, particle in enumerate(particles):
+      if particle.finished:
+        continue
       else:
-        particles.resample()
+        particles[i] = evaluate_particle(particle, functions, file_dir)
+
+    if particles.finished:
+      break
+    else:
+      particles.resample()
 
   return particles.result(), particles
