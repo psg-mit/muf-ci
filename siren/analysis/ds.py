@@ -95,30 +95,30 @@ class AbsDSState(AbsSymState):
     return self.do_sample(rv)
   
   # Make rv marginal
-  def marginalize(self, expr: AbsRandomVar) -> None:
-    match self.type[expr]:
+  def marginalize(self, rv: AbsRandomVar) -> None:
+    match self.type[rv]:
       case DSType.REALIZED:
         return
       case DSType.MARGINALIZED:
         return
       case DSType.INITIALIZED:
         if expr not in self.parent:
-          raise ValueError(f'Cannot marginalize {expr} because it has no parent')
+          raise ValueError(f'Cannot marginalize {rv} because it has no parent')
         
-        rv_par = self.parent[expr]
+        rv_par = self.parent[rv]
         match self.type[rv_par]:
           case DSType.REALIZED:
-            self.set_distr(expr, self.eval_distr(self.distr(expr)))
+            self.set_distr(rv, self.eval_distr(self.distr(rv)))
           case DSType.MARGINALIZED:
             if not self.make_marginal(rv_par, expr):
               self.value(rv_par)
-              self.set_distr(expr, self.eval_distr(self.distr(expr)))
+              self.set_distr(rv, self.eval_distr(self.distr(rv)))
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
           case DSType.INITIALIZED:
             self.marginalize(rv_par)
-            if not self.make_marginal(rv_par, expr):
+            if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
-              self.set_distr(expr, self.eval_distr(self.distr(expr)))
+              self.set_distr(rv, self.eval_distr(self.distr(rv)))
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
     
   ########################################################################
@@ -176,7 +176,7 @@ class AbsDSState(AbsSymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.distr(rv_child)
+    likelihood = self.original_distr[rv_child]
     match prior, likelihood:
       case AbsNormal(_), AbsNormal(_):
         if _update(conj.gaussian_marginal(self, prior, likelihood, rv_par, rv_child)):
@@ -196,44 +196,44 @@ class AbsDSState(AbsSymState):
       case _:
         return False
 
+  def make_conditional(self, rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> bool:
+    def _update(posterior: Optional[AbsSymDistr]) -> bool:
+      if posterior is None:
+        return False
+      
+      posterior = self.eval_distr(posterior)
+      self.set_distr(rv_par, posterior)
+      # Update original distr
+      return True
+
+    prior = self.distr(rv_par)
+    likelihood = self.original_distr[rv_child]
+    match prior, likelihood:
+      case AbsNormal(_), AbsNormal(_):
+        if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x.v)):
+          return True
+        else:
+          return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case AbsBernoulli(_), AbsBernoulli(_):
+        return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case AbsBeta(_), AbsBernoulli(_):
+        return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case AbsBeta(_), AbsBinomial(_):
+        return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case AbsGamma(_), AbsPoisson(_):
+        return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case AbsGamma(_), AbsNormal(_):
+        return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+      case _:
+        return False
+
   def realize(self, rv: AbsRandomVar, x: AbsDelta) -> None:
-    def _make_conditional(rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> bool:
-      def _update(posterior: Optional[AbsSymDistr]) -> bool:
-        if posterior is None:
-          return False
-        
-        posterior = self.eval_distr(posterior)
-        self.set_distr(rv_par, posterior)
-        # Update original distr
-        return True
-
-      prior = self.distr(rv_par)
-      likelihood = self.original_distr[rv_child]
-      match prior, likelihood:
-        case AbsNormal(_), AbsNormal(_):
-          if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x.v)):
-            return True
-          else:
-            return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case AbsBernoulli(_), AbsBernoulli(_):
-          return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case AbsBeta(_), AbsBernoulli(_):
-          return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case AbsBeta(_), AbsBinomial(_):
-          return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case AbsGamma(_), AbsPoisson(_):
-          return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case AbsGamma(_), AbsNormal(_):
-          return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
-        case _:
-          return False
-
     assert self.type[rv] == DSType.MARGINALIZED
     self.type[rv] = DSType.REALIZED
     if rv in self.parent:
       rv_par = self.parent[rv]
       # condition parent on child
-      if _make_conditional(rv_par, rv):
+      if self.make_conditional(rv_par, rv, x.v):
         self.type[rv_par] = DSType.MARGINALIZED
         self.children[rv_par].remove(rv)
         del self.parent[rv]
@@ -243,7 +243,6 @@ class AbsDSState(AbsSymState):
         # raise ValueError(f'Cannot realize {rv} because {rv_par} is not conjugate')
 
     self.intervene(rv, x)
-    self.original_distr[rv] = self.distr(rv)
     # new roots from children
     for rv_child in self.children[rv]:
       self.do_marginalize(rv_child)
