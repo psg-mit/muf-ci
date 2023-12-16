@@ -84,6 +84,10 @@ class DSState(SymState):
           self.value(rv_par)
           distribution = self.eval_distr(distribution)
 
+      # all parents were sampled
+      if len(distribution.rvs()) == 0:
+          self.type[rv] = DSType.MARGINALIZED
+
     self.state[rv] = (name, distribution)
     self.original_distr[rv] = distribution
 
