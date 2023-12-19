@@ -127,7 +127,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": false
+        "ds": false,
+        "bp": true
       }
     },
     "1": {
@@ -137,7 +138,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     },
     "2": {
@@ -147,7 +149,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     },
     "3": {
@@ -157,7 +160,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     }
   },

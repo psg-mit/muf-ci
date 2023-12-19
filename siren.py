@@ -6,19 +6,21 @@ import cProfile
 import pstats
 
 from siren import parser, evaluate, analyze
-from siren.inference import SSIState, DSState
-from siren.analysis import AbsSSIState, AbsDSState
+from siren.inference import SSIState, DSState, BPState
+from siren.analysis import AbsSSIState, AbsDSState, AbsBPState
 from siren.inference_plan import runtime_inference_plan
 
 class methods(Enum):
   ssi = 'ssi'
   ds = 'ds'
-  ft = 'ft'
+  # ft = 'ft'
+  bp = 'bp'
   # di = 'di'
 
 method_states = {
   methods.ssi: (SSIState, AbsSSIState),
-  methods.ds: (DSState, AbsDSState)
+  methods.ds: (DSState, AbsDSState),
+  methods.bp: (BPState, AbsBPState),
 }
 
 def main():
@@ -43,6 +45,17 @@ def main():
     # print(program)
 
   (inference_method, analysis_method) = method_states[args.method]
+
+  print('===== Inferred Algorithm =====')
+  match args.method:
+    case methods.ssi:
+      print('SSI')
+    case methods.ds:
+      print('DS')
+    case methods.bp:
+      print('BP')
+    case _:
+      raise ValueError('Invalid method')
 
   if args.analyze or args.analyze_only:
     print('===== Inferred Inference Plan =====')

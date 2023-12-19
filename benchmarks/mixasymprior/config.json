@@ -43,7 +43,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "1": {
@@ -56,7 +57,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "2": {
@@ -69,7 +71,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "3": {
@@ -82,7 +85,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "4": {
@@ -95,7 +99,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "5": {
@@ -108,7 +113,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "6": {
@@ -121,7 +127,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "7": {
@@ -134,7 +141,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "8": {
@@ -147,7 +155,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "9": {
@@ -160,7 +169,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "10": {
@@ -173,7 +183,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "11": {
@@ -186,7 +197,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "12": {
@@ -199,7 +211,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "13": {
@@ -212,7 +225,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "14": {
@@ -225,7 +239,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "15": {
@@ -238,7 +253,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "16": {
@@ -251,7 +267,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "17": {
@@ -264,7 +281,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "18": {
@@ -277,7 +295,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "19": {
@@ -290,7 +309,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     },
     "20": {
@@ -303,7 +323,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "21": {
@@ -316,7 +337,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "22": {
@@ -329,7 +351,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": false
       }
     },
     "23": {
@@ -342,7 +365,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     },
     "24": {
@@ -355,7 +379,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "25": {
@@ -368,7 +393,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": false
       }
     },
     "26": {
@@ -381,7 +407,8 @@
       },
       "satisfiable": {
         "ssi": false,
-        "ds": false
+        "ds": false,
+        "bp": false
       }
     },
     "27": {
@@ -394,7 +421,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     },
     "28": {
@@ -407,7 +435,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": false
       }
     },
     "29": {
@@ -420,7 +449,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": false
       }
     },
     "30": {
@@ -433,7 +463,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": false
       }
     },
     "31": {
@@ -446,7 +477,8 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true
+        "ds": true,
+        "bp": true
       }
     }
   },

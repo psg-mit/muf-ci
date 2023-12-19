@@ -29,6 +29,7 @@ DEFAULT_METHODS = [
   'ds',
   # 'ft',
   # 'dis',
+  'bp',
 ]
 
 N_INTERVALS = 30
@@ -403,9 +404,24 @@ def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, 
           print('No more particles to try')
           break
 
-def find_satisfiable_plans(files, methods, plans, knowns):
-  print(plans)
-  files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+def find_satisfiable_plans(benchmark, files, methods, plans, knowns):
+  # print(plans)
+  if len(files) == 0:
+    # If no files specified, get all files in programs directory
+    files = []
+    for file in os.listdir(os.path.join(benchmark, 'programs')):
+      if file.endswith('.si'):
+        files.append(file)
+
+    # harness in benchmarks directory already
+    for file in files:
+      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+        raise Exception(f'File not found: {file}')
+
+    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
+    files = list(files)
+
   satisfiable_plans = {}
 
   # Get runtime inference plan
@@ -477,8 +493,23 @@ def find_satisfiable_plans(files, methods, plans, knowns):
 
   return satisfiable_plans
 
-def analyze(files, methods, variables, plans):
-  results = {}
+def analyze(benchmark, files, methods, variables, plans, results):
+  if len(files) == 0:
+    # If no files specified, get all files in programs directory
+    files = []
+    for file in os.listdir(os.path.join(benchmark, 'programs')):
+      if file.endswith('.si'):
+        files.append(file)
+
+    # harness in benchmarks directory already
+    for file in files:
+      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+        raise Exception(f'File not found: {file}')
+
+    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
+    files = list(files)
+
   # Number of plans
   results['n_plans'] = len(files)
   # Number of variables
@@ -543,9 +574,9 @@ def analyze(files, methods, variables, plans):
         line = line.strip()
         if line == '===== Inferred Inference Plan =====':
           start = True
-        elif '=====' in line:
-          break
         elif start:
+          if '=====' in line:
+            break
           if line != '':
             var, enc = line.split(': ')
             inferred_plan[var] = enc.strip()
@@ -706,9 +737,14 @@ if __name__ == '__main__':
     elif args.subparser_name == 'analyze':
       filename = os.path.join(benchmark, args.output, 'statistics.json')
 
+      results = {}
+      if os.path.exists(filename):
+        with open(os.path.join(filename)) as f:
+          results = json.load(f)
+
       variables = config['variables']
 
-      results = analyze(files, methods, variables, config['plans'])
+      results = analyze(benchmark, files, methods, variables, config['plans'], results)
 
       os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -718,10 +754,10 @@ if __name__ == '__main__':
 
     elif args.subparser_name == 'check':
       knowns = config['known_enc'] if 'known_enc' in config else None
-      satisfied_plan_ids = find_satisfiable_plans(files, methods, config['plans'], knowns)
+      satisfied_plan_ids = find_satisfiable_plans(benchmark, files, methods, config['plans'], knowns)
       
       for plan_id, plan_data in config['plans'].items():
-        plan_data['satisfiable'] = {}
+        plan_data['satisfiable'] = {} if 'satisfiable' not in plan_data else plan_data['satisfiable']
         for method in methods:
           plan_data['satisfiable'][method] = (plan_id in satisfied_plan_ids[method])
 

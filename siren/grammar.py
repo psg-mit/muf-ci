@@ -179,6 +179,12 @@ class Const(SymExpr[T]):
   
   def subst_rv(self, rv: 'RandomVar', value: 'SymExpr') -> 'SymExpr':
     return self
+  
+  def __round__(self, n=None):
+    if isinstance(self.v, Number):
+      return round(self.v, n)
+    else:
+      raise TypeError(f"Cannot round {self.v}")
 
 @dataclass(frozen=True)
 class RandomVar(SymExpr[T]):
