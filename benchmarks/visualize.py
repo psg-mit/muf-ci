@@ -26,6 +26,7 @@ DEFAULT_METHODS = [
   'ds',
   # 'ft',
   # 'dis',
+  'bp',
 ]
 
 N_INTERVALS = 30
