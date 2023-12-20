@@ -575,7 +575,7 @@ class ProbState(object):
   def mixture(self) -> Mixture:
     probabilities = self.normalized_probabilities()
     values = [p.final_expr for p in self.particles]
-    states = [copy(p.state) for p in self.particles]
+    states = [p.state for p in self.particles]
 
     unique_values = {}
     for v, state, prob in zip(values, states, probabilities):
