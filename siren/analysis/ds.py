@@ -194,6 +194,8 @@ class AbsDSState(AbsSymState):
       case DSType.REALIZED:
         return
       case DSType.MARGINALIZED:
+        if len(self.children(rv)) > 0:
+          self.graft(rv)
         return
       case DSType.INITIALIZED:
         rv_par = self.parent(rv)
@@ -207,13 +209,18 @@ class AbsDSState(AbsSymState):
             if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
               self.eval_entry(rv)
-              # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
+            else:
+              raise ValueError(f'Marginalizing {rv} is not possible')
           case DSType.INITIALIZED:
             self.marginalize(rv_par)
             if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
               self.eval_entry(rv)
-              # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
+            else:
+              raise ValueError(f'Marginalizing {rv} is not possible')
+
+        if len(self.children(rv)) > 0:
+            self.graft(rv)
     
   ########################################################################
 

@@ -158,6 +158,8 @@ class DSState(SymState):
       case DSType.REALIZED:
         return
       case DSType.MARGINALIZED:
+        if len(self.children(rv)) > 0:
+          self.graft(rv)
         return
       case DSType.INITIALIZED:
         rv_par = self.parent(rv)
@@ -180,7 +182,9 @@ class DSState(SymState):
               self.eval_entry(rv)
             else:
               raise ValueError(f'Marginalizing {rv} is not possible')
-              # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
+            
+        if len(self.children(rv)) > 0:
+          self.graft(rv)
     
   ########################################################################
               
