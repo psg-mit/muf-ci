@@ -1,4 +1,4 @@
-from typing import Dict, Set, Tuple, Optional
+from typing import Dict, Set, Tuple, Optional, Any
 from copy import copy
 
 from siren.inference_plan import InferencePlan, DistrEnc
@@ -8,9 +8,12 @@ class AnalysisViolatedAnnotationError(Exception):
   pass
 
 class AbsSymState(object):
+
+  ### Shared functions ###
+  # These should not need to be overridden
   def __init__(self) -> None:
     super().__init__()
-    self.state: Dict[AbsRandomVar, Tuple[Set[Identifier], AbsSymDistr]] = {}
+    self.state: Dict[AbsRandomVar, Dict[str, Any]] = {}
     self.plan: InferencePlan = InferencePlan()
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
@@ -18,50 +21,13 @@ class AbsSymState(object):
 
   def __copy__(self):
     new_state = type(self)()
-    new_state.state = copy(self.state)
+    new_state.state = {key: copy(value) for key, value in self.state.items()}
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
     new_state.annotations = self.annotations
     new_state.plan = copy(self.plan)
     return new_state
-
-  def new_var(self, min_counter: Optional[int] = None) -> AbsRandomVar:
-    if min_counter is not None:
-      self.counter = max(self.counter, min_counter)
-    self.counter += 1
-    return AbsRandomVar(f"rv{self.counter}")
   
-  def vars(self) -> Set[AbsRandomVar]:
-    return set(self.state.keys())
-    
-  def distr(self, variable: AbsRandomVar[T]) -> AbsSymDistr[T]:
-    return self.state[variable][1]
-  
-  def pv(self, variable: AbsRandomVar) -> Set[Identifier]:
-    return self.state[variable][0]
-  
-  def set_distr(self, variable: AbsRandomVar[T], distribution: AbsSymDistr[T]) -> None:
-    # Check if annotations violated
-    if isinstance(distribution, AbsDelta):
-      pvs = self.pv(variable)
-      for pv in pvs:
-        if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
-          and distribution.sampled:
-          pvs = ', '.join(map(str, self.pv(variable)))
-          raise AnalysisViolatedAnnotationError(f"Program variables {pvs} may have violated annotations")
-      
-    self.state[variable] = (self.state[variable][0], distribution)
-
-  def set_pv(self, variable: AbsRandomVar, pvs: Set[Identifier]) -> None:
-    self.state[variable] = (pvs, self.state[variable][1])
-
-  def is_sampled(self, variable: AbsRandomVar) -> bool:
-    match self.distr(variable):
-      case AbsDelta(_, sampled):
-        return sampled
-      case _:
-        return False
-
   def __len__(self) -> int:
     return len(self.state)
 
@@ -75,26 +41,72 @@ class AbsSymState(object):
     self_vars = self.vars()
     other_vars = other.vars()
     for rv1 in self_vars:
-      if rv1 not in other_vars or \
-        self.distr(rv1) != other.distr(rv1) or \
-        self.pv(rv1) != other.pv(rv1):
+      if rv1 not in other_vars:
         return False
+      for key, item in self.state[rv1].items():
+        if key not in other.state[rv1] or \
+          item != other.state[rv1][key]:
+          return False
 
     for rv2 in other_vars:
-      if rv2 not in self_vars or \
-        self.distr(rv2) != other.distr(rv2) or \
-        self.pv(rv2) != other.pv(rv2):
+      if rv2 not in self_vars:
         return False
+      for key, item in other.state[rv2].items():
+        if key not in self.state[rv2] or \
+          item != self.state[rv2][key]:
+          return False
 
     return True
+
+  def new_var(self, min_counter: Optional[int] = None) -> AbsRandomVar:
+    if min_counter is not None:
+      self.counter = max(self.counter, min_counter)
+    self.counter += 1
+    return AbsRandomVar(f"rv{self.counter}")
   
+  def vars(self) -> Set[AbsRandomVar]:
+    return set(self.state.keys())
+    
+  def get_entry(self, rv: AbsRandomVar, key: str) -> Any:
+    if rv not in self.state:
+      raise ValueError(f"{rv} not in state")
+    if key not in self.state[rv]:
+      raise ValueError(f"{key} not in {rv}")
+    return self.state[rv][key]
+  
+  def set_entry(self, variable: AbsRandomVar, **kwargs) -> None:
+    if variable not in self.state:
+      self.state[variable] = {}
+
+    for key, value in kwargs.items():
+      self.state[variable][key] = value
+
+    # Check if annotations violated
+    if 'distribution' in kwargs:
+      distribution = kwargs['distribution']
+      if isinstance(distribution, Delta):
+        pv = self.get_entry(variable, 'pv')
+        if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
+          and distribution.sampled:
+          raise AnalysisViolatedAnnotationError(
+            f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
+        
+  def is_sampled(self, variable: AbsRandomVar) -> bool:
+    match self.get_entry(variable, 'distribution'):
+      case AbsDelta(_, sampled):
+        return sampled
+      case _:
+        return False
+      
+  # Removes unused variables from the state
+  # Depends on referenced_vars and subst_rv, which may need to be overridden
   def clean(self, other: 'AbsSymState', expr: Optional[AbsSymExpr]=None) -> None:
     expr_vars = set() if expr is None else set(expr.rvs())
     # other_vars = other.vars()
     used_vars = expr_vars | set().union(*(expr.rvs() for expr in self.ctx.context.values()))
     # get referenced vars in the distribution of each ctx variable
     while True:
-      new_used_vars = used_vars | set().union(*(self.eval_distr(self.distr(rv)).rvs() for rv in used_vars))
+      new_used_vars = used_vars | self.entry_referenced_rvs(used_vars)
       if new_used_vars == used_vars:
         used_vars = new_used_vars
         break
@@ -114,14 +126,16 @@ class AbsSymState(object):
             self.ctx.context[x] = e.subst_rv(rv, d.v)
 
         del self.state[rv]
-  
+
+  # Renames old rv to new rv in the state, ctx, and given expr
+  # Depends on rename_rv, which may need to be overridden
   def rename(self, expr: AbsSymExpr, old: AbsRandomVar, new: AbsRandomVar) -> AbsSymExpr:
     if new == old:
       return expr
     # rename each distribution
     for rv in self.vars():
       # rename references in parameters
-      self.set_distr(rv, self.distr(rv).rename(old, new))
+      self.entry_rename_rv(rv, old, new)
 
       # use new name as entry key
       if rv == old:
@@ -245,22 +259,22 @@ class AbsSymState(object):
 
     return (e1, e2, other)
   
+  # Joins the two states
+  # Depends on join_entry and copy_entry, which may need to be overridden
   def join(self, other: 'AbsSymState') -> None:
     self_vars = self.vars()
     other_vars = other.vars()
     
     for rv in self_vars | other_vars:
       if rv in self_vars and rv in other_vars:
-        # join distributions
-        self.set_distr(rv, join_distr(self.distr(rv), other.distr(rv)))
-        # join program variables
-        self.set_pv(rv, self.pv(rv) | other.pv(rv))
+        self.entry_join(rv, other)
       elif rv in self_vars:
         # keep distribution
         pass
       elif rv in other_vars:
         # copy entry
-        self.state[rv] = other.state[rv]
+        for key, value in other.state[rv].items():
+          self.set_entry(rv, **{key: copy(value)})
       else:
         raise ValueError(rv)
       
@@ -550,22 +564,65 @@ class AbsSymState(object):
         return AbsConst(UnkC())
       case _:
         raise ValueError(expr)
-  
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
-    raise NotImplementedError()
-
-  def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> float:
-    raise NotImplementedError()
-
+      
+  # Depends on value_impl, which needs to be implemented by subclasses
   def value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     for pv in self.pv(rv):
       self.plan[pv] = DistrEnc.sample
 
     return self.value_impl(rv)
+        
+  ### Abstract functions ###
+  # These may need be overridden by subclasses, if the subclass has additional
+  # state entries
+  # If overridden, the subclass should call the superclass method
+  
+  ## Accessors
+  # Returns the specified entry for the given variable
+  # Base symbolic state only has 'distribution' and 'pv' entries
+  def pv(self, rv: AbsRandomVar) -> Set[Identifier]:
+    return self.get_entry(rv, 'pv')
+
+  def distr(self, rv: AbsRandomVar) -> AbsSymDistr:
+    distribution = self.get_entry(rv, 'distribution')
+    return distribution
+  
+  ## Mutators
+  # Sets the specified entry for the given variable
+  # Base symbolic state only has 'distribution' and 'pv' entries
+  def set_distr(self, rv: AbsRandomVar, distribution: AbsSymDistr) -> None:
+    self.set_entry(rv, distribution=distribution)
+
+  def set_pv(self, rv: AbsRandomVar, pv: Set[Identifier]) -> None:
+    self.set_entry(rv, pv=pv)
+      
+  # Returns the set of random variables referenced in the entries of each variable
+  # Base symbolic state only needs care about distribution of each variable
+  def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
+    return set().union(*(self.eval_distr(self.distr(rv)).rvs() for rv in rvs))
+
+  # Renames rv to new in the entries of symbolic state
+  # Base symbolic state only needs care about distribution of each variable
+  def entry_rename_rv(self, rv: AbsRandomVar, old: AbsRandomVar, new: AbsRandomVar) -> None:
+    self.set_distr(rv, self.distr(rv).rename(old, new))
+
+  # Joins the entries to the same variable in the two states
+  # Base symbolic state only holds 'distribution' and 'pv' entries
+  def entry_join(self, rv: AbsRandomVar, other: 'AbsSymState') -> None:
+    self.set_distr(rv, join_distr(self.distr(rv), other.distr(rv)))
+    self.set_pv(rv, self.pv(rv) | other.pv(rv))
+
+  ### Symbolic Interface ###
+  # These need to be implemented by subclasses
+  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
+    raise NotImplementedError()
+
+  def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> float:
+    raise NotImplementedError()
   
   def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     raise NotImplementedError()
-  
+
 # Domain Operations
 
 # TODO: would be neater as methods in each abstract expression

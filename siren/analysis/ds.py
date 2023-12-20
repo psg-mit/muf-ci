@@ -7,29 +7,95 @@ from siren.analysis.interface import *
 from siren.inference.ds import DSType
 
 class AbsDSState(AbsSymState):
-  def __init__(self) -> None:
-    super().__init__()
-    self.type : Dict[AbsRandomVar, DSType] = {}
-    self.children : Dict[AbsRandomVar, List[AbsRandomVar]] = {}
-    self.parent : Dict[AbsRandomVar, AbsRandomVar] = {}
-    self.original_distr : Dict[AbsRandomVar, AbsSymDistr] = {}
-
-  def __copy__(self):
-    new_state = super().__copy__()
-    new_state.type = copy(self.type)
-    new_state.children = {k: copy(v) for k, v in self.children.items()}
-    new_state.parent = copy(self.parent)
-    new_state.original_distr = copy(self.original_distr)
-    return new_state
+  ###
+  # State entry:
+  #   rv: (pv, distribution, type, children, parent, cdistr)
+  ###
 
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsDSState(\n\t{s}\n)" if s else "AbsDSState()"
+  
+  ## Accessors
+  def type_(self, rv: AbsRandomVar) -> DSType:
+    return self.get_entry(rv, 'type')
+  
+  def children(self, rv: AbsRandomVar) -> List[AbsRandomVar]:
+    return self.get_entry(rv, 'children')
+  
+  def parent(self, rv: AbsRandomVar) -> Optional[AbsRandomVar]:
+    return self.get_entry(rv, 'parent')
+  
+  def cdistr(self, rv: AbsRandomVar) -> Optional[AbsSymDistr]:
+    return self.get_entry(rv, 'cdistr')
+  
+  ## Mutators
+  def set_type(self, rv: AbsRandomVar, type_: DSType) -> None:
+    self.set_entry(rv, type=type_)
 
+  def set_children(self, rv: AbsRandomVar, children: List[AbsRandomVar]) -> None:
+    self.set_entry(rv, children=children)
+
+  def set_parent(self, rv: AbsRandomVar, parent: Optional[AbsRandomVar]) -> None:
+    self.set_entry(rv, parent=parent)
+
+  def set_cdistr(self, rv: AbsRandomVar, cdistr: Optional[AbsSymDistr]) -> None:
+    self.set_entry(rv, cdistr=cdistr)
+
+  def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
+    ref_rvs = super().entry_referenced_rvs(rvs)
+    for rv in rvs:
+      for rv_child in self.children(rv):
+        ref_rvs.add(rv_child)
+      
+      rv_par = self.parent(rv)
+      if rv_par is not None:
+        ref_rvs.add(rv_par)
+
+      cdistr = self.cdistr(rv)
+      if cdistr is not None:
+        ref_rvs = ref_rvs.union(cdistr.rvs())
+
+    return ref_rvs
+  
+  def entry_rename_rv(self, rv: AbsRandomVar, old: AbsRandomVar, new: AbsRandomVar) -> None:
+    super().entry_rename_rv(rv, old, new)
+    self.set_children(rv, [rv_child if rv_child != old else new for rv_child in self.children(rv)])
+    self.set_parent(rv, new if self.parent(rv) == old else self.parent(rv))
+    cdistr = self.cdistr(rv)
+    if cdistr is not None:
+      self.set_cdistr(rv, cdistr.rename(old, new))
+
+  def entry_join(self, rv: AbsRandomVar, other: 'AbsDSState') -> None:
+    super().entry_join(rv, other)
+
+    self.set_children(rv, self.children(rv) + other.children(rv))
+
+    self_par = self.parent(rv)
+    other_par = other.parent(rv)
+    if self_par is None:
+      rv_par = other_par
+    elif other_par is None:
+      rv_par = self_par
+    else:
+      # Can only maintain a single parent
+      rv_par = self.narrow_join_expr(self_par, other_par, copy(self))
+      # Joining random vars only, so should get back a random var
+      assert isinstance(rv_par, AbsRandomVar)
+    
+    self.set_parent(rv, rv_par)
+    cdistr = self.cdistr(rv)
+    other_cdistr = other.cdistr(rv)
+    if cdistr is not None and other_cdistr is not None:
+      self.set_cdistr(rv, join_distr(cdistr, other_cdistr))
+    elif cdistr is None and other_cdistr is not None:
+      self.set_cdistr(rv, other_cdistr)
+
+  ### Symbolic Interface ###
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     def _check_conjugacy(prior : AbsSymDistr, likelihood : AbsSymDistr, rv_par : AbsRandomVar, rv_child : AbsRandomVar) -> bool:
       match prior, likelihood:
-        case AbsNormal(mu0, var0), AbsNormal(mu, var):
+        case AbsNormal(_), AbsNormal(_):
           return conj.gaussian_conjugate_check(self, prior, likelihood, rv_par, rv_child) or \
             conj.normal_inverse_gamma_normal_conjugate_check(self, prior, likelihood, rv_par, rv_child)
         case AbsBernoulli(_), AbsBernoulli(_):
@@ -53,14 +119,14 @@ class AbsDSState(AbsSymState):
       else:
         self.annotations[name] = annotation
     distribution = self.eval_distr(distribution)
-    self.state[rv] = (pv, distribution)
-    self.original_distr[rv] = distribution
-
-    self.children[rv] = []
+    
+    children = []
+    canonical_parent = None
+    cdistr = None
     if len(distribution.rvs()) == 0:
-      self.type[rv] = DSType.MARGINALIZED
+      dstype = DSType.MARGINALIZED
     else:
-      self.type[rv] = DSType.INITIALIZED
+      dstype = DSType.INITIALIZED
 
       parents = []
       for rv_par in distribution.rvs():
@@ -68,16 +134,44 @@ class AbsDSState(AbsSymState):
           parents.append(rv_par)
 
       # keep if conjugate, else sample it
+      has_parent = False
       for rv_par in parents:
-        if _check_conjugacy(self.original_distr[rv_par], distribution, rv_par, rv):
-          if rv_par not in self.children:
-            self.children[rv_par] = []
-          self.children[rv_par].append(rv)
+        if not has_parent:
+          if self.type_(rv_par) == DSType.REALIZED:
+            distribution = self.eval_distr(distribution)
+            continue
 
-          self.parent[rv] = rv_par
-        else:
-          self.value(rv_par)
-          distribution = self.eval_distr(distribution)
+          if self.type_(rv_par) == DSType.MARGINALIZED:
+            parent_dist = self.distr(rv_par)
+          else:
+            parent_dist = self.cdistr(rv_par)
+            if parent_dist is None:
+              raise ValueError(f'{rv_par} is Initialized but has no conditional distribution')
+
+          if _check_conjugacy(parent_dist, distribution, rv_par, rv):
+            self.children(rv_par).append(rv)
+
+            canonical_parent = rv_par
+            has_parent = True
+            continue
+
+        self.value(rv_par)
+        distribution = self.eval_distr(distribution)
+
+      # all parents were sampled
+      if len(distribution.rvs()) == 0:
+        dstype = DSType.MARGINALIZED
+
+    if dstype == DSType.INITIALIZED:
+      cdistr = distribution
+
+    pv = {name} if name is not None else set()
+    self.set_pv(rv, pv)
+    self.set_distr(rv, distribution)
+    self.set_type(rv, dstype)
+    self.set_children(rv, children)
+    self.set_parent(rv, canonical_parent)
+    self.set_cdistr(rv, cdistr)
           
     return rv
 
@@ -85,7 +179,7 @@ class AbsDSState(AbsSymState):
     # Turn rv into a terminal node
     self.graft(rv)
     # observe
-    assert self.type[rv] == DSType.MARGINALIZED
+    assert self.type_(rv) == DSType.MARGINALIZED
     self.realize(rv, AbsDelta(value, sampled=False))
     return
 
@@ -96,63 +190,65 @@ class AbsDSState(AbsSymState):
   
   # Make rv marginal
   def marginalize(self, rv: AbsRandomVar) -> None:
-    match self.type[rv]:
+    match self.type_(rv):
       case DSType.REALIZED:
         return
       case DSType.MARGINALIZED:
         return
       case DSType.INITIALIZED:
-        if expr not in self.parent:
+        rv_par = self.parent(rv)
+        if rv_par is None:
           raise ValueError(f'Cannot marginalize {rv} because it has no parent')
         
-        rv_par = self.parent[rv]
-        match self.type[rv_par]:
+        match self.type_(rv_par):
           case DSType.REALIZED:
-            self.set_distr(rv, self.eval_distr(self.distr(rv)))
+            self.eval_entry(rv)
           case DSType.MARGINALIZED:
-            if not self.make_marginal(rv_par, expr):
+            if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
-              self.set_distr(rv, self.eval_distr(self.distr(rv)))
+              self.eval_entry(rv)
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
           case DSType.INITIALIZED:
             self.marginalize(rv_par)
             if not self.make_marginal(rv_par, rv):
               self.value(rv_par)
-              self.set_distr(rv, self.eval_distr(self.distr(rv)))
+              self.eval_entry(rv)
               # raise ValueError(f'Cannot marginalize {expr} because {rv_par} is not conjugate')
     
   ########################################################################
 
+  def eval_entry(self, rv: AbsRandomVar) -> None:
+    self.set_distr(rv, self.eval_distr(self.distr(rv)))
+
   # moves rv from I to M and updates its distribution by marginalizing over its parent
   def do_marginalize(self, rv: AbsRandomVar) -> None:
-    assert self.type[rv] == DSType.INITIALIZED
-    if rv not in self.parent:
+    assert self.type_(rv) == DSType.INITIALIZED
+    rv_par = self.parent(rv)
+    if rv_par is None:
       raise ValueError(f'Cannot marginalize {rv} because it has no parent')
     
-    rv_par = self.parent[rv]
-    match self.type[rv_par]:
+    match self.type_(rv_par):
       case DSType.INITIALIZED:
         raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not marginalized')
       case DSType.REALIZED:
         d = self.distr(rv_par)
-        match d:
-          case AbsDelta(_, _):
-            self.set_distr(rv, self.eval_distr(d))
-          case _:
-            raise ValueError(d)
+        if not isinstance(d, Delta):
+          raise ValueError(d)
+        # convert to marginal
+        self.eval_entry(rv)
       case DSType.MARGINALIZED:
         if self.make_marginal(rv_par, rv):
-          self.set_distr(rv, self.eval_distr(self.distr(rv)))
+          self.eval_entry(rv)
         else:
           self.value(rv_par)
-          self.set_distr(rv, self.eval_distr(self.distr(rv)))
+          self.eval_entry(rv)
           # raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not conjugate')
 
-    self.type[rv] = DSType.MARGINALIZED
+    self.set_type(rv, DSType.MARGINALIZED)
 
   def do_sample(self, rv: AbsRandomVar) -> AbsConst:
     # sample
-    assert self.type[rv] == DSType.MARGINALIZED
+    assert self.type_(rv) == DSType.MARGINALIZED
     self.realize(rv, AbsDelta(AbsConst(UnkC()), sampled=True))
     return AbsConst(UnkC())
 
@@ -161,8 +257,8 @@ class AbsDSState(AbsSymState):
 
   # Invariant 2: A node always has at most one child that is marginalized
   def marginal_child(self, rv: AbsRandomVar) -> Optional[AbsRandomVar]:
-    for rv_child in self.children[rv]:
-      if self.type[rv_child] == DSType.MARGINALIZED:
+    for rv_child in self.children(rv):
+      if self.type_(rv_child) == DSType.MARGINALIZED:
         return rv_child
       
     return None
@@ -176,7 +272,7 @@ class AbsDSState(AbsSymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.original_distr[rv_child]
+    likelihood = self.cdistr(rv_child)
     match prior, likelihood:
       case AbsNormal(_), AbsNormal(_):
         if _update(conj.gaussian_marginal(self, prior, likelihood, rv_par, rv_child)):
@@ -196,7 +292,7 @@ class AbsDSState(AbsSymState):
       case _:
         return False
 
-  def make_conditional(self, rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> bool:
+  def make_conditional(self, rv_par: AbsRandomVar, rv_child: AbsRandomVar, x: AbsSymExpr) -> bool:
     def _update(posterior: Optional[AbsSymDistr]) -> bool:
       if posterior is None:
         return False
@@ -207,36 +303,37 @@ class AbsDSState(AbsSymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.original_distr[rv_child]
+    likelihood = self.cdistr(rv_child)
     match prior, likelihood:
       case AbsNormal(_), AbsNormal(_):
-        if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x.v)):
+        if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x)):
           return True
         else:
-          return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+          return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case AbsBernoulli(_), AbsBernoulli(_):
-        return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+        return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case AbsBeta(_), AbsBernoulli(_):
-        return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+        return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case AbsBeta(_), AbsBinomial(_):
-        return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+        return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case AbsGamma(_), AbsPoisson(_):
-        return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+        return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case AbsGamma(_), AbsNormal(_):
-        return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x.v))
+        return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
       case _:
         return False
 
   def realize(self, rv: AbsRandomVar, x: AbsDelta) -> None:
-    assert self.type[rv] == DSType.MARGINALIZED
-    self.type[rv] = DSType.REALIZED
-    if rv in self.parent:
-      rv_par = self.parent[rv]
+    assert self.type_(rv) == DSType.MARGINALIZED
+    self.set_type(rv, DSType.REALIZED)
+
+    rv_par = self.parent(rv)
+    if rv_par is not None:
       # condition parent on child
       if self.make_conditional(rv_par, rv, x.v):
-        self.type[rv_par] = DSType.MARGINALIZED
-        self.children[rv_par].remove(rv)
-        del self.parent[rv]
+        self.set_type(rv_par, DSType.MARGINALIZED)
+        self.children(rv_par).remove(rv)
+        self.set_parent(rv, None)
       else:
         self.value(rv_par)
         self.eval_distr(self.distr(rv))
@@ -244,28 +341,28 @@ class AbsDSState(AbsSymState):
 
     self.intervene(rv, x)
     # new roots from children
-    for rv_child in self.children[rv]:
+    for rv_child in self.children(rv):
       self.do_marginalize(rv_child)
-      del self.parent[rv_child]
+      self.set_parent(rv_child, None)
 
-    self.children[rv] = []
+    self.set_children(rv, [])
     
   def graft(self, rv: AbsRandomVar) -> None:
-    if self.type[rv] == DSType.MARGINALIZED:
+    if self.type_(rv) == DSType.MARGINALIZED:
       rv_child = self.marginal_child(rv)
       if rv_child is not None:
         self.prune(rv_child)
-    elif self.type[rv] == DSType.INITIALIZED:
-      if rv not in self.parent:
+    elif self.type_(rv) == DSType.INITIALIZED:
+      rv_par = self.parent(rv)
+      if rv_par is None:
         raise ValueError(f'Cannot graft {rv} because it has no parent')
-      rv_par = self.parent[rv]
       self.graft(rv_par)
       self.do_marginalize(rv)
     else:
       raise ValueError(f'Cannot graft {rv} because it is already realized')
 
   def prune(self, rv: AbsRandomVar) -> None:
-    assert self.type[rv] == DSType.MARGINALIZED
+    assert self.type_(rv) == DSType.MARGINALIZED
     rv_child = self.marginal_child(rv)
     if rv_child is not None:
       self.prune(rv_child)

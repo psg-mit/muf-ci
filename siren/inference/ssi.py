@@ -23,7 +23,10 @@ class SSIState(SymState):
         raise ValueError('Cannot annotate anonymous variable')
       else:
         self.annotations[name] = annotation
-    self.state[rv] = (name, distribution)
+
+    self.set_distr(rv, distribution)
+    self.set_pv(rv, name)
+
     return rv
 
   def observe(self, rv: RandomVar[T], value: Const[T]) -> float:

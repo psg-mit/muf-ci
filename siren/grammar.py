@@ -793,7 +793,7 @@ class Delta(SymDistr[T]):
 
     return self.v.v
   
-  def draw(self):
+  def draw(self, rng: np.random.Generator):
     return self.v
   
   def score(self, v: T) -> float:

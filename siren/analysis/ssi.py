@@ -18,6 +18,7 @@ class AbsSSIState(AbsSymState):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsSSIState(\n\t{s}\n)" if s else "AbsSSIState()"
 
+  ### Symbolic Interface ###
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     rv = self.new_var()
     pv = {name} if name is not None else set()
@@ -26,7 +27,9 @@ class AbsSSIState(AbsSymState):
         raise ValueError('Cannot annotate anonymous variable')
       else:
         self.annotations[name] = annotation
-    self.state[rv] = (pv, distribution)
+
+    self.set_distr(rv, distribution)
+    self.set_pv(rv, pv)
     return rv
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> None:

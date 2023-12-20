@@ -189,7 +189,7 @@ def gaussian_posterior(state: SymState, prior: Normal, likelihood: Normal,
 
 # Returns (marginal, posterior) distributions
 def gaussian_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Normal, Normal]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Normal(mu0, var0), Normal(mu, var):
       marginal = gaussian_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -242,7 +242,7 @@ def bernoulli_posterior(state: SymState, prior: Bernoulli, likelihood: Bernoulli
   return Bernoulli(p1_new)
     
 def bernoulli_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Bernoulli, Bernoulli]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Bernoulli(p1), Bernoulli(p2):
       marginal = bernoulli_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -291,7 +291,7 @@ def beta_bernoulli_posterior(state: SymState, prior: Beta, likelihood: Bernoulli
   return Beta(a_new, b_new)
     
 def beta_bernoulli_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[Bernoulli, Beta]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Beta(a, b), Bernoulli(p):
       marginal = beta_bernoulli_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -343,7 +343,7 @@ def beta_binomial_posterior(state: SymState, prior: Beta, likelihood: Binomial,
   return Beta(a_new, b_new)
     
 def beta_binomial_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[BetaBinomial, Beta]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Beta(a, b), Binomial(n, p):
       marginal = beta_binomial_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -397,7 +397,7 @@ def gamma_poisson_posterior(state: SymState, prior: Gamma, likelihood: Poisson,
   return Gamma(a_new, b_new)
     
 def gamma_poisson_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[NegativeBinomial, Gamma]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Gamma(a, b), Poisson(l):
       marginal = gamma_poisson_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -454,7 +454,7 @@ def gamma_normal_posterior(state: SymState, prior: Gamma, likelihood: Normal,
   return Gamma(a_new, b_new)
     
 def gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Gamma]]:
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Gamma(a, b), Normal(mu, var):
       marginal = gamma_normal_marginal(state, prior, likelihood, rv_par, rv_child)
@@ -476,7 +476,7 @@ def normal_inverse_gamma_normal_conjugate_check(state: SymState, prior: SymDistr
         case Div(Const(1), var2_inner):
           if isinstance(var2_inner, RandomVar):
             # TODO: should this be passed in
-            match state.distr(var2_inner):
+            match state.get_entry(var2_inner, 'distribution'):
               case Gamma(a, b):
                 # var1 should be the invgamma scaled by 1/lambda
                 k = is_scaled(state, var1, var2)
@@ -513,7 +513,7 @@ def normal_inverse_gamma_normal_marginal(state: SymState, prior: Normal, likelih
   match var2:
     case Div(Const(1), var2_inner):
       if isinstance(var2_inner, RandomVar):
-        match state.distr(var2_inner):
+        match state.get_entry(var2_inner, 'distribution'):
           case Gamma(a, b):
             k = is_scaled(state, var1, var2)
             assert k is not None
@@ -525,7 +525,7 @@ def normal_inverse_gamma_normal_marginal(state: SymState, prior: Normal, likelih
             b_inner = state.ex_add(rv_child, Const(-mu0.v))
             b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
 
-            state.set_distr(var2_inner, Gamma(a_new, b_new))
+            state.set_entry(var2_inner, distribution=Gamma(a_new, b_new))
 
 
             mu_new = mu0
@@ -554,7 +554,7 @@ def normal_inverse_gamma_normal_posterior(state: SymState, prior: Normal, likeli
     case Div(Const(1), var2_inner):
       # var2 must be a random variable of invgamma
       if isinstance(var2_inner, RandomVar):
-        match state.distr(var2_inner):
+        match state.get_entry(var2_inner, 'distribution'):
           case Gamma(a, b):
             k = is_scaled(state, var1, var2)
             assert k is not None
@@ -569,7 +569,7 @@ def normal_inverse_gamma_normal_posterior(state: SymState, prior: Normal, likeli
             b_inner = state.ex_add(x, Const(-mu0.v))
             b_new = state.ex_add(b, state.ex_mul(state.ex_div(lam, state.ex_div(lam, Const(1))), state.ex_div(state.ex_mul(b_inner, b_inner), Const(2))))
 
-            state.set_distr(var2_inner, Gamma(a_new, b_new))
+            state.set_entry(var2_inner, distribution=Gamma(a_new, b_new))
 
             var_new = state.ex_div(Const(1), state.ex_mul(lam_new, var2_inner))
 
@@ -584,7 +584,7 @@ def normal_inverse_gamma_normal_posterior(state: SymState, prior: Normal, likeli
     
 def normal_inverse_gamma_normal_conjugate(state: SymState, rv_par: RandomVar, rv_child: RandomVar) -> Optional[Tuple[StudentT, Normal]]:
   # print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
-  prior, likelihood = state.distr(rv_par), state.distr(rv_child)
+  prior, likelihood = state.get_entry(rv_par, 'distribution'), state.get_entry(rv_child, 'distribution')
   match prior, likelihood:
     case Normal(mu0, var1), Normal(mu, var2):
       marginal = normal_inverse_gamma_normal_marginal(state, prior, likelihood, rv_par, rv_child)

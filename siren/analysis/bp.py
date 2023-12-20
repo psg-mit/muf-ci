@@ -7,21 +7,59 @@ from siren.analysis.interface import *
 from siren.inference.bp import BPType
 
 class AbsBPState(AbsSymState):
-  def __init__(self) -> None:
-    super().__init__()
-    self.type : Dict[AbsRandomVar, BPType] = {}
-    self.parent : Dict[AbsRandomVar, AbsRandomVar] = {}
-
-  def __copy__(self):
-    new_state = super().__copy__()
-    new_state.type = copy(self.type)
-    new_state.parent = copy(self.parent)
-    return new_state
-  
+  ###
+  # State entry:
+  #   rv: (pv, distribution, type, parent)
+  ###
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsBPState(\n\t{s}\n)" if s else "AbsBPState()"
+  
+  ## Accessors
+  def type_(self, rv: AbsRandomVar) -> BPType:
+    return self.get_entry(rv, 'type')
+  
+  def parent(self, rv: AbsRandomVar) -> Optional[AbsRandomVar]:
+    return self.get_entry(rv, 'parent')
 
+  ## Mutators
+  def set_type(self, rv: AbsRandomVar, type_: BPType) -> None:
+    self.set_entry(rv, type=type_)
+
+  def set_parent(self, rv: AbsRandomVar, parent: Optional[AbsRandomVar]) -> None:
+    self.set_entry(rv, parent=parent)
+
+  def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
+    ref_rvs = super().entry_referenced_rvs(rvs)
+    for rv in rvs:
+      rv_par = self.parent(rv)
+      if rv_par is not None:
+        ref_rvs.add(rv_par)
+
+    return ref_rvs
+  
+  def entry_rename_rv(self, rv: AbsRandomVar, old: AbsRandomVar, new: AbsRandomVar) -> None:
+    super().entry_rename_rv(rv, old, new)
+    self.set_parent(rv, new if self.parent(rv) == old else self.parent(rv))
+
+  def entry_join(self, rv: AbsRandomVar, other: 'AbsBPState') -> None:
+    super().entry_join(rv, other)
+
+    self_par = self.parent(rv)
+    other_par = other.parent(rv)
+    if self_par is None:
+      rv_par = other_par
+    elif other_par is None:
+      rv_par = self_par
+    else:
+      # Can only maintain a single parent
+      rv_par = self.narrow_join_expr(self_par, other_par, copy(self))
+      # Joining random vars only, so should get back a random var
+      assert isinstance(rv_par, AbsRandomVar)
+    
+    self.set_parent(rv, rv_par)
+  
+  ### Symbolic Interface ###
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     def _check_conjugacy(prior : AbsSymDistr, likelihood : AbsSymDistr, rv_par : AbsRandomVar, rv_child : AbsRandomVar) -> bool:
       match prior, likelihood:
@@ -38,10 +76,11 @@ class AbsBPState(AbsSymState):
         self.annotations[name] = annotation
     distribution = self.eval_distr(distribution)
 
+    canonical_parent = None
     if len(distribution.rvs()) == 0:
-      self.type[rv] = BPType.MARGINALIZED
+      self.set_type(rv, BPType.MARGINALIZED)
     else:
-      self.type[rv] = BPType.INITIALIZED
+      self.set_type(rv, BPType.INITIALIZED)
 
       parents = []
       for rv_par in distribution.rvs():
@@ -52,8 +91,7 @@ class AbsBPState(AbsSymState):
       has_parent = False
       for rv_par in parents:
         if not has_parent and _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
-
-          self.parent[rv] = rv_par
+          canonical_parent = rv_par
           has_parent = True
         else:
           self.value(rv_par)
@@ -61,48 +99,50 @@ class AbsBPState(AbsSymState):
 
       # all parents were sampled
       if len(distribution.rvs()) == 0:
-          self.type[rv] = BPType.MARGINALIZED
+          self.set_type(rv, BPType.MARGINALIZED)
 
     pv = {name} if name is not None else set()
-    self.state[rv] = (pv, distribution)
+    self.set_pv(rv, pv)
+    self.set_distr(rv, distribution)
+    self.set_parent(rv, canonical_parent)
 
     return rv
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> None:
-    match self.type[rv]:
+    match self.type_(rv):
       case BPType.REALIZED:
         raise ValueError(f'Cannot observe {rv} twice')
       case BPType.MARGINALIZED:
         self.intervene(rv, AbsDelta(value, sampled=False))
       case BPType.INITIALIZED:
-        assert rv in self.parent
-        rv_par = self.parent[rv]
+        rv_par = self.parent(rv)
+        assert rv_par is not None
         self.marginalize(rv_par)
 
         if self.condition_cd(rv_par, rv):
           self.intervene(rv, AbsDelta(value, sampled=False))
           self.set_distr(rv_par, self.eval_distr(self.distr(rv_par)))
-          self.type[rv_par] = BPType.MARGINALIZED
+          self.set_type(rv_par, BPType.MARGINALIZED)
         else:
           self.value(rv_par)
           self.observe(rv, value)
 
   def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     self.marginalize(rv)
-    assert self.type[rv] != BPType.INITIALIZED
+    assert self.type_(rv) != BPType.INITIALIZED
     self.intervene(rv, AbsDelta(AbsConst(UnkC()), sampled=True))
     return AbsConst(UnkC())
   
   # make rv a root
   def marginalize(self, rv: AbsRandomVar) -> None:
-    match self.type[rv]:
+    match self.type_(rv):
       case BPType.MARGINALIZED:
         return
       case BPType.REALIZED:
         return
       case BPType.INITIALIZED:
-        assert rv in self.parent
-        rv_par = self.parent[rv]
+        rv_par = self.parent(rv)
+        assert rv_par is not None
         self.marginalize(rv_par)
 
         if self.condition_cd(rv_par, rv):
@@ -114,7 +154,7 @@ class AbsBPState(AbsSymState):
   ########################################################################
 
   def intervene(self, rv: AbsRandomVar[T], v: AbsDelta[T]) -> None:
-    self.type[rv] = BPType.REALIZED
+    self.set_type(rv, BPType.REALIZED)
     self.set_distr(rv, v)
 
   def condition_cd(self, rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> bool:
@@ -126,12 +166,12 @@ class AbsBPState(AbsSymState):
       self.set_distr(rv_par, posterior)
       self.set_distr(rv_child, marginal)
 
-      self.type[rv_child] = BPType.MARGINALIZED
-      del self.parent[rv_child]
+      self.set_type(rv_child, BPType.MARGINALIZED)
+      self.set_parent(rv_child, None)
 
-      if self.type[rv_par] != BPType.REALIZED:
-        self.type[rv_par] = BPType.INITIALIZED
-        self.parent[rv_par] = rv_child
+      if self.type_(rv_par) != BPType.REALIZED:
+        self.set_type(rv_par, BPType.INITIALIZED)
+        self.set_parent(rv_par, rv_child)
 
       return True
 

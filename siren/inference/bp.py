@@ -10,18 +10,24 @@ class BPType(Enum):
   MARGINALIZED = 2
   REALIZED = 3
 
-class BPState(SymState):
-  def __init__(self, seed=None) -> None:
-    super().__init__(seed)
-    self.type : Dict[RandomVar, BPType] = {}
-    self.parent : Dict[RandomVar, RandomVar] = {}
-
-  def __copy__(self):
-    new_state = super().__copy__()
-    new_state.type = copy(self.type)
-    new_state.parent = copy(self.parent)
-    return new_state
+class BPState(SymState): 
+  ###
+  # State entry:
+  #   rv: (pv, distribution, type, parent)
+  ###
   
+  def type_(self, rv: RandomVar) -> BPType:
+    return self.get_entry(rv, 'type')
+  
+  def parent(self, rv: RandomVar) -> Optional[RandomVar]:
+    return self.get_entry(rv, 'parent')
+
+  def set_type(self, rv: RandomVar, type_: BPType) -> None:
+    self.set_entry(rv, type=type_)
+
+  def set_parent(self, rv: RandomVar, parent: Optional[RandomVar]) -> None:
+    self.set_entry(rv, parent=parent)
+
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"BPState(\n\t{s}\n)" if s else "BPState()"
@@ -42,10 +48,11 @@ class BPState(SymState):
         self.annotations[name] = annotation
     distribution = self.eval_distr(distribution)
 
+    canonical_parent = None
     if len(distribution.rvs()) == 0:
-      self.type[rv] = BPType.MARGINALIZED
+      self.set_type(rv, BPType.MARGINALIZED)
     else:
-      self.type[rv] = BPType.INITIALIZED
+      self.set_type(rv, BPType.INITIALIZED)
 
       parents = []
       for rv_par in distribution.rvs():
@@ -56,8 +63,7 @@ class BPState(SymState):
       has_parent = False
       for rv_par in parents:
         if not has_parent and _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
-
-          self.parent[rv] = rv_par
+          canonical_parent = rv_par
           has_parent = True
         else:
           self.value(rv_par)
@@ -65,14 +71,16 @@ class BPState(SymState):
 
       # all parents were sampled
       if len(distribution.rvs()) == 0:
-          self.type[rv] = BPType.MARGINALIZED
+        self.set_type(rv, BPType.MARGINALIZED)
 
-    self.state[rv] = (name, distribution)
+    self.set_pv(rv, name)
+    self.set_distr(rv, distribution)
+    self.set_parent(rv, canonical_parent)
 
     return rv
 
   def observe(self, rv: RandomVar[T], value: Const[T]) -> float:
-    match self.type[rv]:
+    match self.type_(rv):
       case BPType.REALIZED:
         raise ValueError(f'Cannot observe {rv} twice')
       case BPType.MARGINALIZED:
@@ -80,15 +88,15 @@ class BPState(SymState):
         self.intervene(rv, Delta(value, sampled=False))
         return s
       case BPType.INITIALIZED:
-        assert rv in self.parent
-        rv_par = self.parent[rv]
+        rv_par = self.parent(rv)
+        assert rv_par is not None
         self.marginalize(rv_par)
 
         if self.condition_cd(rv_par, rv):
           s = self.score(rv, value.v)
           self.intervene(rv, Delta(value, sampled=False))
           self.set_distr(rv_par, self.eval_distr(self.distr(rv_par)))
-          self.type[rv_par] = BPType.MARGINALIZED
+          self.set_type(rv_par, BPType.MARGINALIZED)
           return s
         else:
           self.value(rv_par)
@@ -96,21 +104,21 @@ class BPState(SymState):
 
   def value(self, rv: RandomVar[T]) -> Const[T]:
     self.marginalize(rv)
-    assert self.type[rv] != BPType.INITIALIZED
+    assert self.type_(rv) != BPType.INITIALIZED
     v = self.draw(rv)
     self.intervene(rv, Delta(Const(v), sampled=True))
     return Const(v)
   
   # make rv a root
   def marginalize(self, rv: RandomVar) -> None:
-    match self.type[rv]:
+    match self.type_(rv):
       case BPType.MARGINALIZED:
         return
       case BPType.REALIZED:
         return
       case BPType.INITIALIZED:
-        assert rv in self.parent
-        rv_par = self.parent[rv]
+        rv_par = self.parent(rv)
+        assert rv_par is not None
         self.marginalize(rv_par)
 
         if self.condition_cd(rv_par, rv):
@@ -128,7 +136,7 @@ class BPState(SymState):
     return self.distr(rv).draw(self.rng)
 
   def intervene(self, rv: RandomVar[T], v: Delta[T]) -> None:
-    self.type[rv] = BPType.REALIZED
+    self.set_type(rv, BPType.REALIZED)
     self.set_distr(rv, v)
 
   def condition_cd(self, rv_par: RandomVar, rv_child: RandomVar) -> bool:
@@ -140,12 +148,12 @@ class BPState(SymState):
       self.set_distr(rv_par, posterior)
       self.set_distr(rv_child, marginal)
 
-      self.type[rv_child] = BPType.MARGINALIZED
-      del self.parent[rv_child]
+      self.set_type(rv_child, BPType.MARGINALIZED)
+      self.set_parent(rv_child, None)
 
-      if self.type[rv_par] != BPType.REALIZED:
-        self.type[rv_par] = BPType.INITIALIZED
-        self.parent[rv_par] = rv_child
+      if self.type_(rv_par) != BPType.REALIZED:
+        self.set_type(rv_par, BPType.INITIALIZED)
+        self.set_parent(rv_par, rv_child)
 
       return True
 

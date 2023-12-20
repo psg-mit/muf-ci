@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Optional, Set
+from typing import Dict, Tuple, Optional, Set, Any
 from copy import copy
 import warnings
 
@@ -11,15 +11,17 @@ class RuntimeViolatedAnnotationError(Exception):
 class SymState(object):
   def __init__(self, seed=None) -> None:
     super().__init__()
-    self.state: Dict[RandomVar, Tuple[Optional[Identifier], SymDistr]] = {}
+    # State has to have distribution and pv
+    self.state: Dict[RandomVar, Dict[str, Any]] = {}
     self.ctx: Context = Context()
     self.counter: int = 0
     self.annotations: Dict[Identifier, Annotation] = {}
     self.rng = np.random.default_rng(seed=seed)
 
+  # Needs to be overridden if the state contains mutable objects
   def __copy__(self):
     new_state = type(self)()
-    new_state.state = copy(self.state)
+    new_state.state = {rv: copy(self.state[rv]) for rv in self.state}
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
     new_state.annotations = self.annotations
@@ -32,26 +34,46 @@ class SymState(object):
   
   def vars(self) -> Set[RandomVar]:
     return set(self.state.keys())
-    
-  def distr(self, variable: RandomVar[T]) -> SymDistr[T]:
-    return self.state[variable][1]
   
-  def pv(self, variable: RandomVar) -> Optional[Identifier]:
-    return self.state[variable][0]
+  def get_entry(self, rv: RandomVar, key: str) -> Any:
+    if rv not in self.state:
+      raise ValueError(f"{rv} not in state")
+    if key not in self.state[rv]:
+      raise ValueError(f"{key} not in {rv}")
+    return self.state[rv][key]
   
-  def set_distr(self, variable: RandomVar[T], distribution: SymDistr[T]) -> None:
+  def set_entry(self, variable: RandomVar, **kwargs) -> None:
+    if variable not in self.state:
+      self.state[variable] = {}
+
+    for key, value in kwargs.items():
+      self.state[variable][key] = value
+
     # Check if annotations violated
-    if isinstance(distribution, Delta):
-      pv = self.pv(variable)
-      if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
-        and distribution.sampled:
-        raise RuntimeViolatedAnnotationError(
-          f"{self.pv(variable)} is annotated as symbolic but will be sampled")
+    if 'distribution' in kwargs:
+      distribution = kwargs['distribution']
+      if isinstance(distribution, Delta):
+        pv = self.get_entry(variable, 'pv')
+        if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
+          and distribution.sampled:
+          raise RuntimeViolatedAnnotationError(
+            f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
       
-    self.state[variable] = (self.state[variable][0], distribution)
+  def pv(self, rv: RandomVar) -> Optional[Identifier]:
+    return self.get_entry(rv, 'pv')
+
+  def distr(self, rv: RandomVar) -> SymDistr:
+    distribution = self.get_entry(rv, 'distribution')
+    return distribution
+  
+  def set_distr(self, rv: RandomVar, distribution: SymDistr) -> None:
+    self.set_entry(rv, distribution=distribution)
+
+  def set_pv(self, rv: RandomVar, pv: Optional[Identifier]) -> None:
+    self.set_entry(rv, pv=pv)
 
   def is_sampled(self, variable: RandomVar) -> bool:
-    match self.distr(variable):
+    match self.get_entry(variable, 'distribution'):
       case Delta(_, sampled):
         return sampled
       case _:
@@ -84,7 +106,7 @@ class SymState(object):
 
   def str_distrs(self, rv: RandomVar) -> str:
     distr = self.eval(rv)
-    match self.distr(rv):
+    match self.get_entry(rv, 'distribution'):
       case Normal(mu, var):
         return f"Normal({self.str_expr(mu)}, {self.str_expr(var)})"
       case Bernoulli(p):
@@ -108,7 +130,7 @@ class SymState(object):
       case Delta(v, sampled):
         return f"Delta({self.str_expr(v)}, {sampled})"
       case _:
-        raise ValueError(self.distr(rv))
+        raise ValueError(self.get_entry(rv, 'distribution'))
 
   def str_expr (self, expr: SymExpr) -> str:
     expr = self.eval(expr)
@@ -131,7 +153,6 @@ class SymState(object):
         return f"({self.str_expr(e1)}, {self.str_expr(e2)})"
       case _:
         raise ValueError(expr)
-  
   
   def ex_add(self, e1: SymExpr[Number], e2: SymExpr[Number]) -> SymExpr[Number]:
     match e1, e2:
@@ -212,11 +233,11 @@ class SymState(object):
         case Const(_):
           return expr
         case RandomVar(_):
-          match self.distr(expr):
+          match self.get_entry(expr, 'distribution'):
             case Delta(v, _):
               return _eval(v)
             case _:
-              self.set_distr(expr, self.eval_distr(self.distr(expr)))
+              self.set_entry(expr, distribution=self.eval_distr(self.get_entry(expr, 'distribution')))
               return expr
         case Add(e1, e2):
           return self.ex_add(_eval(e1), _eval(e2))
@@ -273,7 +294,6 @@ class SymState(object):
       case _:
         raise ValueError(distr)
 
-  
   def marginalize(self, expr: RandomVar) -> None:
     raise NotImplementedError()
       
@@ -409,7 +429,7 @@ class Particle(object):
   
   def simplify(self) -> 'Particle':
     for rv in self.state.vars():
-      self.state.set_distr(rv, self.state.eval_distr(self.state.distr(rv)))
+      self.state.set_entry(rv, distribution=self.state.eval_distr(self.state.get_entry(rv, 'distribution')))
     return self
 
 class Mixture(object):
@@ -491,7 +511,7 @@ def mean(expr: SymExpr, state: SymState) -> float:
       return value
     case RandomVar(_):
       state.marginalize(expr)
-      return state.distr(expr).mean()
+      return state.get_entry(expr, 'distribution').mean()
     case Add(left, right):
       return mean(left, state) + mean(right, state)
     # case Sub(left, right):

@@ -226,8 +226,8 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
           return p1.update(cont=UnkE([]))
         match a, b:
           case AbsConst(a), AbsConst(b):
-            assert isinstance(a, int) and isinstance(b, int) and a <= b
-            l : List[AbsSymExpr] = list(map(AbsConst, range(a, b)))
+            assert isinstance(a, Number) and isinstance(b, Number) and a <= b
+            l : List[AbsSymExpr] = list(map(AbsConst, range(int(a), int(b))))
             return p1.update(cont=AbsLst(l))
           case _:
             raise ValueError(new_args)

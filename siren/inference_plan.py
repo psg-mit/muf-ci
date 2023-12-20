@@ -119,7 +119,7 @@ class InferencePlan(object):
 def distribution_encodings(particle: Particle) -> InferencePlan:
   inf_plan = InferencePlan()
   for rv in particle.state:
-    pv = particle.state.pv(rv)
+    pv = particle.state.get_entry(rv, 'pv')
     if pv is None:
       continue
 
