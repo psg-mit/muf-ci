@@ -51,6 +51,9 @@ class Identifier(Expr):
     n = "()" if self.name is None else f"{self.name}"
     return f"{m}{n}"
   
+  def __repr__(self) -> str:
+    return str(self)
+  
 @dataclass(frozen=True)
 class GenericOp(Op[S]):
   op: Operator
@@ -879,12 +882,6 @@ class UnkC:
     return UnkC()
   
   def __neg__(self):
-    return UnkC()
-  
-  def __eq__(self, other):
-    return UnkC()
-  
-  def __lt__(self, other):
     return UnkC()
     
 @dataclass(frozen=True)

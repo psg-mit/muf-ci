@@ -1,9 +1,9 @@
 from typing import Dict, Tuple, Optional, Set, Any
-from copy import copy
+from copy import copy, deepcopy
 import warnings
 
 from siren.grammar import *
-from siren.utils import is_pair, is_lst, get_pair, get_lst
+from siren.utils import is_pair, is_lst, get_pair, get_lst, fast_copy
 
 class RuntimeViolatedAnnotationError(Exception):
   pass
@@ -21,7 +21,7 @@ class SymState(object):
   # Needs to be overridden if the state contains mutable objects
   def __copy__(self):
     new_state = type(self)()
-    new_state.state = {rv: copy(self.state[rv]) for rv in self.state}
+    new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
     new_state.annotations = self.annotations
@@ -293,6 +293,31 @@ class SymState(object):
         return Delta(self.eval(v), sampled)
       case _:
         raise ValueError(distr)
+      
+  def mean(self, expr: SymExpr) -> float:
+    expr = self.eval(expr)
+
+    match expr:
+      case Const(value):
+        return value
+      case RandomVar(_):
+        self.marginalize(expr)
+        return self.get_entry(expr, 'distribution').mean()
+      case Add(left, right):
+        return self.mean(left) + self.mean(right)
+      # case Sub(left, right):
+      #   return mean(left, state) - mean(right, state)
+      case Mul(left, right):
+        return self.mean(left) * self.mean(right)
+      case Div(left, right):
+        return self.mean(left) / self.mean(right)
+      case Ite(cond, true, false):
+        cond = self.mean(cond)
+        true = self.mean(true)
+        false = self.mean(false)
+        return true if cond else false
+      case _:
+        raise ValueError(expr)
 
   def marginalize(self, expr: RandomVar) -> None:
     raise NotImplementedError()
@@ -427,6 +452,7 @@ class Particle(object):
       self.finished,
     )
   
+  # Only for debugging
   def simplify(self) -> 'Particle':
     for rv in self.state.vars():
       self.state.set_entry(rv, distribution=self.state.eval_distr(self.state.get_entry(rv, 'distribution')))
@@ -497,41 +523,38 @@ class Mixture(object):
     if len(self.mixture) == 0:
       raise ValueError("No results")
     if len(self.mixture) == 1:
-      return mean(self.mixture[0][0], self.mixture[0][1])
-    acc = 0.0
+      expr, state, _ = self.mixture[0]
+      return state.mean(expr)
+    
+    unique_values = {}
     for expr, state, weight in self.mixture:
-      acc += weight * mean(expr, state)
+      v = state.mean(expr)
+      key = str(v)
+      
+      if key not in unique_values:
+        unique_values[key] = (v, weight)
+      else:
+        unique_values[key] = (v, unique_values[key][1] + weight)
+    
+    acc = 0.0
+    for v, weight in unique_values.values():
+      acc += weight * v
     return acc
-
-def mean(expr: SymExpr, state: SymState) -> float:
-  expr = state.eval(expr)
-
-  match expr:
-    case Const(value):
-      return value
-    case RandomVar(_):
-      state.marginalize(expr)
-      return state.get_entry(expr, 'distribution').mean()
-    case Add(left, right):
-      return mean(left, state) + mean(right, state)
-    # case Sub(left, right):
-    #   return mean(left, state) - mean(right, state)
-    case Mul(left, right):
-      return mean(left, state) * mean(right, state)
-    case Div(left, right):
-      return mean(left, state) / mean(right, state)
-    case Ite(cond, true, false):
-      return mean(true, state) if mean(cond, state) else mean(false, state)
-    case _:
-      raise ValueError(expr)
 
 class ProbState(object):
   def __init__(self, n_particles: int, cont: Expr, method: type[SymState], seed: Optional[int] = None) -> None:
     super().__init__()
+    self.seed = seed
     self.rng = np.random.default_rng(seed=seed)
     self.particles: List[Particle] = [
       Particle(cont, method(seed=seed)) for i in range(n_particles)
     ]
+
+  def __copy__(self) -> 'ProbState':
+    # doesn't really matter what goes in constructor, since it will be overwritten
+    new_state = ProbState(1, self.particles[0].cont, type(self.particles[0].state), seed=self.seed)
+    new_state.particles = [copy(p) for p in self.particles]
+    return new_state
 
   def __getitem__(self, index: int) -> Particle:
     return self.particles[index]
@@ -545,6 +568,7 @@ class ProbState(object):
   def __iter__(self):
     return iter(self.particles)
   
+  # Only for debugging
   def simplify(self) -> 'ProbState':
     for p in self.particles:
       p.simplify()
@@ -577,21 +601,12 @@ class ProbState(object):
     values = [p.final_expr for p in self.particles]
     states = [p.state for p in self.particles]
 
-    unique_values = {}
-    for v, state, prob in zip(values, states, probabilities):
-      v = state.eval(v)
-      key = str(v)
-      
-      if key not in unique_values:
-        unique_values[key] = (v, state, prob)
-      else:
-        unique_values[key] = (v, state, unique_values[key][2] + prob)
-    unique_values = Mixture(list(unique_values.values()))
+    unique_values = Mixture(list(zip(values, states, probabilities)))
 
     return unique_values
 
   def result(self) -> SymExpr:
-    unique_values = self.mixture()
+    mixture = self.mixture()
     
     def _get_mean(res: Mixture) -> Const:
       if res.is_pair_mixture:
@@ -605,7 +620,7 @@ class ProbState(object):
       else:
         return Const(res.mean())
       
-    return _get_mean(unique_values)
+    return _get_mean(mixture)
 
   @property
   def finished(self) -> bool:

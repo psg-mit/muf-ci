@@ -34,6 +34,7 @@ def main():
   p.add_argument('--multiprocess', '-mp', action='store_true')
   p.add_argument('--profile', '-pr', action='store_true')
   p.add_argument('--seed', '-s', type=int, default=None)
+  p.add_argument('--exclude-marginalizing', action='store_true', default=False)
   args = p.parse_args()
 
   profiler = cProfile.Profile()
@@ -60,7 +61,7 @@ def main():
   if args.analyze or args.analyze_only:
     print('===== Inferred Inference Plan =====')
     t1 = time.time()
-    inferred_plan = analyze.analyze(program, analysis_method)
+    inferred_plan = analyze.analyze(program, analysis_method, args.exclude_marginalizing)
     t2 = time.time()
     print(inferred_plan)
     print('===== Analysis Time =====')
@@ -75,6 +76,7 @@ def main():
       inference_method, 
       file_dir, 
       args.multiprocess,
+      args.exclude_marginalizing,
       args.seed,
     )
     t2 = time.time()
@@ -84,7 +86,10 @@ def main():
     print('===== Result =====')
     print(res)
 
+    plan = runtime_inference_plan(particles)
+
     if args.verbose:
+      # Only for debugging
       particles.simplify()
       print('===== Mixture =====')
       print(particles.mixture())
@@ -92,7 +97,7 @@ def main():
       print(particles)
 
     print('===== Runtime Inference Plan =====')
-    print(runtime_inference_plan(particles))
+    print(plan)
 
   if args.profile:
     profiler.disable()

@@ -1,61 +1,56 @@
-from typing import Any, Set
+from typing import Any, Set, Union
 from copy import copy
 from siren.grammar import RandomVar
 
 import siren.inference.conjugate as conj
 from siren.inference.interface import *
 
-class DSType(Enum):
-  INITIALIZED = 1
-  MARGINALIZED = 2
-  REALIZED = 3
+@dataclass(frozen=True)
+class DSNode():
+  pass
+
+@dataclass(frozen=True)
+class DSRealized(DSNode):
+  def __str__(self) -> str:
+    return 'DSRealized'
+
+@dataclass(frozen=True)
+class DSMarginalized(DSNode):
+  edge: Optional[Tuple[RandomVar, SymDistr]]
+
+  def __str__(self):
+    return f'DSMarginalized({self.edge})'
+
+@dataclass(frozen=True)
+class DSInitialized(DSNode):
+  edge: Tuple[RandomVar, SymDistr]
+
+  def __str__(self):
+    return f'DSInitialized({self.edge})'
 
 class DSState(SymState):
   ###
   # State entry:
-  #   rv: (pv, distribution, type, children, parent, cdistr)
+  #   rv: (pv, distribution, children, node)
   ###
-  
-  def type_(self, rv: RandomVar) -> DSType:
-    return self.get_entry(rv, 'type')
-  
-  def children(self, rv: RandomVar) -> List[RandomVar]:
-    return self.get_entry(rv, 'children')
-  
-  def parent(self, rv: RandomVar) -> Optional[RandomVar]:
-    return self.get_entry(rv, 'parent')
-  
-  def cdistr(self, rv: RandomVar) -> Optional[SymDistr]:
-    return self.get_entry(rv, 'cdistr')
-  
-  def set_pv(self, rv: RandomVar, pv: Optional[Identifier]) -> None:
-    self.set_entry(rv, pv=pv)
-  
-  def set_distr(self, rv: RandomVar, distribution: SymDistr) -> None:
-    self.set_entry(rv, distribution=distribution)
-
-  def set_type(self, rv: RandomVar, type_: DSType) -> None:
-    self.set_entry(rv, type=type_)
-
-  def set_children(self, rv: RandomVar, children: List[RandomVar]) -> None:
-    self.set_entry(rv, children=children)
-
-  def set_parent(self, rv: RandomVar, parent: Optional[RandomVar]) -> None:
-    self.set_entry(rv, parent=parent)
-
-  def set_cdistr(self, rv: RandomVar, cdistr: Optional[SymDistr]) -> None:
-    self.set_entry(rv, cdistr=cdistr)
-
-  def __copy__(self):
-    new_state = super().__copy__()
-    # children is a list so needs to be deepcopied
-    for rv in self.state:
-      new_state.set_children(rv, copy(self.children(rv)))
-    return new_state
 
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"DSState(\n\t{s}\n)" if s else "DSState()"
+  
+  ## Accessors
+  def children(self, rv: RandomVar) -> List[RandomVar]:
+    return self.get_entry(rv, 'children')
+  
+  def node(self, rv: RandomVar) -> DSNode:
+    return self.get_entry(rv, 'node')
+
+  ## Mutators
+  def set_children(self, rv: RandomVar, children: List[RandomVar]) -> None:
+    self.set_entry(rv, children=children)
+
+  def set_node(self, rv: RandomVar, node: DSNode) -> None:
+    self.set_entry(rv, node=node)
 
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     def _check_conjugacy(prior : SymDistr, likelihood : SymDistr, rv_par : RandomVar, rv_child : RandomVar) -> bool:
@@ -85,56 +80,58 @@ class DSState(SymState):
     distribution = self.eval_distr(distribution)
 
     children = []
-    canonical_parent = None
-    cdistr = None
     if len(distribution.rvs()) == 0:
-      dstype = DSType.MARGINALIZED
+      node = DSMarginalized(None)
     else:
-      dstype = DSType.INITIALIZED
-
       parents = []
       for rv_par in distribution.rvs():
         if rv_par not in parents:
           parents.append(rv_par)
 
       # keep if conjugate, else sample it
+      canonical_parent = None
       has_parent = False
       for rv_par in parents:
+        if rv_par not in distribution.rvs():
+          continue
         if not has_parent:
-          if self.type_(rv_par) == DSType.REALIZED:
-            distribution = self.eval_distr(distribution)
-            continue
+          match self.node(rv_par):
+            case DSRealized():
+              distribution = self.eval_distr(distribution)
+              continue
+            case DSMarginalized(_):
+              parent_dist = self.distr(rv_par)
+              if _check_conjugacy(parent_dist, distribution, rv_par, rv):
+                if rv not in self.children(rv_par):
+                  self.children(rv_par).append(rv)
 
-          if self.type_(rv_par) == DSType.MARGINALIZED:
-            parent_dist = self.distr(rv_par)
-          else:
-            parent_dist = self.cdistr(rv_par)
-            if parent_dist is None:
-              raise ValueError(f'{rv_par} is Initialized but has no conditional distribution')
+                canonical_parent = rv_par
+                has_parent = True
 
-          if _check_conjugacy(parent_dist, distribution, rv_par, rv):
-            self.children(rv_par).append(rv)
+                continue
+            case DSInitialized((_, parent_dist)):
+              if _check_conjugacy(parent_dist, distribution, rv_par, rv):
+                if rv not in self.children(rv_par):
+                  self.children(rv_par).append(rv)
 
-            canonical_parent = rv_par
-            has_parent = True
-            continue
+                canonical_parent = rv_par
+                has_parent = True
+                continue
 
         self.value(rv_par)
         distribution = self.eval_distr(distribution)
 
       # all parents were sampled
       if len(distribution.rvs()) == 0:
-        dstype = DSType.MARGINALIZED
-
-    if dstype == DSType.INITIALIZED:
-      cdistr = distribution
+        node = DSMarginalized(None)
+      else:
+        assert canonical_parent is not None
+        node = DSInitialized((canonical_parent, distribution))
 
     self.set_pv(rv, name)
     self.set_distr(rv, distribution)
-    self.set_type(rv, dstype)
     self.set_children(rv, children)
-    self.set_parent(rv, canonical_parent)
-    self.set_cdistr(rv, cdistr)
+    self.set_node(rv, node)
 
     return rv
 
@@ -142,10 +139,13 @@ class DSState(SymState):
     # Turn rv into a terminal node
     self.graft(rv)
     # observe
-    assert self.type_(rv) == DSType.MARGINALIZED
-    s = self.score(rv, value.v)
-    self.realize(rv, Delta(value, sampled=False))
-    return s
+    match self.node(rv):
+      case DSMarginalized(_):
+        s = self.score(rv, value.v)
+        self.realize(rv, Delta(value, sampled=False))
+        return s
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
 
   def value(self, rv: RandomVar[T]) -> Const[T]:
     # Turn rv into terminal node
@@ -154,34 +154,18 @@ class DSState(SymState):
   
   # Make rv marginal
   def marginalize(self, rv: RandomVar) -> None:
-    match self.type_(rv):
-      case DSType.REALIZED:
-        return
-      case DSType.MARGINALIZED:
+    match self.node(rv):
+      case DSRealized():
+        assert len(self.children(rv)) == 0
+      case DSMarginalized(_):
         if len(self.children(rv)) > 0:
           self.graft(rv)
-        return
-      case DSType.INITIALIZED:
-        rv_par = self.parent(rv)
-        if rv_par is None:
-          raise ValueError(f'Cannot marginalize {rv} because it has no parent')
-        
-        match self.type_(rv_par):
-          case DSType.REALIZED:
-            self.eval_entry(rv)
-          case DSType.MARGINALIZED:
-            if not self.make_marginal(rv_par, rv):
-              self.value(rv_par)
-              self.eval_entry(rv)
-            else:
-              raise ValueError(f'Marginalizing {rv} is not possible')
-          case DSType.INITIALIZED:
+      case DSInitialized((rv_par, _)):
+        match self.node(rv_par):
+          case DSInitialized(_):
             self.marginalize(rv_par)
-            if not self.make_marginal(rv_par, rv):
-              self.value(rv_par)
-              self.eval_entry(rv)
-            else:
-              raise ValueError(f'Marginalizing {rv} is not possible')
+            assert not isinstance(self.node(rv_par), DSInitialized)
+        self.do_marginalize(rv)
             
         if len(self.children(rv)) > 0:
           self.graft(rv)
@@ -193,37 +177,39 @@ class DSState(SymState):
 
   # moves rv from I to M and updates its distribution by marginalizing over its parent
   def do_marginalize(self, rv: RandomVar) -> None:
-    assert self.type_(rv) == DSType.INITIALIZED
-    rv_par = self.parent(rv)
-    if rv_par is None:
-      raise ValueError(f'Cannot marginalize {rv} because it has no parent')
-    
-    match self.type_(rv_par):
-      case DSType.INITIALIZED:
-        raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not marginalized')
-      case DSType.REALIZED:
-        d = self.distr(rv_par)
-        # simplify delta
-        if not isinstance(d, Delta):
-          raise ValueError(d)
-        # convert to marginal
-        self.eval_entry(rv)
-      case DSType.MARGINALIZED:
-        if self.make_marginal(rv_par, rv):
-          self.eval_entry(rv)
-        else:
-          self.value(rv_par)
-          self.eval_entry(rv)
-          # raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not conjugate')
-
-    self.set_type(rv, DSType.MARGINALIZED)
+    match self.node(rv):
+      case DSInitialized((rv_par, cdistr)):
+        match self.node(rv_par):
+          case DSInitialized(_):
+            raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not marginalized')
+          case DSRealized():
+            d = self.distr(rv_par)
+            # simplify delta
+            if not isinstance(d, Delta):
+              raise ValueError(d)
+            # convert to marginal
+            self.eval_entry(rv)
+            self.set_node(rv, DSMarginalized(None))
+          case DSMarginalized(_):
+            if self.make_marginal(rv_par, rv):
+              self.eval_entry(rv)
+              self.set_node(rv, DSMarginalized((rv_par, cdistr)))
+            else:
+              self.value(rv_par)
+              self.eval_entry(rv)
+              self.set_node(rv, DSMarginalized(None))
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
 
   def do_sample(self, rv: RandomVar) -> Const:
     # sample
-    assert self.type_(rv) == DSType.MARGINALIZED
-    v = self.draw(rv)
-    self.realize(rv, Delta(Const(v), sampled=True))
-    return Const(v)
+    match self.node(rv):
+      case DSMarginalized(_):
+        v = self.draw(rv)
+        self.realize(rv, Delta(Const(v), sampled=True))
+        return Const(v)
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
     
   def score(self, rv: RandomVar[T], v: T) -> float:
     return self.distr(rv).score(v)
@@ -231,14 +217,14 @@ class DSState(SymState):
   def draw(self, rv: RandomVar) -> Any:
     return self.distr(rv).draw(self.rng)
 
-  def intervene(self, rv: RandomVar[T], v: Delta[T]) -> None:
-    self.set_distr(rv, v)
-
   # Invariant 2: A node always has at most one child that is marginalized
   def marginal_child(self, rv: RandomVar) -> Optional[RandomVar]:
     for rv_child in self.children(rv):
-      if self.type_(rv_child) == DSType.MARGINALIZED:
-        return rv_child
+      match self.node(rv_child):
+        case DSMarginalized(_):
+          return rv_child
+        case _:
+          continue
       
     return None
   
@@ -251,25 +237,28 @@ class DSState(SymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.cdistr(rv_child)
-    match prior, likelihood:
-      case Normal(_), Normal(_):
-        if _update(conj.gaussian_marginal(self, prior, likelihood, rv_par, rv_child)):
-          return True
-        else:
-          return _update(conj.normal_inverse_gamma_normal_marginal(self, prior, likelihood, rv_par, rv_child))
-      case Bernoulli(_), Bernoulli(_):
-        return _update(conj.bernoulli_marginal(self, prior, likelihood, rv_par, rv_child))
-      case Beta(_), Bernoulli(_):
-        return _update(conj.beta_bernoulli_marginal(self, prior, likelihood, rv_par, rv_child))
-      case Beta(_), Binomial(_):
-        return _update(conj.beta_binomial_marginal(self, prior, likelihood, rv_par, rv_child))
-      case Gamma(_), Poisson(_):
-        return _update(conj.gamma_poisson_marginal(self, prior, likelihood, rv_par, rv_child))
-      case Gamma(_), Normal(_):
-        return _update(conj.gamma_normal_marginal(self, prior, likelihood, rv_par, rv_child))
+    match self.node(rv_child):
+      case DSInitialized((_, likelihood)):
+        match prior, likelihood:
+          case Normal(_), Normal(_):
+            if _update(conj.gaussian_marginal(self, prior, likelihood, rv_par, rv_child)):
+              return True
+            else:
+              return _update(conj.normal_inverse_gamma_normal_marginal(self, prior, likelihood, rv_par, rv_child))
+          case Bernoulli(_), Bernoulli(_):
+            return _update(conj.bernoulli_marginal(self, prior, likelihood, rv_par, rv_child))
+          case Beta(_), Bernoulli(_):
+            return _update(conj.beta_bernoulli_marginal(self, prior, likelihood, rv_par, rv_child))
+          case Beta(_), Binomial(_):
+            return _update(conj.beta_binomial_marginal(self, prior, likelihood, rv_par, rv_child))
+          case Gamma(_), Poisson(_):
+            return _update(conj.gamma_poisson_marginal(self, prior, likelihood, rv_par, rv_child))
+          case Gamma(_), Normal(_):
+            return _update(conj.gamma_normal_marginal(self, prior, likelihood, rv_par, rv_child))
+          case _:
+            return False
       case _:
-        return False
+        raise ValueError(f'{rv_child} is {self.node(rv_child)}')
       
   def make_conditional(self, rv_par: RandomVar, rv_child: RandomVar, x: SymExpr) -> bool:
     def _update(posterior: Optional[SymDistr]) -> bool:
@@ -281,67 +270,74 @@ class DSState(SymState):
       return True
 
     prior = self.distr(rv_par)
-    likelihood = self.cdistr(rv_child)
-    match prior, likelihood:
-      case Normal(_), Normal(_):
-        if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x)):
-          return True
-        else:
-          return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
-      case Bernoulli(_), Bernoulli(_):
-        return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
-      case Beta(_), Bernoulli(_):
-        return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
-      case Beta(_), Binomial(_):
-        return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x))
-      case Gamma(_), Poisson(_):
-        return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x))
-      case Gamma(_), Normal(_):
-        return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
+    match self.node(rv_child):
+      case DSMarginalized((_, likelihood)):
+        match prior, likelihood:
+          case Normal(_), Normal(_):
+            if _update(conj.gaussian_posterior(self, prior, likelihood, rv_par, rv_child, x)):
+              return True
+            else:
+              return _update(conj.normal_inverse_gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case Bernoulli(_), Bernoulli(_):
+            return _update(conj.bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case Beta(_), Bernoulli(_):
+            return _update(conj.beta_bernoulli_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case Beta(_), Binomial(_):
+            return _update(conj.beta_binomial_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case Gamma(_), Poisson(_):
+            return _update(conj.gamma_poisson_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case Gamma(_), Normal(_):
+            return _update(conj.gamma_normal_posterior(self, prior, likelihood, rv_par, rv_child, x))
+          case _:
+            return False
       case _:
-        return False
+        raise ValueError(f'{rv_child} is {self.node(rv_child)}')
 
   def realize(self, rv: RandomVar, x: Delta) -> None:
-    assert self.type_(rv) == DSType.MARGINALIZED
-    self.set_type(rv, DSType.REALIZED)
+    match self.node(rv):
+      case DSMarginalized(None):
+        pass
+      case DSMarginalized((rv_par, _)):
+        match self.node(rv_par):
+          case DSMarginalized(edge):
+            if self.make_conditional(rv_par, rv, x.v):
+              self.set_node(rv_par, DSMarginalized(edge))
+              self.children(rv_par).remove(rv)
+            else:
+              raise ValueError(f'Cannot realize {rv} because {rv_par} is not conjugate')
+          case _:
+            raise ValueError(f'{rv_par} is {self.node(rv_par)}')
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
 
-    rv_par = self.parent(rv)
-    if rv_par is not None:
-      if self.make_conditional(rv_par, rv, x.v):
-        self.set_type(rv_par, DSType.MARGINALIZED)
-        self.children(rv_par).remove(rv)
-        self.set_parent(rv, None)
-      else:
-        self.value(rv_par)
-        self.eval_distr(self.distr(rv))
-        # raise ValueError(f'Cannot realize {rv} because {rv_par} is not conjugate')
+    self.set_distr(rv, x)
+    self.set_node(rv, DSRealized())
 
-    self.intervene(rv, x)
     # new roots from children
     for rv_child in self.children(rv):
       self.do_marginalize(rv_child)
-      self.set_parent(rv_child, None)
 
     self.set_children(rv, [])
     
   def graft(self, rv: RandomVar) -> None:
-    if self.type_(rv) == DSType.MARGINALIZED:
-      rv_child = self.marginal_child(rv)
-      if rv_child is not None:
-        self.prune(rv_child)
-    elif self.type_(rv) == DSType.INITIALIZED:
-      rv_par = self.parent(rv)
-      if rv_par is None:
-        raise ValueError(f'Cannot graft {rv} because it has no parent')
-      self.graft(rv_par)
-      self.do_marginalize(rv)
-    else:
-      raise ValueError(f'Cannot graft {rv} because it is already realized')
+    match self.node(rv):
+      case DSRealized():
+        raise ValueError(f'Cannot graft {rv} because it is already realized')
+      case DSMarginalized(_):
+        rv_child = self.marginal_child(rv)
+        if rv_child is not None:
+          self.prune(rv_child)
+      case DSInitialized((rv_par, _)):
+        self.graft(rv_par)
+        self.do_marginalize(rv)
 
   def prune(self, rv: RandomVar) -> None:
-    assert self.type_(rv) == DSType.MARGINALIZED
-    rv_child = self.marginal_child(rv)
-    if rv_child is not None:
-      self.prune(rv_child)
-    
-    self.value(rv)
+    match self.node(rv):
+      case DSMarginalized(_):
+        rv_child = self.marginal_child(rv)
+        if rv_child is not None:
+          self.prune(rv_child)
+        
+        self.value(rv)
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')

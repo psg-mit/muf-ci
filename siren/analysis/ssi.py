@@ -59,6 +59,13 @@ class AbsSSIState(AbsSymState):
     
     return AbsConst(UnkC())
   
+  def marginalize(self, rv: AbsRandomVar) -> None:
+    try:
+      self.hoist_and_eval(rv)
+    except NonConjugate as e:
+      self.value(e.rv_nc)
+      self.marginalize(rv)
+  
   ########################################################################
 
   def parents(self, rv: AbsRandomVar) -> List[AbsRandomVar]:
@@ -246,12 +253,8 @@ class AbsSSIState(AbsSymState):
           return _update(conj.gamma_poisson_conjugate(self, rv_par, rv_child))
         case AbsGamma(_), AbsNormal(_):
           return _update(conj.gamma_normal_conjugate(self, rv_par, rv_child))
-        case UnkD(parents), _:
-          for pv in self.pv(rv_par):
-            self.plan[pv] = DistrEnc.dynamic
-          for parent in parents:
-            for pv in self.pv(parent):
-              self.plan[pv] = DistrEnc.dynamic
+        case UnkD(_), _:
+          self.set_dynamic(rv_par)
           return False
         case _:
           return False
@@ -280,4 +283,12 @@ class AbsSSIState(AbsSymState):
     self.set_distr(rv, self.eval_distr(self.distr(rv)))
     self.hoist(rv)
     self.set_distr(rv, self.eval_distr(self.distr(rv)))
+
+  # Sets pvs of rv to be dynamic, and recursively sets pvs of parents to be
+  # dynamic
+  def set_dynamic(self, rv: AbsRandomVar) -> None:
+    super().set_dynamic(rv)
+    
+    for rv_par in self.parents(rv):
+      self.set_dynamic(rv_par)
 

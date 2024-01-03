@@ -35,7 +35,7 @@ def test_coin(method):
     assert isinstance(res, Const) and round(res, 2) == 0.70
     assert runtime_plan[var] == DistrEnc.sample
   else:
-    assert res == Const(0.9)
+    assert isinstance(res, Const) and round(res, 2) == 0.9
     assert runtime_plan[var] == DistrEnc.symbolic
 
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])

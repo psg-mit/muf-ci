@@ -206,6 +206,8 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
           return p1.update(cont=exprs)
         if len(exprs) == 0:
           raise ValueError(new_args)
+        if isinstance(exprs[0], UnkE):
+          return p1.update(cont=AbsLst(exprs))
         return p1.update(cont=AbsLst(exprs[1:]))
       case 'len':
         (p1, old_args, new_args) = _evaluate_args(particle, args, [])
@@ -405,8 +407,11 @@ def evaluate(program: Program, method: type[AbsSymState]) -> AbsProbState:
 
   return probstate
 
-def analyze(program: Program, method: type[AbsSymState]) -> InferencePlan:
+def analyze(program: Program, method: type[AbsSymState], exclude_marginalizing: bool=False) -> InferencePlan:
   prob = evaluate(program, method)
+
+  if not exclude_marginalizing:
+    prob.result()
 
   inferred_plan = prob.particles.state.plan
 

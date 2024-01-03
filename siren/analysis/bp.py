@@ -53,9 +53,11 @@ class AbsBPState(AbsSymState):
       rv_par = self_par
     else:
       # Can only maintain a single parent
+      # TODO
       rv_par = self.narrow_join_expr(self_par, other_par, copy(self))
       # Joining random vars only, so should get back a random var
       assert isinstance(rv_par, AbsRandomVar)
+      # TODO: Type
     
     self.set_parent(rv, rv_par)
   

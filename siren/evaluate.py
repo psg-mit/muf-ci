@@ -464,6 +464,7 @@ def evaluate(
   method: type[SymState], 
   file_dir: str,
   multiprocess: bool = False,
+  exclude_marginalizing: bool = False,
   seed: Optional[int] = None,
 ) -> Tuple[SymExpr, ProbState]:
   functions, expression = program.functions, program.main
@@ -527,5 +528,9 @@ def evaluate(
       break
     else:
       particles.resample()
+
+  if exclude_marginalizing:
+    orig_particles = copy(particles)
+    return particles.result(), orig_particles
 
   return particles.result(), particles

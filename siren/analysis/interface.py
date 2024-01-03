@@ -1,8 +1,12 @@
 from typing import Dict, Set, Tuple, Optional, Any
-from copy import copy
+from copy import copy, deepcopy
 
 from siren.inference_plan import InferencePlan, DistrEnc
 from siren.grammar import *
+from siren.utils import is_abs_pair, is_abs_lst, get_abs_pair, get_abs_lst, fast_copy, match_rvs
+
+ED = TypeVar('ED', bound=AbsSymExpr | AbsSymDistr)
+OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
 
 class AnalysisViolatedAnnotationError(Exception):
   pass
@@ -21,7 +25,7 @@ class AbsSymState(object):
 
   def __copy__(self):
     new_state = type(self)()
-    new_state.state = {key: copy(value) for key, value in self.state.items()}
+    new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
     new_state.annotations = self.annotations
@@ -84,12 +88,13 @@ class AbsSymState(object):
     # Check if annotations violated
     if 'distribution' in kwargs:
       distribution = kwargs['distribution']
-      if isinstance(distribution, Delta):
+      if isinstance(distribution, AbsDelta):
         pv = self.get_entry(variable, 'pv')
-        if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
-          and distribution.sampled:
-          raise AnalysisViolatedAnnotationError(
-            f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
+        for pv in self.pv(variable):
+          if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
+            and distribution.sampled:
+            raise AnalysisViolatedAnnotationError(
+              f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
         
   def is_sampled(self, variable: AbsRandomVar) -> bool:
     match self.get_entry(variable, 'distribution'):
@@ -129,7 +134,7 @@ class AbsSymState(object):
 
   # Renames old rv to new rv in the state, ctx, and given expr
   # Depends on rename_rv, which may need to be overridden
-  def rename(self, expr: AbsSymExpr, old: AbsRandomVar, new: AbsRandomVar) -> AbsSymExpr:
+  def rename(self, expr: ED, old: AbsRandomVar, new: AbsRandomVar) -> ED:
     if new == old:
       return expr
     # rename each distribution
@@ -147,113 +152,54 @@ class AbsSymState(object):
 
     return expr.rename(old, new)
   
-  def unify(self, e1: AbsSymExpr, e2: AbsSymExpr, other: 'AbsSymState') -> Tuple[AbsSymExpr, AbsSymExpr, 'AbsSymState']:     
-    def _vars_in_expr(expr: AbsSymExpr) -> Set[AbsRandomVar]:
-      match expr:
-        case AbsConst(_):
-          return set()
-        case AbsRandomVar(_):
-          return {expr}
-        case AbsAdd(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case AbsMul(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case AbsDiv(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case AbsIte(cond, true, false):
-          return _vars_in_expr(cond) | _vars_in_expr(true) | _vars_in_expr(false)
-        case AbsEq(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case AbsLt(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case AbsLst(es):
-          return set().union(*(vars for vars in map(_vars_in_expr, es)))
-        case AbsPair(e1, e2):
-          return _vars_in_expr(e1) | _vars_in_expr(e2)
-        case UnkE(parents):
-          return set(parents)
-        case _:
-          raise ValueError(expr)
-
-    vars2 = _vars_in_expr(e2)    
+  def unify(self, e1: AbsSymExpr, e2: AbsSymExpr, other: OTHERSTATE) -> Tuple[AbsSymExpr, AbsSymExpr, OTHERSTATE]:
+    vars2 = set(e2.rvs())
     
-    unify_mapping : Dict[AbsRandomVar, Set[AbsRandomVar]] = {}
     capture_avoiding_mapping : Dict[AbsRandomVar, AbsRandomVar] = {}
 
-    def _match_rvs(e1: AbsSymExpr, e2: AbsSymExpr) -> None:
-      match e1, e2:
-        case AbsRandomVar(_), AbsRandomVar(_):
-          # e2 is already renamed 
-          if e2 in unify_mapping:
-            unify_mapping[e2].add(e1)
-          else:
-            unify_mapping[e2] = {e1}
-        case AbsAdd(e11, e12), AbsAdd(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case AbsMul(e11, e12), AbsMul(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case AbsDiv(e11, e12), AbsDiv(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case AbsIte(cond1, true1, false1), AbsIte(cond2, true2, false2):
-          _match_rvs(cond1, cond2)
-          _match_rvs(true1, true2)
-          _match_rvs(false1, false2)
-        case AbsEq(e11, e12), AbsEq(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case AbsLt(e11, e12), AbsLt(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case AbsLst(es1), AbsLst(es2):
-          for e1, e2 in zip(es1, es2):
-            _match_rvs(e1, e2)
-        case AbsPair(e11, e12), AbsPair(e21, e22):
-          _match_rvs(e11, e21)
-          _match_rvs(e12, e22)
-        case _, _:
-          pass
+    unify_mapping = match_rvs({}, e1, e2)
 
-    _match_rvs(e1, e2)
-
-    rvs_mapped_to = set().union(*(vars for vars in unify_mapping.values()))
-
-    # capture avoiding substitution to avoid mapping a variable 
-    # in e2 to an irrelevant variable in e2 
-    # note: this doesn't happen for e1 vars because they will be 
-    # mapped to one of the vars in the mapped-to set, which means
-    # they will never be mapped to something that isn't used in e1
-    for e2_var in other.vars():
-      # variable is not used in e2 but it will be mapped to
-      if e2_var not in vars2 and e2_var in rvs_mapped_to:
-        # capture avoiding substitution
-        new_var = self.new_var(other.counter)
-
-        capture_avoiding_mapping[e2_var] = new_var
-
-    for old_var, new_var in capture_avoiding_mapping.items():
-      e2 = other.rename(e2, old_var, new_var)
-      other.ctx.rename(old_var, new_var)
-
+    # Get canonical variable for for each e2_var from set of e1_vars
+    map2temp = {}
     # use temp vars to avoid collision
-    temp_mapping = {}
-
+    map2canonical = {}
     for e2_var, e1_vars in unify_mapping.items():
       canon_var = min(e1_vars, key=lambda v: v.rv)
 
-      # rename e2_var to canon_var in e2 and other
-      temp_var = self.new_var(other.counter)
-      temp_mapping[temp_var] = canon_var
-      e2 = other.rename(e2, e2_var, temp_var)
+      # capture avoiding substitution to avoid mapping a variable 
+      # in e2 to an irrelevant variable in e2 or a variable referenced
+      # by that old variable
+      # note: this doesn't happen for e1 vars because they will be 
+      # mapped to one of the vars in the mapped-to set, which means
+      # they will never be mapped to something that isn't used in e1
+      if (canon_var in other.vars() and canon_var not in vars2) \
+        or canon_var in other.entry_referenced_rvs({e2_var}):
+        # capture avoiding substitution
+        new_var = self.new_var(other.counter)
+        capture_avoiding_mapping[canon_var] = new_var
 
-      # rename other vars in e1_vars to canon_var in e1 and self
+      temp_var = self.new_var(other.counter)
+      map2temp[e2_var] = temp_var
+      map2canonical[temp_var] = canon_var
+
+    for old_var, new_var in capture_avoiding_mapping.items():
+      e2 = other.rename(e2, old_var, new_var)
+
+    # rename other vars in e1_vars to temp_var in e1 and self
+    for e2_var, e1_vars in unify_mapping.items():
+      temp_var = map2temp[e2_var]
+
       for e1_var in e1_vars:
         e1 = self.rename(e1, e1_var, temp_var)
 
+    # rename e2_var to temp_var in e2 and other
+    for e2_var, e1_vars in unify_mapping.items():
+      temp_var = map2temp[e2_var]
+
+      e2 = other.rename(e2, e2_var, temp_var)
+
     # rename temp vars to canon vars
-    for temp_var, canon_var in temp_mapping.items():
+    for temp_var, canon_var in map2canonical.items():
       e2 = other.rename(e2, temp_var, canon_var)
       e1 = self.rename(e1, temp_var, canon_var)
 
@@ -264,7 +210,7 @@ class AbsSymState(object):
   def join(self, other: 'AbsSymState') -> None:
     self_vars = self.vars()
     other_vars = other.vars()
-    
+
     for rv in self_vars | other_vars:
       if rv in self_vars and rv in other_vars:
         self.entry_join(rv, other)
@@ -273,6 +219,8 @@ class AbsSymState(object):
         pass
       elif rv in other_vars:
         # copy entry
+        # copy pv first
+        self.set_pv(rv, copy(other.pv(rv)))
         for key, value in other.state[rv].items():
           self.set_entry(rv, **{key: copy(value)})
       else:
@@ -515,9 +463,35 @@ class AbsSymState(object):
         return UnkD(parents)
       case _:
         raise ValueError(distr)
+      
+  def mean(self, expr: AbsSymExpr) -> None:
+    expr = self.eval(expr)
+
+    match expr:
+      case AbsConst(_):
+        return
+      case AbsRandomVar(_):
+        self.marginalize(expr)
+      case AbsAdd(left, right):
+        self.mean(left)
+        self.mean(right)
+      # case Sub(left, right):
+      #   return mean(left, state) - mean(right, state)
+      case AbsMul(left, right):
+        self.mean(left)
+        self.mean(right)
+      case AbsDiv(left, right):
+        self.mean(left)
+        self.mean(right)
+      case AbsIte(cond, true, false):
+        cond = self.mean(cond)
+        true = self.mean(true)
+        false = self.mean(false)
+      case _:
+        raise ValueError(expr)
   
-  # def marginal_expr(self, expr: AbsSymExpr) -> AbsSymExpr:
-  #   raise NotImplementedError()
+  def marginalize(self, rv: AbsSymExpr) -> None:
+    raise NotImplementedError()
 
   def value_expr(self, expr: AbsSymExpr) -> AbsConst:
     match expr:
@@ -551,10 +525,14 @@ class AbsSymState(object):
       case AbsEq(fst, snd):
         fst = self.value_expr(fst).v
         snd = self.value_expr(snd).v
+        if isinstance(fst, UnkC) or isinstance(snd, UnkC):
+          return AbsConst(UnkC())
         return AbsConst(fst == snd)
       case Lt(fst, snd):
         fst = self.value_expr(fst).v
         snd = self.value_expr(snd).v
+        if isinstance(fst, UnkC) or isinstance(snd, UnkC):
+          return AbsConst(UnkC())
         return AbsConst(fst < snd)
       case AbsLst(es):
         return AbsConst([self.value_expr(e).v for e in es])
@@ -612,6 +590,17 @@ class AbsSymState(object):
     self.set_distr(rv, join_distr(self.distr(rv), other.distr(rv)))
     self.set_pv(rv, self.pv(rv) | other.pv(rv))
 
+  # Sets the inferred distribution encoding as dynamic
+  # May need to be overridden by subclasses
+  def set_dynamic(self, variable: AbsRandomVar) -> None:
+    for pv in self.pv(variable):
+      if pv in self.annotations:
+        raise AnalysisViolatedAnnotationError(
+          f"{self.get_entry(variable, 'pv')} is annotated as {self.annotations[pv]} but cannot be determined")
+    
+    for pv in self.pv(variable):
+      self.plan[pv] = DistrEnc.dynamic
+
   ### Symbolic Interface ###
   # These need to be implemented by subclasses
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
@@ -630,7 +619,13 @@ class AbsSymState(object):
 def join_expr(e1: AbsSymExpr, e2: AbsSymExpr) -> AbsSymExpr:
   match e1, e2:
     case AbsConst(v1), AbsConst(v2):
-      return AbsConst(v1) if v1 == v2 else AbsConst(UnkC())
+      eq = v1 == v2
+      if isinstance(eq, UnkC):
+        return AbsConst(UnkC())
+      elif eq:
+        return AbsConst(v1)
+      else:
+        return AbsConst(UnkC())
     case AbsConst(_), AbsRandomVar(_):
       return e2
     case AbsRandomVar(_), AbsConst(_):
@@ -818,6 +813,39 @@ class AbsParticle(object):
 
   def __str__(self):
     return f"AbsParticle({self.cont}, {self.state})"
+  
+class AbsMixture(object):
+  def __init__(self, mixture: Tuple[AbsSymExpr, AbsSymState]):
+    super().__init__()
+    if len(mixture) == 0:
+      raise ValueError("Empty distribution")
+    self.mixture: Tuple[AbsSymExpr, AbsSymState] = mixture
+
+  @property
+  def is_pair_mixture(self) -> bool:
+    return is_abs_pair(self.mixture[0])
+
+  def get_pair_mixture(self) -> Tuple['AbsMixture', 'AbsMixture']:
+    expr, state = self.mixture
+    f, s = get_abs_pair(expr)
+    return AbsMixture((f, state)), AbsMixture((s, state))
+
+  @property
+  def is_lst_mixture(self) -> bool:
+    return is_abs_lst(self.mixture[0])
+
+  def get_lst_mixture(self) -> List['AbsMixture'] | UnkE:
+    expr, state = self.mixture
+    lst = get_abs_lst(expr)
+    match lst:
+      case UnkE(_):
+        return lst
+      case _:
+        return [AbsMixture((e, state)) for e in lst]
+      
+  def mean(self) -> None:
+    expr, state = self.mixture
+    state.mean(expr)
 
 class AbsProbState(object):
   def __init__(self, cont: Expr, method: type[AbsSymState]) -> None:
@@ -826,3 +854,28 @@ class AbsProbState(object):
 
   def __str__(self) -> str:
     return f"{self.particles}"
+  
+
+
+
+  def mixture(self) -> AbsMixture:
+    return AbsMixture((self.particles.final_expr, self.particles.state))
+
+  def result(self) -> None:
+    mixture = self.mixture()
+    
+    def _get_mean(res: AbsMixture) -> None:
+      if res.is_pair_mixture:
+        fst, snd = res.get_pair_mixture()
+        if not isinstance(fst.mixture[0], UnkE):
+          fst = _get_mean(fst)
+        if not isinstance(snd.mixture[0], UnkE):
+          snd = _get_mean(snd)
+      elif res.is_lst_mixture:
+        lst = res.get_lst_mixture()
+        if not isinstance(lst, UnkE):
+          list(map(lambda x: _get_mean(x), lst))
+      else:
+        res.mean()
+      
+    return _get_mean(mixture)
