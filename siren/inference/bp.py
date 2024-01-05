@@ -5,32 +5,44 @@ from collections import deque
 import siren.inference.conjugate as conj
 from siren.inference.interface import *
 
-class BPType(Enum):
-  INITIALIZED = 1
-  MARGINALIZED = 2
-  REALIZED = 3
+@dataclass(frozen=True)
+class BPNode():
+  pass
+
+@dataclass(frozen=True)
+class BPRealized(BPNode):
+  def __str__(self) -> str:
+    return 'BPRealized'
+
+@dataclass(frozen=True)
+class BPMarginalized(BPNode):
+  def __str__(self):
+    return f'BPMarginalized()'
+
+@dataclass(frozen=True)
+class BPInitialized(BPNode):
+  parent: RandomVar
+
+  def __str__(self):
+    return f'BPInitialized({self.parent})'
 
 class BPState(SymState): 
   ###
   # State entry:
-  #   rv: (pv, distribution, type, parent)
+  #   rv: (pv, distribution, node)
   ###
-  
-  def type_(self, rv: RandomVar) -> BPType:
-    return self.get_entry(rv, 'type')
-  
-  def parent(self, rv: RandomVar) -> Optional[RandomVar]:
-    return self.get_entry(rv, 'parent')
-
-  def set_type(self, rv: RandomVar, type_: BPType) -> None:
-    self.set_entry(rv, type=type_)
-
-  def set_parent(self, rv: RandomVar, parent: Optional[RandomVar]) -> None:
-    self.set_entry(rv, parent=parent)
 
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"BPState(\n\t{s}\n)" if s else "BPState()"
+  
+  ## Accessors
+  def node(self, rv: RandomVar) -> BPNode:
+    return self.get_entry(rv, 'node')
+
+  ## Mutators
+  def set_node(self, rv: RandomVar, node: BPNode) -> None:
+    self.set_entry(rv, node=node)
 
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     def _check_conjugacy(prior : SymDistr, likelihood : SymDistr, rv_par : RandomVar, rv_child : RandomVar) -> bool:
@@ -48,47 +60,55 @@ class BPState(SymState):
         self.annotations[name] = annotation
     distribution = self.eval_distr(distribution)
 
-    canonical_parent = None
     if len(distribution.rvs()) == 0:
-      self.set_type(rv, BPType.MARGINALIZED)
+      node = BPMarginalized()
     else:
-      self.set_type(rv, BPType.INITIALIZED)
-
       parents = []
       for rv_par in distribution.rvs():
         if rv_par not in parents:
           parents.append(rv_par)
 
       # keep if conjugate, else sample it
+      canonical_parent = None
       has_parent = False
       for rv_par in parents:
-        if not has_parent and _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
-          canonical_parent = rv_par
-          has_parent = True
-        else:
-          self.value(rv_par)
-          distribution = self.eval_distr(distribution)
+        if rv_par not in distribution.rvs():
+          continue
+        if not has_parent:
+          match self.node(rv_par):
+            case BPRealized():
+              distribution = self.eval_distr(distribution)
+              continue
+            case _: # BPInitialized or BPMarginalized
+              if _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
+                canonical_parent = rv_par
+                has_parent = True
+                continue
+        self.value(rv_par)
+        distribution = self.eval_distr(distribution)
 
       # all parents were sampled
       if len(distribution.rvs()) == 0:
-        self.set_type(rv, BPType.MARGINALIZED)
+        node = BPMarginalized()
+      else:
+        assert canonical_parent is not None
+        node = BPInitialized(canonical_parent)
 
     self.set_pv(rv, name)
     self.set_distr(rv, distribution)
-    self.set_parent(rv, canonical_parent)
+    self.set_node(rv, node)
 
     return rv
 
   def observe(self, rv: RandomVar[T], value: Const[T]) -> float:
-    match self.type_(rv):
-      case BPType.REALIZED:
+    match self.node(rv):
+      case BPRealized():
         raise ValueError(f'Cannot observe {rv} twice')
-      case BPType.MARGINALIZED:
+      case BPMarginalized():
         s = self.score(rv, value.v)
         self.intervene(rv, Delta(value, sampled=False))
         return s
-      case BPType.INITIALIZED:
-        rv_par = self.parent(rv)
+      case BPInitialized(rv_par):
         assert rv_par is not None
         self.marginalize(rv_par)
 
@@ -96,29 +116,29 @@ class BPState(SymState):
           s = self.score(rv, value.v)
           self.intervene(rv, Delta(value, sampled=False))
           self.set_distr(rv_par, self.eval_distr(self.distr(rv_par)))
-          self.set_type(rv_par, BPType.MARGINALIZED)
+          self.set_node(rv_par, BPMarginalized())
           return s
         else:
           self.value(rv_par)
           return self.observe(rv, value)
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
 
   def value(self, rv: RandomVar[T]) -> Const[T]:
     self.marginalize(rv)
-    assert self.type_(rv) != BPType.INITIALIZED
-    v = self.draw(rv)
-    self.intervene(rv, Delta(Const(v), sampled=True))
-    return Const(v)
+    match self.node(rv):
+      case BPInitialized(_):
+        raise ValueError(f'{rv} is {self.node(rv)}')
+      case _:
+        v = self.draw(rv)
+        self.intervene(rv, Delta(Const(v), sampled=True))
+        return Const(v)
   
   # make rv a root
+  # postcondition: rv is not BPInitialized
   def marginalize(self, rv: RandomVar) -> None:
-    match self.type_(rv):
-      case BPType.MARGINALIZED:
-        return
-      case BPType.REALIZED:
-        return
-      case BPType.INITIALIZED:
-        rv_par = self.parent(rv)
-        assert rv_par is not None
+    match self.node(rv):
+      case BPInitialized(rv_par):
         self.marginalize(rv_par)
 
         if self.condition_cd(rv_par, rv):
@@ -136,7 +156,7 @@ class BPState(SymState):
     return self.distr(rv).draw(self.rng)
 
   def intervene(self, rv: RandomVar[T], v: Delta[T]) -> None:
-    self.set_type(rv, BPType.REALIZED)
+    self.set_node(rv, BPRealized())
     self.set_distr(rv, v)
 
   def condition_cd(self, rv_par: RandomVar, rv_child: RandomVar) -> bool:
@@ -148,12 +168,13 @@ class BPState(SymState):
       self.set_distr(rv_par, posterior)
       self.set_distr(rv_child, marginal)
 
-      self.set_type(rv_child, BPType.MARGINALIZED)
-      self.set_parent(rv_child, None)
-
-      if self.type_(rv_par) != BPType.REALIZED:
-        self.set_type(rv_par, BPType.INITIALIZED)
-        self.set_parent(rv_par, rv_child)
+      self.set_node(rv_child, BPMarginalized())
+      
+      match self.node(rv_par):
+        case BPRealized():
+          pass
+        case _:
+          self.set_node(rv_par, BPInitialized(rv_child))
 
       return True
 

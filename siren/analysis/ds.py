@@ -160,7 +160,7 @@ class AbsDSState(AbsSymState):
             parents.append(rv_par)
         
         if len(parents) == 0:
-          assert ValueError(f'{rv} is {self.node(rv)}')
+          raise ValueError(f'{rv} is {self.node(rv)}')
         if len(parents) == 1:
           self.set_node(rv, AbsDSInitialized((parents[0],  cdistr)))
           return
@@ -254,16 +254,19 @@ class AbsDSState(AbsSymState):
         pv = {name} if name is not None else set()
         self.set_pv(rv, pv)
         self.set_children(rv, children)
-        self.set_node(rv, AbsDSUnk(set(parents)))
         # UnkD because we don't know which is the canonical parent
         self.set_distr(rv, UnkD(parents))
+
+        saved_parents = []
 
         for rv_par in parents:
           if not isinstance(self.node(rv_par), AbsDSRealized):
             self.set_unk_node(rv_par)
+            saved_parents.append(rv_par)
             if rv not in self.children(rv_par):
               self.children(rv_par).append(rv)
 
+        self.set_node(rv, AbsDSUnk(set(saved_parents)))
         return rv
 
       # keep if conjugate, else sample it
@@ -587,22 +590,8 @@ class AbsDSState(AbsSymState):
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
       
-  # Sets pvs of rv to be dynamic
-  # Does not need to recurse on parents, because
-  # DS does not reverse edge, and just prunes children
-      
   # Makes rv DSUnk and deal with side effects 
   def set_unk_node(self, rv: AbsRandomVar) -> None:
-    def _set_unk(rv: AbsRandomVar) -> None:
-      self.set_dynamic(rv)
-      match self.node(rv):
-        case AbsDSMarginalized((rv_par, cdistr)):
-          self.set_node(rv, AbsDSUnk({rv_par}))
-        case AbsDSUnk(parents):
-          self.set_node(rv, AbsDSUnk(parents))
-        case _:
-          raise ValueError(f'{rv} is {self.node(rv)}')    
-        
     nodes = set()
     def _set_unk_node(rv: AbsRandomVar) -> None:
       if rv in nodes:
