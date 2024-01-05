@@ -5,6 +5,8 @@ from siren.inference_plan import InferencePlan, DistrEnc
 from siren.grammar import *
 from siren.utils import is_abs_pair, is_abs_lst, get_abs_pair, get_abs_lst, fast_copy, match_rvs
 
+MAX_RVS = 1
+
 ED = TypeVar('ED', bound=AbsSymExpr | AbsSymDistr)
 OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
 
@@ -105,7 +107,7 @@ class AbsSymState(object):
       
   # Removes unused variables from the state
   # Depends on referenced_vars and subst_rv, which may need to be overridden
-  def clean(self, other: 'AbsSymState', expr: Optional[AbsSymExpr]=None) -> None:
+  def clean(self, expr: Optional[AbsSymExpr]=None) -> None:
     expr_vars = set() if expr is None else set(expr.rvs())
     # other_vars = other.vars()
     used_vars = expr_vars | set().union(*(expr.rvs() for expr in self.ctx.context.values()))
@@ -232,7 +234,7 @@ class AbsSymState(object):
   def narrow_join_expr(self, e1: AbsSymExpr, e2: AbsSymExpr, other: 'AbsSymState') -> AbsSymExpr:
     e1, e2, other = self.unify(e1, e2, other)
     
-    e = join_expr(e1, e2)
+    e = self.join_expr(e1, e2, other)
     self.join(other)
 
     return e
@@ -335,6 +337,8 @@ class AbsSymState(object):
           return _is_const(e1) and _is_const(e2)
         case UnkE(parents):
           return len(parents) == 0
+        case TopE():
+          return False
         case _:
           raise ValueError(expr)
 
@@ -422,6 +426,8 @@ class AbsSymState(object):
           if len(parents) == 0:
             return AbsConst(UnkC())
           return UnkE(parents)
+        case TopE():
+          return TopE()
         case _:
           raise ValueError(expr)
 
@@ -461,8 +467,205 @@ class AbsSymState(object):
               if var not in parents:
                 parents.append(var)
         return UnkD(parents)
+      case TopD():
+        return TopD()
       case _:
         raise ValueError(distr)
+      
+  def join_expr(self, e1: AbsSymExpr, e2: AbsSymExpr, other: 'AbsSymState') -> AbsSymExpr:
+    match e1, e2:
+      case AbsConst(v1), AbsConst(v2):
+        eq = v1 == v2
+        if isinstance(eq, UnkC):
+          return AbsConst(UnkC())
+        elif eq:
+          return AbsConst(v1)
+        else:
+          return AbsConst(UnkC())
+      case AbsConst(_), AbsRandomVar(_):
+        return e2
+      case AbsRandomVar(_), AbsConst(_):
+        return e1
+      case AbsRandomVar(_), AbsRandomVar(_):
+        return e1 if e1 == e2 else UnkE([e1, e2])
+      case AbsAdd(e11, e12), AbsAdd(e21, e22):
+        return AbsAdd(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case AbsMul(e11, e12), AbsMul(e21, e22):
+        return AbsMul(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case AbsDiv(e11, e12), AbsDiv(e21, e22):
+        return AbsDiv(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case AbsIte(cond1, true1, false1), AbsIte(cond2, true2, false2):
+        return AbsIte(self.join_expr(cond1, cond2, other), 
+                      self.join_expr(true1, true2, other),
+                      self.join_expr(false1, false2, other))
+      case AbsEq(e11, e12), AbsEq(e21, e22):
+        return AbsEq(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case AbsLt(e11, e12), AbsLt(e21, e22):
+        return AbsLt(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case AbsConst(c), AbsLst(es):
+        if isinstance(c, UnkC) or isinstance(c, list):
+          return self.join_expr(AbsLst([]), e2, other)
+        else:
+          raise ValueError(c)
+      case AbsLst(es), AbsConst(c):
+        if isinstance(c, UnkC) or isinstance(c, list):
+          return self.join_expr(e1, AbsLst([]), other)
+        else:
+          raise ValueError(c)
+      case AbsLst(es1), AbsLst(es2):
+        es = []
+        max_len = max(len(es1), len(es2))
+        for i in range(max_len):
+          if i < len(es1) and i < len(es2):
+            es.append(self.join_expr(es1[i], es2[i], other))
+          else:
+            if i < len(es1):
+              rest_parents = AbsLst(es1[i:]).rvs()
+            else: # i < len(es2)
+              rest_parents = AbsLst(es2[i:]).rvs()
+
+            # Collapse with the last element if it's just UnkE
+            if len(es) > 0:
+              match es[-1]:
+                case UnkE(parents):
+                  new_parents = []
+                  for p in parents + rest_parents:
+                    if p in new_parents:
+                      continue
+                    new_parents.append(p)
+                  es[-1] = UnkE(new_parents)
+                case TopE():
+                  new_parents = []
+                  for p in rest_parents:
+                    if p in new_parents:
+                      continue
+                    new_parents.append(p)
+                    if p in self.vars():
+                      self.set_dynamic(p)
+                    if p in other.vars():
+                      other.set_dynamic(p)
+                  es[-1] = TopE()
+                case _:
+                  es.append(UnkE(rest_parents))
+              break
+        return AbsLst(es)     
+      case AbsConst(c), AbsPair(e21, e22):
+        if isinstance(c, UnkC):
+          return self.join_expr(AbsPair(AbsConst(UnkC()), AbsConst(UnkC())), e2, other)
+        elif isinstance(c, tuple):
+          return self.join_expr(AbsPair(AbsConst(c[0]), AbsConst(c[1])), e2, other)
+        else:
+          raise ValueError(c)
+      case AbsPair(e11, e12), AbsConst(c):
+        if isinstance(c, UnkC):
+          return self.join_expr(e1, AbsPair(AbsConst(UnkC()), AbsConst(UnkC())), other)
+        elif isinstance(c, tuple):
+          return self.join_expr(e1, AbsPair(AbsConst(c[0]), AbsConst(c[1])), other)
+        else:
+          raise ValueError(c)
+      case AbsPair(e11, e12), AbsPair(e21, e22):
+        return AbsPair(self.join_expr(e11, e21, other), self.join_expr(e12, e22, other))
+      case TopE(), _:
+        parents = []
+        for p in e2.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in other.vars():
+              other.set_dynamic(rv_par)
+        return TopE()
+      case _, TopE():
+        parents = []
+        for p in e1.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in self.vars():
+              self.set_dynamic(rv_par)
+        return TopE()
+      case _, _:
+        parents = []
+        for p in e1.rvs() + e2.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in self.vars():
+              self.set_dynamic(rv_par)
+            if rv_par in other.vars():
+              other.set_dynamic(rv_par)
+          return TopE()
+        return UnkE(parents)
+  
+  def join_distr(self, d1: AbsSymDistr, d2: AbsSymDistr, other: 'AbsSymState') -> AbsSymDistr:
+    match d1, d2:
+      case AbsNormal(mu1, var1), AbsNormal(mu2, var2):
+        return AbsNormal(self.join_expr(mu1, mu2, other), self.join_expr(var1, var2, other))
+      case AbsBernoulli(p1), AbsBernoulli(p2):
+        return AbsBernoulli(self.join_expr(p1, p2, other))
+      case AbsBeta(a1, b1), AbsBeta(a2, b2):
+        return AbsBeta(self.join_expr(a1, a2, other), self.join_expr(b1, b2, other))
+      case AbsBinomial(n1, p1), AbsBinomial(n2, p2):
+        return AbsBinomial(self.join_expr(n1, n2, other), self.join_expr(p1, p2, other))
+      case AbsBetaBinomial(n1, a1, b1), AbsBetaBinomial(n2, a2, b2):
+        return AbsBetaBinomial(self.join_expr(n1, n2, other), self.join_expr(a1, a2, other), self.join_expr(b1, b2, other))
+      case AbsNegativeBinomial(n1, p1), AbsNegativeBinomial(n2, p2):
+        return AbsNegativeBinomial(self.join_expr(n1, n2, other), self.join_expr(p1, p2, other))
+      case AbsGamma(a1, b1), AbsGamma(a2, b2):
+        return AbsGamma(self.join_expr(a1, a2, other), self.join_expr(b1, b2, other))
+      case AbsPoisson(l1), AbsPoisson(l2):
+        return AbsPoisson(self.join_expr(l1, l2, other))
+      case AbsStudentT(mu1, tau21, nu1), AbsStudentT(mu2, tau22, nu2):
+        return AbsStudentT(self.join_expr(mu1, mu2, other), self.join_expr(tau21, tau22, other), self.join_expr(nu1, nu2, other))
+      case AbsCategorical(lower1, upper1, probs1), AbsCategorical(lower2, upper2, probs2):
+        return AbsCategorical(self.join_expr(lower1, lower2, other), self.join_expr(upper1, upper2, other), self.join_expr(probs1, probs2, other))
+      case AbsDelta(v1, sampled1), AbsDelta(v2, sampled2):
+        if sampled1 == sampled2:
+          return AbsDelta(self.join_expr(v1, v2, other), sampled1)
+        else:
+          # Once a delta is sampled, it is always sampled
+          return AbsDelta(self.join_expr(v1, v2, other), sampled=True)
+      case TopD(), _:
+        parents = []
+        for p in d2.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in other.vars():
+              other.set_dynamic(rv_par)
+        return TopD()
+      case _, TopD():
+        parents = []
+        for p in d1.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in self.vars():
+              self.set_dynamic(rv_par)
+        return TopD()
+      case _, _:
+        parents = []
+        for p in d1.rvs() + d2.rvs():
+          if p in parents:
+            continue
+          parents.append(p)
+        if len(parents) > MAX_RVS:
+          for rv_par in parents:
+            if rv_par in self.vars():
+              self.set_dynamic(rv_par)
+            if rv_par in other.vars():
+              other.set_dynamic(rv_par)
+          return TopD()
+        return UnkD(parents)
       
   def mean(self, expr: AbsSymExpr) -> None:
     expr = self.eval(expr)
@@ -540,6 +743,8 @@ class AbsSymState(object):
         return AbsConst((self.value_expr(fst).v, self.value_expr(snd).v))
       case UnkE(_):
         return AbsConst(UnkC())
+      case TopE():
+        return AbsConst(UnkC())
       case _:
         raise ValueError(expr)
       
@@ -587,7 +792,7 @@ class AbsSymState(object):
   # Joins the entries to the same variable in the two states
   # Base symbolic state only holds 'distribution' and 'pv' entries
   def entry_join(self, rv: AbsRandomVar, other: 'AbsSymState') -> None:
-    self.set_distr(rv, join_distr(self.distr(rv), other.distr(rv)))
+    self.set_distr(rv, self.join_distr(self.distr(rv), other.distr(rv), other))
     self.set_pv(rv, self.pv(rv) | other.pv(rv))
 
   # Sets the inferred distribution encoding as dynamic
@@ -611,139 +816,6 @@ class AbsSymState(object):
   
   def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     raise NotImplementedError()
-
-# Domain Operations
-
-# TODO: would be neater as methods in each abstract expression
-      
-def join_expr(e1: AbsSymExpr, e2: AbsSymExpr) -> AbsSymExpr:
-  match e1, e2:
-    case AbsConst(v1), AbsConst(v2):
-      eq = v1 == v2
-      if isinstance(eq, UnkC):
-        return AbsConst(UnkC())
-      elif eq:
-        return AbsConst(v1)
-      else:
-        return AbsConst(UnkC())
-    case AbsConst(_), AbsRandomVar(_):
-      return e2
-    case AbsRandomVar(_), AbsConst(_):
-      return e1
-    case AbsRandomVar(_), AbsRandomVar(_):
-      return e1 if e1 == e2 else UnkE([e1, e2])
-    case AbsAdd(e11, e12), AbsAdd(e21, e22):
-      return AbsAdd(join_expr(e11, e21), join_expr(e12, e22))
-    case AbsMul(e11, e12), AbsMul(e21, e22):
-      return AbsMul(join_expr(e11, e21), join_expr(e12, e22))
-    case AbsDiv(e11, e12), AbsDiv(e21, e22):
-      return AbsDiv(join_expr(e11, e21), join_expr(e12, e22))
-    case AbsIte(cond1, true1, false1), AbsIte(cond2, true2, false2):
-      return AbsIte(join_expr(cond1, cond2), 
-                    join_expr(true1, true2),
-                    join_expr(false1, false2))
-    case AbsEq(e11, e12), AbsEq(e21, e22):
-      return AbsEq(join_expr(e11, e21), join_expr(e12, e22))
-    case AbsLt(e11, e12), AbsLt(e21, e22):
-      return AbsLt(join_expr(e11, e21), join_expr(e12, e22))
-    case AbsConst(c), AbsLst(es):
-      if isinstance(c, UnkC) or isinstance(c, list):
-        return join_expr(AbsLst([]), e2)
-      else:
-        raise ValueError(c)
-    case AbsLst(es), AbsConst(c):
-      if isinstance(c, UnkC) or isinstance(c, list):
-        return join_expr(e1, AbsLst([]))
-      else:
-        raise ValueError(c)
-    case AbsLst(es1), AbsLst(es2):
-      es = []
-      max_len = max(len(es1), len(es2))
-      for i in range(max_len):
-        if i < len(es1) and i < len(es2):
-          es.append(join_expr(es1[i], es2[i]))
-        else:
-          if i < len(es1):
-            rest_parents = AbsLst(es1[i:]).rvs()
-          else: # i < len(es2)
-            rest_parents = AbsLst(es2[i:]).rvs()
-
-          # Collapse with the last element if it's just UnkE
-          if len(es) > 0:
-            match es[-1]:
-              case UnkE(parents):
-                new_parents = []
-                for p in parents + rest_parents:
-                  if p in new_parents:
-                    continue
-                  new_parents.append(p)
-                es[-1] = UnkE(new_parents)
-              case _:
-                es.append(UnkE(rest_parents))
-            break
-
-      return AbsLst(es)     
-    case AbsConst(c), AbsPair(e21, e22):
-      if isinstance(c, UnkC):
-        return join_expr(AbsPair(AbsConst(UnkC()), AbsConst(UnkC())), e2)
-      elif isinstance(c, tuple):
-        return join_expr(AbsPair(AbsConst(c[0]), AbsConst(c[1])), e2)
-      else:
-        raise ValueError(c)
-    case AbsPair(e11, e12), AbsConst(c):
-      if isinstance(c, UnkC):
-        return join_expr(e1, AbsPair(AbsConst(UnkC()), AbsConst(UnkC())))
-      elif isinstance(c, tuple):
-        return join_expr(e1, AbsPair(AbsConst(c[0]), AbsConst(c[1])))
-      else:
-        raise ValueError(c)
-    case AbsPair(e11, e12), AbsPair(e21, e22):
-      return AbsPair(join_expr(e11, e21), join_expr(e12, e22))
-    case _, _:
-      parents = []
-      for p in e1.rvs() + e2.rvs():
-        if p in parents:
-          continue
-        parents.append(p)
-      return UnkE(parents)
- 
-def join_distr(d1: AbsSymDistr, d2: AbsSymDistr) -> AbsSymDistr:
-  match d1, d2:
-    case AbsNormal(mu1, var1), AbsNormal(mu2, var2):
-      return AbsNormal(join_expr(mu1, mu2), join_expr(var1, var2))
-    case AbsBernoulli(p1), AbsBernoulli(p2):
-      return AbsBernoulli(join_expr(p1, p2))
-    case AbsBeta(a1, b1), AbsBeta(a2, b2):
-      return AbsBeta(join_expr(a1, a2), join_expr(b1, b2))
-    case AbsBinomial(n1, p1), AbsBinomial(n2, p2):
-      return AbsBinomial(join_expr(n1, n2), join_expr(p1, p2))
-    case AbsBetaBinomial(n1, a1, b1), AbsBetaBinomial(n2, a2, b2):
-      return AbsBetaBinomial(join_expr(n1, n2), join_expr(a1, a2), join_expr(b1, b2))
-    case AbsNegativeBinomial(n1, p1), AbsNegativeBinomial(n2, p2):
-      return AbsNegativeBinomial(join_expr(n1, n2), join_expr(p1, p2))
-    case AbsGamma(a1, b1), AbsGamma(a2, b2):
-      return AbsGamma(join_expr(a1, a2), join_expr(b1, b2))
-    case AbsPoisson(l1), AbsPoisson(l2):
-      return AbsPoisson(join_expr(l1, l2))
-    case AbsStudentT(mu1, tau21, nu1), AbsStudentT(mu2, tau22, nu2):
-      return AbsStudentT(join_expr(mu1, mu2), join_expr(tau21, tau22), join_expr(nu1, nu2))
-    case AbsCategorical(lower1, upper1, probs1), AbsCategorical(lower2, upper2, probs2):
-      return AbsCategorical(join_expr(lower1, lower2), join_expr(upper1, upper2), join_expr(probs1, probs2))
-    case AbsDelta(v1, sampled1), AbsDelta(v2, sampled2):
-      if sampled1 == sampled2:
-        return AbsDelta(join_expr(v1, v2), sampled1)
-      else:
-        # Once a delta is sampled, it is always sampled
-        return AbsDelta(join_expr(v1, v2), sampled=True)
-    case UnkD(parents1), UnkD(parents2):
-      return UnkD(parents1 + parents2)
-    case _, _:
-      parents = []
-      for p in d1.rvs() + d2.rvs():
-        if p in parents:
-          continue
-        parents.append(p)
-      return UnkD(parents)
     
 # Abstract prob states 
 # TODO: Basically the same as concrete version, so can refractor somehow
@@ -855,9 +927,6 @@ class AbsProbState(object):
   def __str__(self) -> str:
     return f"{self.particles}"
   
-
-
-
   def mixture(self) -> AbsMixture:
     return AbsMixture((self.particles.final_expr, self.particles.state))
 

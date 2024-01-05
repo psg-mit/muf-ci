@@ -842,6 +842,20 @@ class AbsSymExpr(Generic[T], Expr['AbsSymExpr']):
     raise NotImplementedError()
   
 @dataclass(frozen=True)
+class TopE(AbsSymExpr[T]):
+  def __str__(self):
+    return "TopE"
+  
+  def rvs(self) -> List['AbsRandomVar']:
+    return []
+  
+  def rename(self, old: 'AbsRandomVar', new: 'AbsRandomVar') -> 'TopE':
+    return self
+  
+  def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymExpr':
+    return self
+  
+@dataclass(frozen=True)
 class UnkE(AbsSymExpr[T]):
   parents: List['AbsRandomVar']
 
@@ -1076,6 +1090,20 @@ class AbsSymDistr(AbsSymExpr[T], Op[AbsSymExpr]):
   
   def subst_rv(self, rv: AbsRandomVar, value: AbsSymExpr) -> 'AbsSymDistr':
     raise NotImplementedError()
+  
+@dataclass(frozen=True)
+class TopD(AbsSymDistr[T]):
+  def __str__(self):
+    return "TopD"
+  
+  def rvs(self) -> List['AbsRandomVar']:
+    return []
+  
+  def rename(self, old: 'AbsRandomVar', new: 'AbsRandomVar') -> 'TopD':
+    return self
+  
+  def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymDistr':
+    return self
 
 @dataclass(frozen=True)
 class UnkD(AbsSymDistr[T]):

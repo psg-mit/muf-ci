@@ -54,6 +54,10 @@ def is_scaled(state: AbsSymState, expr: AbsSymExpr, e: AbsSymExpr) -> Optional[A
       return None
     case AbsPair(_):
       return None
+    case UnkE(s):
+      return None
+    case TopE():
+      return None
     case _:
       raise ValueError(expr)
 
@@ -121,6 +125,8 @@ def abs_is_affine(state: AbsSymState, expr: AbsSymExpr, rv: AbsRandomVar) -> Opt
         return (AbsConst(0), expr)
       else:
         return None
+    case TopE():
+      return None
     case _:
       raise ValueError(expr)
     

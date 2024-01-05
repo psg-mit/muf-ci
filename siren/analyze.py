@@ -314,7 +314,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
             state_old = copy(p2.state)
             p3 = _evaluate(p2.copy(cont=Apply(func, [lst_val, acc_val])))
             acc_new = p2.state.narrow_join_expr(acc_val, p3.final_expr, p3.state)
-            p2.state.clean(state_old, acc_new)
+            p2.state.clean(acc_new)
             if acc_val == acc_new and state_old == p2.state:
               return p3.update(cont=acc_new, state=state_old)
             else:

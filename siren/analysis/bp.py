@@ -28,11 +28,8 @@ class AbsBPInitialized(AbsBPNode):
   
 @dataclass(frozen=True)
 class AbsBPUnk(AbsBPNode):
-  parents: Set[AbsRandomVar]
-
   def __str__(self):
-    return f'AbsBPUnk({self.parents})'
-
+    return f'AbsBPUnk()'
 
 class AbsBPState(AbsSymState):
   ###
@@ -68,6 +65,16 @@ class AbsBPState(AbsSymState):
         self.set_node(rv, AbsBPInitialized(new if rv_par == old else rv_par))
 
   def entry_join(self, rv: AbsRandomVar, other: 'AbsBPState') -> None:
+    def _make_unk(
+      parents1: Set[AbsRandomVar],
+      parents2: Set[AbsRandomVar],
+    ) -> None:
+      for rv_par in parents1:
+        self.set_dynamic(rv_par)
+      for rv_par in parents2:
+        other.set_dynamic(rv_par)
+      self.set_distr(rv, TopD())
+      self.set_node(rv, AbsBPUnk())
 
     match self.node(rv), other.node(rv):
       case AbsBPRealized(), AbsBPRealized():
@@ -75,7 +82,11 @@ class AbsBPState(AbsSymState):
       case AbsBPMarginalized(), AbsBPMarginalized():
         super().entry_join(rv, other)
       case AbsBPInitialized(self_par), AbsBPInitialized(other_par):
-        cdistr = join_distr(self.distr(rv), other.distr(rv))
+        cdistr = self.join_distr(self.distr(rv), other.distr(rv), other)
+
+        if isinstance(cdistr, TopD):
+          _make_unk(set(), set())
+          return
 
         parents = []
         for rv_par in cdistr.rvs():
@@ -89,10 +100,7 @@ class AbsBPState(AbsSymState):
           self.set_pv(rv, self.pv(rv) | other.pv(rv))
           self.set_node(rv, AbsBPInitialized(parents[0]))
         else:
-          self.set_node(rv, AbsBPUnk(set(parents)))
-      case AbsBPUnk(self_parents), AbsBPUnk(other_parents):
-        super().entry_join(rv, other)
-        self.set_node(rv, AbsBPUnk(self_parents | other_parents))
+          _make_unk(set(parents), set())
       case _, _:
         super().entry_join(rv, other)
 
@@ -104,8 +112,10 @@ class AbsBPState(AbsSymState):
             parents1 = set()
           case AbsBPInitialized(rv_par):
             parents1 = {rv_par}
-          case AbsBPUnk(parents):
-            parents1 = parents
+          case AbsBPUnk():
+            parents1 = set()
+          case _:
+            raise ValueError(f'{rv} is {self.node(rv)}')
         
         parents2 = set()
         match self.node(rv):
@@ -115,10 +125,12 @@ class AbsBPState(AbsSymState):
             parents2 = set()
           case AbsBPInitialized(rv_par):
             parents2 = {rv_par}
-          case AbsBPUnk(parents):
-            parents2 = parents
+          case AbsBPUnk():
+            parents2 = set()
+          case _:
+            raise ValueError(f'{rv} is {self.node(rv)}')
 
-        self.set_node(rv, AbsBPUnk(parents1 | parents2))
+        _make_unk(parents1, parents2)
 
   ### Symbolic Interface ###
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
@@ -148,7 +160,7 @@ class AbsBPState(AbsSymState):
       make_top = False
       for rv_par in parents:
         match self.node(rv_par):
-          case AbsBPUnk(_):
+          case AbsBPUnk():
             make_top = True
             break
           case _:
@@ -163,14 +175,11 @@ class AbsBPState(AbsSymState):
         # UnkD because we don't know which is the canonical parent
         self.set_distr(rv, UnkD(parents))
 
-        saved_parents = []
-
         for rv_par in parents:
           if not isinstance(self.node(rv_par), AbsBPRealized):
-            self.set_unk_node(rv_par)
-            saved_parents.append(rv_par)
+            self.set_dynamic(rv_par)
 
-        self.set_node(rv, AbsBPUnk(set(saved_parents)))
+        self.set_node(rv, AbsBPUnk())
         return rv
 
       # keep if conjugate, else sample it
@@ -184,7 +193,7 @@ class AbsBPState(AbsSymState):
             case AbsBPRealized():
               distribution = self.eval_distr(distribution)
               continue
-            case AbsBPUnk(_):
+            case AbsBPUnk():
               raise ValueError(f'{rv_par} is {self.node(rv_par)}')
             case _: # BPInitialized or BPMarginalized
               if _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
@@ -225,11 +234,10 @@ class AbsBPState(AbsSymState):
         else:
           self.value(rv_par)
           self.observe(rv, value)
-      case AbsBPUnk(parents):
+      case AbsBPUnk():
         # All of rv's parents might have been valued, so need to spread unk
-        for rv_par in parents:
-          self.set_unk_node(rv_par)
-          
+        # for rv_par in parents:
+        #   self.set_dynamic(rv_par)
         self.intervene(rv, AbsDelta(value, sampled=False))
           
   def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
@@ -252,10 +260,10 @@ class AbsBPState(AbsSymState):
         else:
           self.value(rv_par)
           self.marginalize(rv)
-      case AbsBPUnk(parents):        
-        for rv_par in parents:
-          self.marginalize(rv_par)
-          self.set_unk_node(rv_par)
+      # case AbsBPUnk():
+        # for rv_par in parents:
+        #   self.marginalize(rv_par)
+        #   self.set_dynamic(rv_par)
 
   ########################################################################
 
@@ -277,7 +285,7 @@ class AbsBPState(AbsSymState):
       match self.node(rv_par):
         case AbsBPRealized():
           pass
-        case AbsBPUnk(parents):
+        case AbsBPUnk():
           raise ValueError(f'{rv_par} is {self.node(rv_par)}')
         case _: # AbsBPInitialized or AbsBPMarginalized
           self.set_node(rv_par, AbsBPInitialized(rv_child))
@@ -309,7 +317,8 @@ class AbsBPState(AbsSymState):
         return False
       
   # Makes rv BPUnk and deal with side effects 
-  def set_unk_node(self, rv: AbsRandomVar) -> None:
+  def set_dynamic(self, rv: AbsRandomVar) -> None:
+    super_set_dynamic = super().set_dynamic
     nodes = set()
     def _set_unk_node(rv: AbsRandomVar) -> None:
       if rv in nodes:
@@ -323,19 +332,26 @@ class AbsBPState(AbsSymState):
         case AbsBPInitialized(rv_par):
           # Calling marginalize/value on I recurses on rv_par
           _set_unk_node(rv_par)
-        case AbsBPUnk(parents):
+        case AbsBPUnk():
+          pass
           # Could be any, including I, so should just recurse on parents
-          for rv_par in parents:
-            _set_unk_node(rv_par)
+          # for rv_par in parents:
+          #   _set_unk_node(rv_par)
+        case _:
+          raise ValueError(f'{rv} is {self.node(rv)}')
 
-      self.set_dynamic(rv)
+      super_set_dynamic(rv)
       match self.node(rv):
         case AbsBPInitialized(rv_par):
-          self.set_node(rv, AbsBPUnk({rv_par}))
-        case AbsBPUnk(parents):
-          self.set_node(rv, AbsBPUnk(parents))
+          _set_unk_node(rv_par)
+          self.set_node(rv, AbsBPUnk())
+        case AbsBPUnk():
+          self.set_node(rv, AbsBPUnk())
         case _:
-          self.set_node(rv, AbsBPUnk(set()))
-      self.set_distr(rv, UnkD(self.distr(rv).rvs()))
+          self.set_node(rv, AbsBPUnk())
+
+      for rv_par in self.distr(rv).rvs():
+        _set_unk_node(rv_par)
+      self.set_distr(rv, TopD())
 
     _set_unk_node(rv)

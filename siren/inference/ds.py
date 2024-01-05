@@ -117,6 +117,8 @@ class DSState(SymState):
                 canonical_parent = rv_par
                 has_parent = True
                 continue
+            case _:
+              raise ValueError(f'{rv_par} is {self.node(rv_par)}')
 
         self.value(rv_par)
         distribution = self.eval_distr(distribution)
@@ -169,6 +171,8 @@ class DSState(SymState):
             
         if len(self.children(rv)) > 0:
           self.graft(rv)
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
     
   ########################################################################
               
@@ -330,6 +334,8 @@ class DSState(SymState):
       case DSInitialized((rv_par, _)):
         self.graft(rv_par)
         self.do_marginalize(rv)
+      case _:
+        raise ValueError(f'{rv} is {self.node(rv)}')
 
   def prune(self, rv: RandomVar) -> None:
     match self.node(rv):
