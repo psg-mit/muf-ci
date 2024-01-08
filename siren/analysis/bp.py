@@ -157,19 +157,10 @@ class AbsBPState(AbsSymState):
         if rv_par not in parents:
           parents.append(rv_par)
 
-      make_top = False
-      for rv_par in parents:
-        match self.node(rv_par):
-          case AbsBPUnk():
-            make_top = True
-            break
-          case _:
-            continue
-
       # If any parent is BPUnk,
       # then rv and all ancestors are BPUnk
       # Because we don't know which parent is the canonical parent
-      if make_top:
+      if any([isinstance(self.node(rv_par), AbsBPUnk) for rv_par in parents]):
         pv = {name} if name is not None else set()
         self.set_pv(rv, pv)
         # UnkD because we don't know which is the canonical parent
@@ -202,6 +193,19 @@ class AbsBPState(AbsSymState):
                 continue
         self.value(rv_par)
         distribution = self.eval_distr(distribution)
+
+        if any([isinstance(self.node(rv_par), AbsBPUnk) for rv_par in parents]):
+          pv = {name} if name is not None else set()
+          self.set_pv(rv, pv)
+          # UnkD because we don't know which is the canonical parent
+          self.set_distr(rv, UnkD(parents))
+
+          for rv_par in parents:
+            if not isinstance(self.node(rv_par), AbsBPRealized):
+              self.set_dynamic(rv_par)
+
+          self.set_node(rv, AbsBPUnk())
+          return rv
 
       # all parents were sampled
       if len(distribution.rvs()) == 0:
@@ -298,6 +302,9 @@ class AbsBPState(AbsSymState):
       case AbsNormal(_), AbsNormal(_):
         return _update(conj.gaussian_conjugate(self, rv_par, rv_child))
       case UnkD(_), _:
+        self.set_dynamic(rv_par)
+        return False
+      case TopD(), _:
         self.set_dynamic(rv_par)
         return False
           # return True

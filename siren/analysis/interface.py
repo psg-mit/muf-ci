@@ -5,7 +5,7 @@ from siren.inference_plan import InferencePlan, DistrEnc
 from siren.grammar import *
 from siren.utils import is_abs_pair, is_abs_lst, get_abs_pair, get_abs_lst, fast_copy, match_rvs
 
-MAX_RVS = 1
+MAX_RVS = 4
 
 ED = TypeVar('ED', bound=AbsSymExpr | AbsSymDistr)
 OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
