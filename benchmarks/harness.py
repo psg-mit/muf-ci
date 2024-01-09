@@ -3,7 +3,7 @@ import os
 import json
 import subprocess
 import time
-from math import log10
+from math import log10, log
 import glob
 import itertools
 import numpy as np
@@ -41,8 +41,11 @@ INC = 1
 
 CWD = '..'
 
-def calc_error(true_x, x):
+def squared_error(true_x, x):
   return (true_x - x) ** 2
+
+def cross_entropy(true_x, x):
+  return -true_x * log(int(x) + 1e-10) - (1 - true_x) * log(1 - int(x) + 1e-10)
 
 def close_to_target(target, value):
   if value == 0:
@@ -98,7 +101,7 @@ def flatten_nested(structure):
   return flattened_list
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_siren(file, p, method, true_vars, error_func):
+def run_siren(benchmark, file, p, method, true_vars, error_func):
   # run siren file
   cmd = f'{sys.executable} siren.py {file} -m {method} -p {p}'
   
@@ -111,7 +114,6 @@ def run_siren(file, p, method, true_vars, error_func):
     print(output)
     return None
   
-
   program_output = {}
 
   # parse output
@@ -142,14 +144,28 @@ def run_siren(file, p, method, true_vars, error_func):
   # parse line into dict
   split_output = flatten_nested(split_output)
 
+  original_error_fun = error_func
+
   for true_var, out in zip(true_vars, split_output):
     var, true_vals = true_var
+
+    # exception, it's easier to do this here
+    if benchmark == 'slds' and var == 's':
+      error_func = 'ce'
+    else:
+      error_func = original_error_fun
 
     if error_func == 'mse':
       # compute MSE error
       error = 0
       for true_val, val in zip(true_vals, out):
-        error += calc_error(true_val, val) 
+        error += squared_error(true_val, val)
+      error /= len(true_vals)
+    elif error_func == 'ce':
+      # compute cross entropy error
+      error = 0
+      for true_val, val in zip(true_vals, out):
+        error += cross_entropy(true_val, val)
       error /= len(true_vals)
     else:
       # print('compute max error')
@@ -157,20 +173,43 @@ def run_siren(file, p, method, true_vars, error_func):
       error = 0
       for true_val, val in zip(true_vals, out):
         # print(true_val, val)
-        error = max(error, calc_error(true_val, val))
+        error = max(error, squared_error(true_val, val))
 
     program_output[var] = error
 
   return eval_time, program_output
 
 # Run experiments for each given number of particles
-def run_particles(files, n, particles, methods, true_vars, results_file, error_func):
+def run_particles(benchmark, files, n, particles, methods, true_vars, results_file, error_func):
+  if len(files) == 0:
+    # If no files specified, get all files in programs directory
+    files = []
+    for file in os.listdir(os.path.join(benchmark, 'programs')):
+      if file.endswith('.si'):
+        files.append(file)
+
+    # harness in benchmarks directory already
+    for file in files:
+      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
+        raise Exception(f'File not found: {file}')
+
+    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
+    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
+    files = list(files)
+    
   for method in methods:
     print(f'Running {method}...')
 
+    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
+    files = list(files)
+    print(files)
+
     for file in files:
       plan_id = get_plan_id(file)
-
+      if plan_id is None:
+        print(f'Invalid file: {file}')
+        continue
+      
       for p in particles:
         print(f'Running with {p} particles')
 
@@ -179,7 +218,7 @@ def run_particles(files, n, particles, methods, true_vars, results_file, error_f
 
           run_outputs = None
           while run_outputs is None:
-            run_outputs = run_siren(file, p, method, true_vars, error_func)
+            run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
             if run_outputs is not None:
               break
           t, program_output = run_outputs
@@ -268,7 +307,7 @@ def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, 
 
               run_outputs = None
               while run_outputs is None:
-                run_outputs = run_siren(file, p, method, true_vars, error_func)
+                run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
                 if run_outputs is not None:
                   break
               t, program_output = run_outputs
@@ -373,7 +412,7 @@ def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, 
 
             run_outputs = None
             while run_outputs is None:
-              run_outputs = run_siren(file, p, method, true_vars, error_func)
+              run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
               if run_outputs is not None:
                 break
             t, program_output = run_outputs
@@ -700,7 +739,6 @@ if __name__ == '__main__':
             writer.writerow(fieldnames)
 
         run_runtime(benchmark, files, n, plan_config, target_runtime, methods, true_vars, results_file, args.error_func)
-
       elif args.accuracy:
         target_errors = config['target_errors']
         plan_config = config['plans']
@@ -736,7 +774,7 @@ if __name__ == '__main__':
             fieldnames += [var[0] for var in true_vars]
             writer.writerow(fieldnames)
 
-        run_particles(files, n, particles, methods, true_vars, results_file, args.error_func)
+        run_particles(benchmark, files, n, particles, methods, true_vars, results_file, args.error_func)
     elif args.subparser_name == 'analyze':
       filename = os.path.join(benchmark, args.output, 'statistics.json')
 
@@ -788,7 +826,7 @@ if __name__ == '__main__':
           fieldnames += [var[0] for var in true_vars]
           writer.writerow(fieldnames)
 
-        run_particles([file], n, [particles], methods, true_vars, results_file, args.error_func)
+        run_particles(benchmark, [file], n, [particles], methods, true_vars, results_file, args.error_func)
 
       # get median accuracy of each variable and median runtime without any annotations with 
       # 1000 particles
