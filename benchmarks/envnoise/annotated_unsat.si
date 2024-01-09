@@ -17,7 +17,8 @@ in
 let data = List.map(preprocess_data, File.read("programs/data/data.csv")) in
 
 let sample invq <- gamma(1.,1.) in
-let symbolic invr <- gamma(1.,1.) in
+(* invr would be annotated as symbolic *)
+let invr <- gamma(1.,1.) in
 
 let (xs,invq,invr) = 
   fold(step,data,([0.],invq,invr)) in
