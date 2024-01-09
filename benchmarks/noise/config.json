@@ -170,7 +170,7 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true,
+        "ds": false,
         "bp": true
       }
     },
