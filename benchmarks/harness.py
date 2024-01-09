@@ -196,11 +196,13 @@ def run_particles(benchmark, files, n, particles, methods, true_vars, results_fi
     files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
     files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
     files = list(files)
+
+  all_files = files
     
   for method in methods:
     print(f'Running {method}...')
 
-    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
+    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], all_files)
     files = list(files)
     print(files)
 
@@ -697,6 +699,8 @@ if __name__ == '__main__':
   benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
   methods = [m.strip() for m in args.methods.split(',')] if args.methods is not None else DEFAULT_METHODS
 
+  print('Start time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
+
   for benchmark in benchmarks:
     print('Benchmark: {}'.format(benchmark))
 
@@ -861,3 +865,5 @@ if __name__ == '__main__':
     else:
       print('Invalid subcommand')
       exit(1)
+
+  print('End time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
