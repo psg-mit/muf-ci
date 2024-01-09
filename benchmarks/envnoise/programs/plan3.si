@@ -2,9 +2,8 @@
 x - symbolic
 env - symbolic
 other - symbolic
-invq - symbolic
+invq - sample
 invr - sample
-x0 - sample
 *)
 
 val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
@@ -25,10 +24,9 @@ in
 
 let data = List.map(preprocess_data, File.read("data/data.csv")) in
 
-let symbolic invq <- gamma(1.,1.) in
+let sample invq <- gamma(1.,1.) in
 let sample invr <- gamma(1.,1.) in
-let sample x0 <- gaussian(0.,1.) in
 
 let (xs,invq,invr) = 
-  fold(step,data,([x0],invq,invr)) in
+  fold(step,data,([0.],invq,invr)) in
 (List.tl(List.rev(xs)),1/invq,1/invr)
