@@ -30,12 +30,12 @@
       "6": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0015349388122558594
+        "analysis_time": 0.0014870166778564453
       },
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0010921955108642578
+        "analysis_time": 0.0015859603881835938
       }
     },
     "n_true_satisfied": 2,
@@ -74,12 +74,12 @@
       "6": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.001483917236328125
+        "analysis_time": 0.001399993896484375
       },
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0009253025054931641
+        "analysis_time": 0.0009059906005859375
       }
     },
     "n_true_satisfied": 2,
@@ -122,7 +122,7 @@
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0012738704681396484
+        "analysis_time": 0.0027871131896972656
       }
     },
     "n_true_satisfied": 1,

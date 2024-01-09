@@ -119,6 +119,9 @@
   "n_x": 2,
   "legend_width": 2,
   "error_func": "se",
+  "known_enc": {
+    "xt": "sample"
+  },
   "plans": {
     "0": {
       "plan": {
