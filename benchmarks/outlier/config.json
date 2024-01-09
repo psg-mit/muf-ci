@@ -152,7 +152,7 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true,
+        "ds": false,
         "bp": false
       }
     },
@@ -164,7 +164,7 @@
       },
       "satisfiable": {
         "ssi": true,
-        "ds": true,
+        "ds": false,
         "bp": true
       }
     },
