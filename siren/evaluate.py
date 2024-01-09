@@ -345,7 +345,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
           p3 = _evaluate(p2.update(cont=false))
           if not p3.finished:
             return p3.update(cont=IfElse(p1.cont, p2.cont, p3.cont), finished=False)
-          return p3.update(cont=Ite(cond_val, then_val, p3.final_expr), finished=True)
+          return p3.update(cont=p3.state.ex_ite(cond_val, then_val, p3.final_expr), finished=True)
         else:
           cond_value = p1.state.value_expr(p1.final_expr)
           match cond_value:

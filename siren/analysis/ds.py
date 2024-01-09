@@ -418,7 +418,7 @@ class AbsDSState(AbsSymState):
           case AbsDSRealized():
             d = self.distr(rv_par)
             # simplify delta
-            if not isinstance(d, Delta):
+            if not isinstance(d, AbsDelta):
               raise ValueError(d)
             # convert to marginal
             self.eval_entry(rv)

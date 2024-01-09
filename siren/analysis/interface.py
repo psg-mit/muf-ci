@@ -690,6 +690,11 @@ class AbsSymState(object):
         cond = self.mean(cond)
         true = self.mean(true)
         false = self.mean(false)
+      case UnkE(parents):
+        for parent in parents:
+          self.marginalize(parent)
+      case TopE():
+        return
       case _:
         raise ValueError(expr)
   

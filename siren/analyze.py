@@ -349,7 +349,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
           p2 = _evaluate(p1.update(cont=true))
           then_val = p2.final_expr
           p3 = _evaluate(p2.update(cont=false))
-          return p3.update(cont=AbsIte(cond_val, then_val, p3.final_expr))
+          return p3.update(cont=p3.state.ex_ite(cond_val, then_val, p3.final_expr))
         else:
           cond_value = p1.state.value_expr(p1.final_expr)
           match cond_value:

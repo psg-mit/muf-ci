@@ -94,7 +94,13 @@ class AbsBPState(AbsSymState):
             parents.append(rv_par)
 
         if len(parents) == 0:
-          raise ValueError(f'{rv} is {self.node(rv)}')
+          # Parent is actually realized
+          if self_par == other_par:
+            self.set_distr(rv, cdistr)
+            self.set_pv(rv, self.pv(rv) | other.pv(rv))
+            self.set_node(rv, AbsBPInitialized(self_par))
+          else:
+            raise ValueError(f'{rv} is {self.node(rv)}')
         elif len(parents) == 1:
           self.set_distr(rv, cdistr)
           self.set_pv(rv, self.pv(rv) | other.pv(rv))
