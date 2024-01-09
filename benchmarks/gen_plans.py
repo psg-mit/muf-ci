@@ -4,15 +4,18 @@ import itertools
 import json
 
 benchmarks = [
-  'gaussianmixture',
+  # 'gaussianmixture',
   'envnoise',
-  'mixasymprior',
+  # 'mixasymprior',
   'noise',
   'outlier',
   # 'serosurvey',
   # 'slam',
-  'smsbehavior',
+  # 'smsbehavior',
   'gtree',
+  'outlierheavy',
+  'slds',
+  'runner',
 ]
 
 ANNOTATIONS = ['symbolic', 'sample']
