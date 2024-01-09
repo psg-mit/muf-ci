@@ -1,0 +1,2292 @@
+{
+  "benchmark": "slds",
+  "true_vars": [
+    [
+      "trans_prob0",
+      [
+        2.909414567153178
+      ]
+    ],
+    [
+      "trans_prob1",
+      [
+        -1.788736827875175
+      ]
+    ],
+    [
+      "s",
+      [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    [
+      "x",
+      [
+        0.08177023595376033,
+        -0.4188408054199608,
+        0.8438027871169154,
+        0.7148311195757647,
+        1.1453282242011977,
+        0.02896876781766089,
+        -0.4822257053389658,
+        -1.7519786607753436,
+        -2.3566425296621802,
+        -3.6055878748714747,
+        -2.4567677364499065,
+        -3.0515867433355734,
+        -3.119845330434611,
+        -2.6305797465789014,
+        -2.6420353552212132,
+        -2.701086525953057,
+        -2.6251865392013665,
+        -2.7161212865620508,
+        -2.361101881354245,
+        -2.0736043551857293,
+        -1.9139021082398895,
+        -1.864693029651825,
+        -1.6195115764849792,
+        -1.4781442133763787,
+        -0.270171540099752,
+        0.9285483448486465,
+        2.725743834348471,
+        2.6326952101537353,
+        2.277583209077219,
+        2.423789962765049,
+        2.502550312339507,
+        2.509761432815278,
+        2.548876672934602,
+        2.5941615084654495,
+        2.7206910052306226,
+        2.646955521774373,
+        1.3363413642593833,
+        1.2169105795632875,
+        1.0489284509391992,
+        3.019858861457333,
+        2.9652957889638913,
+        2.9241934544378063,
+        3.1431035696118146,
+        3.0147885511256707,
+        3.366740726167163,
+        2.9909015587372494,
+        2.9901831893509874,
+        3.135657627780061,
+        3.1639177873710067,
+        3.033551396399123,
+        1.953651530369909,
+        1.3352922924074067,
+        1.3066707147792405,
+        1.5000184624163422,
+        1.50354015863434,
+        1.2819181076602466,
+        1.0483711761922812,
+        0.9236136925939511,
+        1.0658576268367936,
+        0.9092777042779043,
+        0.8286882300057946,
+        0.8289938429840746,
+        0.5879233818562553,
+        0.6967495157810888,
+        0.9747419669518463,
+        0.9299484309438749,
+        1.0027668530273175,
+        1.3003982301232122,
+        0.48180490042942037,
+        -1.238962243719898,
+        -1.2511670979077503,
+        0.37050682898951415,
+        1.60768262239998,
+        3.7785026366642613,
+        1.7525559347569684,
+        1.7664845845966053,
+        2.5300088197249524,
+        2.217433755032374,
+        1.7186358455885484,
+        0.23397132948950317,
+        0.8313585336136544,
+        1.538637515799931,
+        1.4043770111821186,
+        1.4604033607734137,
+        1.3562832374100402,
+        1.3792043773887595,
+        1.5851483581290462,
+        1.6301872088230702,
+        1.6864256959157007,
+        1.8524359616614168,
+        2.255110361725384,
+        2.386909050821558,
+        2.2298530973990243,
+        2.331149352746003,
+        2.2797624547049393,
+        2.233777373798084,
+        2.139219877457215,
+        2.2140955065919874,
+        2.2249098456560463,
+        2.3662665528419145
+      ]
+    ]
+  ],
+  "base_y": 4.7,
+  "base_x": 6,
+  "n_y": 2,
+  "n_x": 2,
+  "legend_width": 3,
+  "error_func": "se",
+  "plans": {
+    "0": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "1": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "2": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "3": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "4": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "5": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "6": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "7": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "8": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "9": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "10": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "11": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "12": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "13": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "14": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "15": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "16": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "17": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "18": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "19": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "20": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "21": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "22": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "23": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "24": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "25": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "26": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "27": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "28": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "29": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "30": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "31": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "32": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "33": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "34": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "35": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "36": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "37": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "38": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "39": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "40": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "41": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "42": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "43": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "44": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "45": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "46": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "47": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "48": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "49": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "50": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "51": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "52": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "53": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "54": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "55": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "56": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "57": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "58": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "59": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "60": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "61": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "62": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "63": {
+      "plan": {
+        "s": "symbolic",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "64": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "65": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "66": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "67": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "68": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "69": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "70": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "71": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "72": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "73": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "74": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "75": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "76": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "77": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "78": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "79": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": true
+      }
+    },
+    "80": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "81": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "82": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "83": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "84": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "85": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "86": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "87": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "88": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "89": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "90": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "91": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "92": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "93": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "94": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "95": {
+      "plan": {
+        "s": "sample",
+        "x1": "symbolic",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": true
+      }
+    },
+    "96": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "97": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "98": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "99": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "100": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "101": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "102": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "103": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "104": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "105": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "106": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "107": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "108": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "109": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": false,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "110": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
+    },
+    "111": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "symbolic",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": true
+      }
+    },
+    "112": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "113": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "114": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "115": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "116": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "117": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "118": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "119": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "symbolic",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "120": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "121": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "122": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "123": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "symbolic",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "124": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "125": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "symbolic",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "126": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": false
+      }
+    },
+    "127": {
+      "plan": {
+        "s": "sample",
+        "x1": "sample",
+        "x0": "sample",
+        "trans_prob0": "sample",
+        "trans_prob1": "sample",
+        "inv_obs_noise0": "sample",
+        "inv_obs_noise1": "sample"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": true,
+        "bp": true
+      }
+    }
+  },
+  "variables": [
+    "s",
+    "x1",
+    "x0",
+    "trans_prob0",
+    "trans_prob1",
+    "inv_obs_noise0",
+    "inv_obs_noise1"
+  ]
+}
