@@ -1,0 +1,25 @@
+val preprocess_data = fun entry -> List.hd(List.tl(entry)) in
+
+val step = fun (obs, (xs,invq,invr)) ->
+  let x_i = List.hd(xs) in
+  let sample x <- gaussian(x_i,1/invq) in
+  let sample env <- bernoulli(0.0001) in
+  (* If never use other, then invr can be symbolic *)
+  let () = if false then
+      let sample other <- beta(1,1) in
+      observe(gaussian(x, (1/invr) + 1000*other),obs) 
+    else
+      observe(gaussian(x,1/invr),obs)
+  in 
+  let () = resample() in
+  (cons(x, xs),invq,invr)
+in
+
+let data = List.map(preprocess_data, File.read("data/data.csv")) in
+
+let sample invq <- gamma(1.,1.) in
+let symbolic invr <- gamma(1.,1.) in
+
+let (xs,invq,invr) = 
+  fold(step,data,([0.],invq,invr)) in
+(List.tl(List.rev(xs)),1/invq,1/invr)

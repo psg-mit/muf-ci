@@ -582,6 +582,20 @@
         "ds": true,
         "bp": true
       }
+    },
+    "32": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "ssi": true,
+        "ds": false,
+        "bp": false
+      }
     }
   },
   "variables": [
