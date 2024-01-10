@@ -3,7 +3,7 @@ import numpy as np
 n = 100
 
 q = 2.45
-r = 1
+r = 2.45
 
 print(f'q: {q}\nr: {r}')
 
@@ -21,9 +21,9 @@ for i in range(n):
   env = i == j
   if env:
     other = np.random.uniform(900, 1000)
-    z = np.random.normal(x, np.sqrt(q + other))
+    z = np.random.normal(x, np.sqrt(r + other))
   else:
-    z = np.random.normal(x, np.sqrt(q))
+    z = np.random.normal(x, np.sqrt(r))
 
   prev_x = x
 

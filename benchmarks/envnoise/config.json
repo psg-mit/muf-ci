@@ -115,7 +115,7 @@
     [
       "r",
       [
-        1
+        2.45
       ]
     ]
   ],
@@ -125,10 +125,10 @@
     "r": 0.01959294068263657
   },
   "base_y": 3,
-  "base_x": 3,
+  "base_x": 4,
   "n_y": 1,
   "n_x": 3,
-  "legend_width": 2,
+  "legend_width": 4,
   "error_func": "se",
   "known_enc": {
     "other": "sample",
