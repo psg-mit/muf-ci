@@ -4,7 +4,8 @@ val step = fun (obs, (xs,invq,invr)) ->
   let x_i = List.hd(xs) in
   let sample x <- gaussian(x_i,1/invq) in
   let sample env <- bernoulli(0.0001) in
-  let () = if env then
+  (* If never use other, then invr can be symbolic *)
+  let () = if false then
       let sample other <- beta(1,1) in
       observe(gaussian(x, (1/invr) + 1000*other),obs) 
     else
@@ -17,8 +18,7 @@ in
 let data = List.map(preprocess_data, File.read("programs/data/data.csv")) in
 
 let sample invq <- gamma(1.,1.) in
-(* invr would be annotated as symbolic *)
-let invr <- gamma(1.,1.) in
+let symbolic invr <- gamma(1.,1.) in
 
 let (xs,invq,invr) = 
   fold(step,data,([0.],invq,invr)) in
