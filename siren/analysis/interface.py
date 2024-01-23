@@ -123,15 +123,6 @@ class AbsSymState(object):
     # remove unused variables
     for rv in self.vars():
       if rv not in used_vars:
-        # subst deltas out
-        d = self.distr(rv)
-        if isinstance(d, AbsDelta):
-          for rv2 in self.vars():
-            self.set_distr(rv2, self.distr(rv2).subst_rv(rv, d.v))
-          
-          for x, e in self.ctx.context.items():
-            self.ctx.context[x] = e.subst_rv(rv, d.v)
-
         del self.state[rv]
 
   # Renames old rv to new rv in the state, ctx, and given expr
@@ -783,11 +774,14 @@ class AbsSymState(object):
 
   def set_pv(self, rv: AbsRandomVar, pv: Set[Identifier]) -> None:
     self.set_entry(rv, pv=pv)
+
+  def remove_unused(self, rv: AbsRandomVar) -> None:
+    del self.state[rv]
       
   # Returns the set of random variables referenced in the entries of each variable
   # Base symbolic state only needs care about distribution of each variable
   def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
-    return set().union(*(self.eval_distr(self.distr(rv)).rvs() for rv in rvs))
+    return set().union(*(self.distr(rv).rvs() for rv in rvs))
 
   # Renames rv to new in the entries of symbolic state
   # Base symbolic state only needs care about distribution of each variable

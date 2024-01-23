@@ -17,6 +17,29 @@ class AbsSSIState(AbsSymState):
   def __str__(self):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsSSIState(\n\t{s}\n)" if s else "AbsSSIState()"
+  
+  def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
+    # Don't need to remember the Deltas because always eval before anything
+
+    referenced_rvs = set()
+
+    for rv in rvs:
+      parents = self.distr(rv).rvs()
+      for rv_par in parents:
+        if rv_par in referenced_rvs:
+          continue
+        else:
+          d = self.distr(rv_par)
+          if isinstance(d, AbsDelta):
+            for rv2 in self.vars():
+              self.set_distr(rv2, self.distr(rv2).subst_rv(rv_par, d.v))
+            
+            for x, e in self.ctx.context.items():
+              self.ctx.context[x] = e.subst_rv(rv_par, d.v)
+          else:
+            referenced_rvs.add(rv_par)
+
+    return referenced_rvs
 
   ### Symbolic Interface ###
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
