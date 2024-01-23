@@ -18,7 +18,7 @@
       "3": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.001650094985961914
+        "analysis_time": 0.0015528202056884766
       },
       "4": {
         "true_satisfied": false,
@@ -35,7 +35,7 @@
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0008800029754638672
+        "analysis_time": 0.0008051395416259766
       }
     },
     "n_true_satisfied": 2,
@@ -74,12 +74,12 @@
       "6": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0013911724090576172
+        "analysis_time": 0.0013818740844726562
       },
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0009312629699707031
+        "analysis_time": 0.0008740425109863281
       }
     },
     "n_true_satisfied": 2,
@@ -102,12 +102,12 @@
       "2": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.012032747268676758
+        "analysis_time": 0.002209186553955078
       },
       "3": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0046482086181640625
+        "analysis_time": 0.0016942024230957031
       },
       "4": {
         "true_satisfied": false,
@@ -120,12 +120,12 @@
       "6": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.003856182098388672
+        "analysis_time": 0.0013129711151123047
       },
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0008649826049804688
+        "analysis_time": 0.0008358955383300781
       }
     },
     "n_true_satisfied": 4,

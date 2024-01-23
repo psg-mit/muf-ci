@@ -18,7 +18,7 @@
       "3": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0031778812408447266
+        "analysis_time": 0.0030870437622070312
       },
       "4": {
         "true_satisfied": false,
@@ -35,7 +35,7 @@
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.004951000213623047
+        "analysis_time": 0.0025870800018310547
       },
       "8": {
         "true_satisfied": false,
@@ -52,7 +52,7 @@
       "11": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0026950836181640625
+        "analysis_time": 0.0071887969970703125
       },
       "12": {
         "true_satisfied": false,
@@ -69,7 +69,7 @@
       "15": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0035169124603271484
+        "analysis_time": 0.001399993896484375
       }
     },
     "n_true_satisfied": 4,
@@ -144,7 +144,7 @@
       "15": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0014710426330566406
+        "analysis_time": 0.0013659000396728516
       }
     },
     "n_true_satisfied": 1,
@@ -171,7 +171,7 @@
       "3": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.002916097640991211
+        "analysis_time": 0.0029609203338623047
       },
       "4": {
         "true_satisfied": false,
@@ -188,7 +188,7 @@
       "7": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.002490997314453125
+        "analysis_time": 0.0023658275604248047
       },
       "8": {
         "true_satisfied": false,
@@ -205,7 +205,7 @@
       "11": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0024912357330322266
+        "analysis_time": 0.002360105514526367
       },
       "12": {
         "true_satisfied": false,
@@ -222,7 +222,7 @@
       "15": {
         "true_satisfied": true,
         "infer_satisfied": true,
-        "analysis_time": 0.0013408660888671875
+        "analysis_time": 0.0012292861938476562
       }
     },
     "n_true_satisfied": 4,
