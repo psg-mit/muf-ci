@@ -18,14 +18,14 @@ x0 = 0
 
 prev_x = x0
 for i in range(n):
-  x = np.random.normal(f * prev_x, np.sqrt(q))
+  x = np.random.normal(prev_x, np.sqrt(q))
 
   env = i == j
   if env:
     other = np.random.uniform(900, 1000)
-    z = np.random.normal(h * x, np.sqrt(r + other))
+    z = np.random.normal(x, np.sqrt(r + other))
   else:
-    z = np.random.normal(h * x, np.sqrt(r))
+    z = np.random.normal(x, np.sqrt(r))
 
   prev_x = x
 
