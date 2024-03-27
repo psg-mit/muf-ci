@@ -154,6 +154,18 @@
         "ssi": true
       }
     },
+    "3": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "dynamic"
+      },
+      "satisfiable": {
+        "ssi": true
+      }
+    },
     "4": {
       "plan": {
         "x": "sample",
