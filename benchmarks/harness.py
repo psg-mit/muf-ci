@@ -671,7 +671,6 @@ def analyze(benchmark, files, methods, variables, plans, results):
   return results
   
 if __name__ == '__main__':
-  sys.setrecursionlimit(5000)
   p = argparse.ArgumentParser()
   p.add_argument('--benchmark', '-b', type=str, required=False)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
