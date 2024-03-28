@@ -9,6 +9,7 @@ from siren import parser, evaluate, analyze
 from siren.inference import SSIState, DSState, BPState
 from siren.analysis import AbsSSIState, AbsDSState, AbsBPState
 from siren.inference_plan import runtime_inference_plan
+import sys
 
 class methods(Enum):
   ssi = 'ssi'
@@ -24,6 +25,7 @@ method_states = {
 }
 
 def main():
+  sys.setrecursionlimit(5000)
   p = argparse.ArgumentParser()
   p.add_argument('filename', type=str)
   p.add_argument('--verbose', '-v', action='store_true')
