@@ -11,6 +11,8 @@ print(f'q: {q}\nr: {r}')
 
 with open('data.csv', 'w') as out:
   out.write('true_x, obs\n')
+with open('true_x.csv', 'w') as out:
+  out.write('true_x\n')
 
 # j = np.random.randint(0, n)
 j = 200
@@ -32,3 +34,5 @@ for i in range(n):
 
   with open('data.csv', 'a') as out:
     out.write(str(x) + ', ' + str(z) + '\n')
+  with open('true_x.csv', 'a') as out:
+    out.write(str(x) + ',\n')
