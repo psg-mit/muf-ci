@@ -9,7 +9,6 @@ val step = fun (obs, (xs,invq,invr)) ->
   let () = resample() in
   (cons(x, xs),invq,invr)
 in
-
 let data = List.map(preprocess_data, File.read("data/data.csv")) in
 
 let invq <- gamma(1.,1.) in
