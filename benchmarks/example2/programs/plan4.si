@@ -5,7 +5,7 @@ val step = fun (obs, (xs,invq,invr)) ->
   let sample env <- bernoulli(0.0001) in
   let sample other <- gamma(1,1) in
   let v = if env then (1/invr) + (1/other) else (1/invr) in
-  let () = observe(gaussian(x,v),obs) in
+  let () = observe(gaussian(2*x,v),obs) in
   let () = resample() in
   (cons(x, xs),invq,invr)
 in

@@ -26,9 +26,9 @@ for i in range(n):
   env = i == j
   if env:
     other = np.random.uniform(900, 1000)
-    z = np.random.normal(x, np.sqrt(r + other))
+    z = np.random.normal(h*x, np.sqrt(r + other))
   else:
-    z = np.random.normal(x, np.sqrt(r))
+    z = np.random.normal(h*x, np.sqrt(r))
 
   prev_x = x
 
