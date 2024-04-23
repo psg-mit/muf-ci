@@ -15,23 +15,19 @@ import ast
 BENCHMARK_DIR = 'benchmarks'
 
 DEFAULT_BENCHMARKS = [
-  # 'gaussianmixture',
   'envnoise',
   'noise',
-  # 'smsbehavior',
   'outlier',
-  # 'mixasymprior',
   'gtree',
   'outlierheavy',
   'slds',
   'runner',
+  'radar',
 ]
 
 DEFAULT_METHODS = [
   'ssi',
   'ds',
-  # 'ft',
-  # 'dis',
   'bp',
 ]
 
