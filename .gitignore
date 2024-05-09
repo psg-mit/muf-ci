@@ -21,3 +21,4 @@ benchmarks/*/all_programs/*.ml
 __pycache__
 .mypy_cache
 .pytest_cache
+.old/

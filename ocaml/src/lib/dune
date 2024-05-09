@@ -1,4 +1,0 @@
-(library
- (name siren)
- (public_name siren)
- (libraries probzelus))
