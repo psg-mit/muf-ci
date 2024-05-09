@@ -113,10 +113,10 @@
       ]
     ]
   ],
-  "base_y": 5,
-  "base_x": 6,
+  "base_y": 3,
+  "base_x": 4,
   "n_y": 1,
-  "n_x": 3,
+  "n_x": 2,
   "legend_width": 4,
   "error_func": "se",
   "plans": {
@@ -168,5 +168,10 @@
   "variables": [
     "b",
     "a"
-  ]
+  ],
+  "default": {
+    "ssi": "0",
+    "ds": "2",
+    "bp": "0"
+  }
 }

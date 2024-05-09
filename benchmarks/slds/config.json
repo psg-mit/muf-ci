@@ -240,7 +240,7 @@
   "base_x": 4,
   "n_y": 2,
   "n_x": 3,
-  "legend_width": 2,
+  "legend_width": 3,
   "error_func": "se",
   "plans": {
     "0": {
@@ -2300,5 +2300,10 @@
     "trans_prob1",
     "inv_obs_noise0",
     "inv_obs_noise1"
-  ]
+  ],
+  "default": {
+    "ssi": "115",
+    "ds": "115",
+    "bp": "79"
+  }
 }

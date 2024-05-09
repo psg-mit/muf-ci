@@ -113,11 +113,11 @@
       ]
     ]
   ],
-  "base_y": 4.5,
-  "base_x": 6,
+  "base_y": 3,
+  "base_x": 4,
   "n_y": 1,
   "n_x": 2,
-  "legend_width": 2,
+  "legend_width": 4,
   "error_func": "se",
   "plans": {
     "0": {
@@ -226,5 +226,9 @@
     "outlier_prob": 0.00023201050280420273,
     "xt": 0.06820551060861771
   },
-  "target_runtime": 71.49667620658875
+  "default": {
+    "ssi": "6",
+    "ds": "6",
+    "bp": "3"
+  }
 }

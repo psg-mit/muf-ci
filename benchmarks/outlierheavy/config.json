@@ -113,8 +113,8 @@
       ]
     ]
   ],
-  "base_y": 4.5,
-  "base_x": 6,
+  "base_y": 3,
+  "base_x": 4,
   "n_y": 1,
   "n_x": 2,
   "legend_width": 2,
@@ -224,5 +224,9 @@
     "xt",
     "is_outlier",
     "outlier_prob"
-  ]
+  ],
+  "default": {
+    "ssi": "6",
+    "ds": "6"
+  }
 }

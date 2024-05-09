@@ -422,11 +422,11 @@
       ]
     ]
   ],
-  "base_y": 4.7,
-  "base_x": 6,
-  "n_y": 2,
-  "n_x": 2,
-  "legend_width": 3,
+  "base_y": 3,
+  "base_x": 4,
+  "n_y": 1,
+  "n_x": 4,
+  "legend_width": 4,
   "error_func": "se",
   "known_enc": {
     "x": "sample"
@@ -646,5 +646,9 @@
     "sy",
     "x",
     "y"
-  ]
+  ],
+  "default": {
+    "ssi": "3",
+    "bp": "11"
+  }
 }
