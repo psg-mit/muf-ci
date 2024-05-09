@@ -7,15 +7,7 @@ $ git clone https://github.com/psg-mit/siren
 $ cd siren
 ```
 
-### Docker (Recommended)
-We also provide a Docker file to build an image. The artifact was tested with Docker Desktop v4.30.0. 
-```bash
-$ docker build -t siren:latest .
-$ docker run -it siren
-```
-
-### From Source
-This software was tested on M1 MacBook and requires Python >= 3.10. To install dependencies:
+This software requires Python >= 3.10. To install dependencies:
 ```bash
 $ pip install -r requirements.txt
 ```
