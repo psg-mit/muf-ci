@@ -1,29 +1,67 @@
 # Siren
+Siren is a first-order functional probabilistic programming language, implemented with the hybrid inference interface, with support for inference plans. Distributions encoding annotations can be added to random variables to select the representation of the variable's distribution to be used during inference. Siren is also equipped with the inference plan satisfiability analysis, which statically infers if the annotated inference plan is satisfiable. 
 
-## Run
+## Install
 ```bash
-python siren.py path/to/program.si -m {method} -p {particles}
-python siren.py path/to/program.si -m {method} -p {particles} --analyze
-python siren.py path/to/program.si -m {method} --analyze-only
+$ git clone https://github.com/psg-mit/siren
+$ cd siren
 ```
 
-## Requirements
-`>= Python3.10`
-
-## Benchmarking
-Inside `benchmarks` folder,
+### Docker (Recommended)
+We also provide a Docker file to build an image. The artifact was tested with Docker Desktop v4.30.0. 
 ```bash
-python gen_plans.py
-python harness.py check
-python harness.py analyze
-python harness.py baseline
-python harness.py run --accuracy -n 100
-python visualize.py
+$ docker build -t siren:latest .
+$ docker run -it siren
 ```
 
-## Todos + Nice to haves
-- Given $X_i \leftarrow Gamma(a_i, b)$ and X_i iid., then $\sum X_i \leftarrow Gamma(\sum a_i, b)$
-- Given $X \leftarrow Gamma(a, b)$ and $c$ a constant, then $cX \leftarrow Gamma(a, b/c)$
-- If X ~ Gamma(α, θ) and Y ~ Gamma(β, θ) are independently distributed, then X/(X + Y) has a beta distribution with parameters α and β, and X/(X + Y) is independent of X + Y, which is Gamma(α + β, θ)-distributed.
-- SSI MCMC
-- Ocaml implementation has a bug where when marginalizing at the end of inference, the engine always samples the resulting RVs because it thinks it has a parent of the mixture distribution formed. Likely a result of the Mixture random variable hack. 
+### From Source
+This software was tested on M1 MacBook and requires Python >= 3.10. To install dependencies:
+```bash
+$ pip install -r requirements.txt
+```
+
+## Quickstart
+Here is an example of a Siren modeling a Kalman filter:
+```ocaml
+val make_observations = fun (yobs, xs) ->
+  let pre_x = List.hd(xs) in
+  let sample x <- gaussian(pre_x, 1.) in
+  let () = observe(gaussian(x, 1.), yobs) in
+
+  let () = resample() in
+  cons(x, xs)
+in
+
+let data = List.range(1, 101) in
+
+let x0 = 0 in
+let xs = fold(make_observations, data, [x0]) in
+List.rev(xs)
+```
+The program iterates over a range of of values from 1 to 100 (inclusive) as the observed data. The variable `x` is annotated with `sample` to indicate `x` should be represented as samples during inference. To indicate `x` should be represented as a symbolic distribution, replace `sample` with `symbolic`.
+
+To run the inference plan satisfiability analysis, and execute the program if the analysis succeeds:
+```bash
+$ python siren.py path/to/program.si -m {method} -p {particles} --analyze
+```
+
+For example, to run the analysis and execute the program using the semi-symbolic inference algorithm with 100 particles:
+```bash
+$ python siren.py path/to/program.si -m ssi -p 100 --analyze
+```
+
+To execute without the analysis:
+```bash
+$ python siren.py path/to/program.si -m {method}
+```
+
+To run the analysis only:
+```bash
+$ python siren.py path/to/program.si -m {method} --analyze-only
+```
+
+## Tests
+To run the test suite for a quick check everything works:
+```bash
+$ python -m pytest tests/
+```
