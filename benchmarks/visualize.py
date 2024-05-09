@@ -2,85 +2,75 @@ import argparse
 import os
 import json
 import matplotlib.pyplot as plt
-import csv
-from matplotlib.ticker import FormatStrFormatter, LogFormatter, LogFormatterMathtext, MultipleLocator, ScalarFormatter
+from matplotlib.ticker import ScalarFormatter
 import pandas as pd
 from typing import List, Tuple, Dict
 import numpy as np
 from math import log10
+from matplotlib.ticker import Locator
 
 BENCHMARK_DIR = 'benchmarks'
 
 DEFAULT_BENCHMARKS = [
-  'gaussianmixture',
-  'envnoise',
   'noise',
-  'smsbehavior',
+  'radar',
+  'envnoise',
   'outlier',
-  'mixasymprior',
+  'outlierheavy',
   'gtree',
+  'slds',
+  'runner',
 ]
 
 DEFAULT_METHODS = [
   'ssi',
   'ds',
-  # 'ft',
-  # 'dis',
   'bp',
 ]
 
 N_INTERVALS = 30
 
 BENCHMARK_LATEX_NAMES = {
-  'gaussianmixture': r"\bGaussianmix{}",
+  'radar': r'\bRadar{}',
   'envnoise': r"\bEnvnoise{}",
-  'mixasymprior': r"\bAsymprior{}",
   'noise': r"\bNoise{}",
   'outlier': r"\bOutlier{}",
-  'smsbehavior': r"\bSmsbehavior{}",
-  "outliernolist": r"\bOutliernolist{}",
-  "noisenolist": r"\bNoisenolist{}"
+  'gtree': r"\bGtree{}",
+  'outlierheavy': r"\bOutlierheavy{}",
+  'slds': r"\bSlds{}",
+  'runner': r"\bRunner{}",
 }
-
-TABLE_STR = r"""
-\begin{tabular}[h]{lrrrrrrrrr}
-  \toprule
-  Benchmark & \# Plans & \# Sat & TP & TN & FP & FN & Precision & Recall & Accuracy \\
-  \midrule CONTENT
-  \bottomrule
-\end{tabular}
-"""
 
 N_INTERVALS = 30
 
 COLORS = [
   "#f4827b", # red
   "#feb140", # orange
-  "#f7dd73", # yellow
   "#9baa20", # green
   "#7cc7d2", # blue
   "#72b0e8", # indigo
   "#c6abd1", # purple
   "#f288de", # magenta
   "#c78f77", # brown
+  "#fac52f", # yellow
   "#969595", # gray
 ]
 EDGECOLORS = [
   "#b7575c", # red
   "#c78200", # orange
-  "#c0ab5f", # yellow
   "#708200", # green
   "#4d9aa4", # blue
   "#204f87", # indigo
   "#7c5b83", # purple
   "#9c0085", # magenta
   "#56281b", # brown
+  "#c0ab5f", # yellow
   "#171616", # gray
 ]
 
 MARKERS = ['s', 'v', 'd', 'o', 'X', 'p', 'h', 'P', '*', '<']
 
-MARKERSSIZE = 50
+MARKERSSIZE = 55
 
 BARWIDTH = 0.25
 BARSPACING = 0.03
@@ -95,97 +85,105 @@ N = 100
 GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
 PLT_SETTINGS = {
-  # 'font.size': 14, 
-  'font.family': 'serif', 
-  # 'font.serif': 'Times New Roman', 
-  # 'font.weight': 'bold',
-  # 'axes.labelweight': 'bold',
-  # 'figure.autolayout': True,
-  "pgf.texsystem": "pdflatex",        # change this if using xetex or lautex
+  'font.size': 14, 
+  'font.family': 'Linux Libertine', 
   "text.usetex": True,                # use LaTeX to write all text
-  "font.family": "serif",
-  "font.serif": [],                   # blank entries should cause plots to inherit fonts from the document
-  "font.sans-serif": [],
-  "font.monospace": [],
-  # "axes.labelsize": 10,               # LaTeX default is 10pt font.
-  # "font.size": 10,
-  # "legend.fontsize": 8,               # Make the legend/label fonts a little smaller
-  # "xtick.labelsize": 8,
-  # "ytick.labelsize": 8,
-  # "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
-  # "pgf.preamble": "\n".join([         # plots will use this preamble
-  #     r"\usepackage[utf8x]{inputenc}",    # use utf8 fonts becasue your computer can handle it :)
-  #     r"\usepackage[T1]{fontenc}",        # plots will be generated using this preamble
-      # ])
+  "text.latex.preamble": "\n".join([         # plots will use this preamble
+    '\\usepackage{libertine}'
+  ])
 }
 
+# https://stackoverflow.com/questions/20470892/how-to-place-minor-ticks-on-symlog-scale
+class MinorSymLogLocator(Locator):
+  """
+  Dynamically find minor tick positions based on the positions of
+  major ticks for a symlog scaling.
+  """
+  def __init__(self, linthresh, nints=10):
+    """
+    Ticks will be placed between the major ticks.
+    The placement is linear for x between -linthresh and linthresh,
+    otherwise its logarithmically. nints gives the number of
+    intervals that will be bounded by the minor ticks.
+    """
+    self.linthresh = linthresh
+    self.nintervals = nints
+
+  def __call__(self):
+    # Return the locations of the ticks
+    majorlocs = self.axis.get_majorticklocs()
+
+    if len(majorlocs) == 1:
+      return self.raise_if_exceeds(np.array([]))
+
+    # add temporary major tick locs at either end of the current range
+    # to fill in minor tick gaps
+    dmlower = majorlocs[1] - majorlocs[0]    # major tick difference at lower end
+    dmupper = majorlocs[-1] - majorlocs[-2]  # major tick difference at upper end
+
+    # add temporary major tick location at the lower end
+    if majorlocs[0] != 0. and ((majorlocs[0] != self.linthresh and dmlower > self.linthresh) or (dmlower == self.linthresh and majorlocs[0] < 0)):
+      majorlocs = np.insert(majorlocs, 0, majorlocs[0]*10.)
+    else:
+      majorlocs = np.insert(majorlocs, 0, majorlocs[0]-self.linthresh)
+
+    # add temporary major tick location at the upper end
+    if majorlocs[-1] != 0. and ((np.abs(majorlocs[-1]) != self.linthresh and dmupper > self.linthresh) or (dmupper == self.linthresh and majorlocs[-1] > 0)):
+      majorlocs = np.append(majorlocs, majorlocs[-1]*10.)
+    else:
+      majorlocs = np.append(majorlocs, majorlocs[-1]+self.linthresh)
+
+    # iterate through minor locs
+    minorlocs = []
+
+    # handle the lowest part
+    for i in range(1, len(majorlocs)):
+      majorstep = majorlocs[i] - majorlocs[i-1]
+      if abs(majorlocs[i-1] + majorstep/2) < self.linthresh:
+          ndivs = self.nintervals
+      else:
+          ndivs = self.nintervals - 1.
+
+      minorstep = majorstep / ndivs
+      locs = np.arange(majorlocs[i-1], majorlocs[i], minorstep)[1:]
+      minorlocs.extend(locs)
+
+    return self.raise_if_exceeds(np.array(minorlocs))
+
+  def tick_values(self, vmin, vmax):
+    raise NotImplementedError('Cannot get tick locations for a '
+                      '%s type.' % type(self))
+
 def table(statistics):
-  # Benchmark & \# Plans & \# Sat & TP & TN & FP & FN & Precision & Recall & Accuracy \\
-  # \bGaussianmix{}    &  & 8 & 8 &  8 & 0 & 0 & 100\% & 100\% & 100\%\\
-  content = ''
+  content = []
+
+  for method in DEFAULT_METHODS:
+
+    method_str = '\\' + method
+
+    method_content = []
+    for benchmark in DEFAULT_BENCHMARKS:
+      
+      n_true_satisfied = statistics[benchmark][method]['n_true_satisfied']
+      n_inferred_satisfied = statistics[benchmark][method]['n_inferred_satisfied']
+
+      method_content.append(f"{n_inferred_satisfied}/{n_true_satisfied}")
+
+    content.append(f"{method_str} & {' & '.join(method_content)} \\\\")
+
+  total_content = []
   for benchmark in DEFAULT_BENCHMARKS:
     n_plans = statistics[benchmark]['n_plans']
-    n_vars = statistics[benchmark]['n_vars']
-    n_true_satisfied = statistics[benchmark]['n_true_satisfied']
-    # n_inferred_satisfied = statistics[benchmark]['n_inferred_satisfied']
-    n_satisfied_tp = statistics[benchmark]['n_satisfied_tp']
-    n_satisfied_tn = statistics[benchmark]['n_satisfied_tn']
-    n_satisfied_fp = statistics[benchmark]['n_satisfied_fp']
-    n_satisfied_fn = statistics[benchmark]['n_satisfied_fn']
+    total_content.append(f"{n_plans}")
 
-    precision = n_satisfied_tp / (n_satisfied_tp + n_satisfied_fp)
-    recall = n_satisfied_tp / (n_satisfied_tp + n_satisfied_fn)
-    accuracy = (n_satisfied_tp + n_satisfied_tn) / n_plans
+  content.append(f"\\midrule")
+  content.append(f"Total Possible Plans & {' & '.join(total_content)} \\\\")
 
-    row = '  {} & {} & {} & {} & {} & {} & {} & {:.0f}\% & {:.0f}\% & {:.0f}\%\\\\'.format(
-      BENCHMARK_LATEX_NAMES[benchmark],
-      n_plans,
-      n_true_satisfied,
-      n_satisfied_tp,
-      n_satisfied_tn,
-      n_satisfied_fp,
-      n_satisfied_fn,
-      precision * 100,
-      recall * 100,
-      accuracy * 100,
-    )
-    content += '\n' + row
+  print(f"Algorithm & {' & '.join([BENCHMARK_LATEX_NAMES[benchmark] for benchmark in DEFAULT_BENCHMARKS])} \\\\")
+  print('\\midrule')
 
-  print(TABLE_STR.replace('CONTENT', content))
-
-def get_label(plan):
-  symbolic = []
-  sample = []
-  dynamic = []
-  for var in sorted(plan.keys()):
-    if plan[var] == 'symbolic':
-      symbolic.append(var)
-    elif plan[var] == 'sample':
-      sample.append(var)
-    elif plan[var] == 'dynamic':
-      dynamic.append(var)
-    else:
-      raise ValueError(plan[var])
-  
-  label = ''
-  if len(symbolic) > 0:
-    label += ', '.join(symbolic)
-  else:
-    label += 'None'
-
-  label += ' | '
-  if len(sample) > 0:
-    label += ', '.join(sample)
-  else:
-    label += 'None'
-
-  # label += ' | '
-  # if len(dynamic) > 0:
-  #   label += ', '.join(dynamic)
-  # else:
-  #   label += 'None'
-
-  return label
+  for line in content:
+    print(line)
 
 def close_to_target_error(target, value):
   if value == 0:
@@ -195,33 +193,46 @@ def close_to_target_error(target, value):
   return False
 
 def close_to_target_runtime(target_runtime, runtime):
-  if log10(runtime) - log10(target_runtime) <= 0.1:
+  if abs(log10(runtime) - log10(target_runtime)) <= 0.15:
     return True
 
   return False
   
-def plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, base_y, legend_width):
+def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n_x, base_x, base_y, legend_width, is_example):
   plt.rcParams.update(PLT_SETTINGS)
 
   # first 4 columns are metadata
-  # n_variables = data.columns[4:].shape[0]
   variables = data.columns[4:]
 
   # drop rows with particles not in particles
   if particles is not None:
     data = data.loc[data['particles'].isin(particles)]
 
-  fig, axes = plt.subplots(
-              n_y, n_x,
-              figsize=(base_x * n_x, base_y * n_y), 
-              sharex=True, 
-              # sharey=True
-  )
+  particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+  original_plan_ids = plan_ids
 
-  for ax in axes.flatten():
-    ax.set_visible(False)
+  if is_example:
+    methods = ['ssi']
 
   for method_i, method in enumerate(methods):
+    plans: List[Tuple[str, Dict[str, str]]] = []
+    if original_plan_ids is None:
+      plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
+
+    plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
+
+    figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
+
+    fig, axes = plt.subplots(
+                  n_y, n_x,
+                  figsize=figsize, 
+                  sharex=True, 
+                  # sharey=True
+    )
+
+    for ax in axes.flatten():
+      ax.set_visible(False)
+
     use_label = True
     for var_i, var in enumerate(variables):
       plot_i = var_i % n_x
@@ -234,500 +245,292 @@ def plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, ba
 
       ax.set_visible(True)
 
-      for plan_i, (plan_id, plan) in enumerate(plans):
+      use_log = True
+
+      plan_i = 0
+      for (plan_id, plan) in plans:
+        plan_id = int(plan_id)
+
         if use_label:
-          label = get_label(plan)
+          label = f'Plan {plan_id}'
+          if is_example:
+            labels = {
+              1: 'No Annotations',
+              2: 'Symbolic r Plan',
+              3: 'Dynamic r Plan',
+              4: 'Symbolic x Plan',
+              5: 'Sample All Plan',
+            }
+            label = labels[plan_id]
         else:
           label = None
 
-        plan_id = int(plan_id)
-
         # 90th percentile error over n runs
-        errors = data.loc[data['method'] == method]\
+        upper = data.loc[data['method'] == method]\
                      .loc[data['plan_id'] == plan_id]\
                      .groupby(['particles'])[var]\
                      .quantile(0.9)
         
+        # median error over n runs
+        median = data.loc[data['method'] == method]\
+                     .loc[data['plan_id'] == plan_id]\
+                     .groupby(['particles'])[var]\
+                      .median()
+        
+        # 10th percentile error over n runs
+        lower = data.loc[data['method'] == method]\
+                     .loc[data['plan_id'] == plan_id]\
+                     .groupby(['particles'])[var]\
+                     .quantile(0.1)
+        
         # min non-zero value
         
-        # nonzero = [x for x in mses['lower'] if x > 0]
-        # thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
+        nonzero = [x for x in lower if x > 0]
+        thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
         
         # median time over n runs
         runtimes = data.loc[data['method'] == method]\
                         .loc[data['plan_id'] == plan_id]\
                         .groupby(['particles'])['time']\
                         .median()
+        
+        yerr = np.array([median - lower, upper - median])
 
-        ax.scatter(runtimes, errors, marker=MARKERS[plan_i], color=COLORS[plan_i], label=label, 
-                                    edgecolor=EDGECOLORS[plan_i], s=MARKERSSIZE)
-        ax.set_xscale('log')
-        ax.set_yscale('symlog', linthresh=1e-10)
-        ax.grid(**GRIDPARAMS)
-        ax.minorticks_on()
+        if runtimes.shape[0] == 0:
+          continue
+
+        if is_example:
+          mfc = {
+            1: '#f4827b',
+            2: '#7cc7d2',
+            3: '#feb140',
+            4: '#9baa20',
+            5: '#fac52f',
+          }[plan_id]
+          mec = {
+            1: '#b7575c',
+            2: '#4d9aa4',
+            3: '#c78200',
+            4: '#708200',
+            5: '#c0ab5f',
+          }[plan_id]
+          marker = {
+            1: 's',
+            2: 'v',
+            3: 'o',
+            4: 'd',
+            5: 'X',
+          }[plan_id]
+        else:
+          mfc = COLORS[plan_i]
+          mec = EDGECOLORS[plan_i]
+          marker = MARKERS[plan_i]
+
+        # ax.errorbar(runtimes, median, yerr=yerr, marker=MARKERS[plan_i], mfc=mfc, mec=mec, ecolor=mec, label=label,
+        #             capsize=5, markersize=5, xerr=None, ls='none')
+          
+        ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
+                                    edgecolor=mec, s=MARKERSSIZE)
+        
+        # if y range doesn't cross any power of 10, use log scale
+        ax.set_yscale('symlog', linthresh=thresh)
+        max_y = max(upper)
+        min_y = min(upper)
+        powers = [10**i for i in range(-10, 10)]
+        for power in powers:
+          if min_y < power and max_y > power:
+            use_log = False
+            break
+        
+        plan_i += 1
 
       use_label = False
       ax.set_title(f'{var}')
+      ax.grid(**GRIDPARAMS)
+      ax.set_axisbelow(True)
+
+      ax.set_xscale('log')
+      ax.tick_params(
+        axis='x',           # changes apply to the x-axis
+        which='major',       # both major and minor ticks are affected
+        bottom=True,
+        top=False,
+        labelbottom=True)
+
+      ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
+      # check if there are any major ticks
+      if use_log:
+        # label minor ticks
+        ax.yaxis.set_minor_formatter(ScalarFormatter())
 
     print('Saving particles plots')
 
-    fig.suptitle(f'Variable Accuracy to Execution Time')
-    # fig.tight_layout()
-    fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.35))
+    if benchmark == 'slds':
+      y = 1
+      bbox = (0.5, 0)
+    else:
+      y = 1.08
+      bbox = (0.5, -0.1)
 
-    # fig.supxlabel('Execution Time in s (log scale)')
-    # fig.supylabel('Error (log scale)')
+    fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
+    lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
 
     if n_y == 1:
-      plt.setp(axes[1], xlabel='Execution Time in s (log scale)')
+      for i in range(n_x):
+        plt.setp(axes[i], xlabel='Execution Time in s (log scale)')
       plt.setp(axes[0], ylabel='Error (log scale)')
     else:
-      plt.setp(axes[n_vars // 2, :], xlabel='Execution Time in s (log scale)')
+      for i in range(n_x):
+        plt.setp(axes[-1, i], xlabel='Execution Time in s (log scale)')
       plt.setp(axes[:, 0], ylabel='Error (log scale)')
+      
+    if benchmark == 'slds':
+      plt.subplots_adjust(hspace=0.3)
 
-    fig.savefig(os.path.join(output, f'particles.pdf'), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'particles.png'), bbox_inches='tight')
-    # fig.savefig(os.path.join(output, f'particles.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    # fig.savefig(os.path.join(output, f'particles.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+    if is_example:
+      plan_id_str = ''.join(plan_ids)
+      filename = f'{method}_example_{plan_id_str}'
+    else:
+      filename = f'{method}_particles'
+    fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
+    fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
 
     plt.close(fig)
 
-def plot_accuracy(data, output, methods, plan_ids, all_plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
-  plt.rcParams.update(PLT_SETTINGS)
+def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
+  def get_error_runtime(data, method, plan_id):
+    # default 90th percentile error over n runs
+    upper = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .drop(columns=['plan_id', 'method', 'time'])\
+                  .groupby(['particles'])\
+                  .quantile(0.9)
 
-  # first 4 columns are metadata
-  # n_variables = data.columns[4:].shape[0]
-  variables = data.columns[4:]
+    runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .median()
 
-  fig, axes = plt.subplots(
-              n_y, n_x,
-              figsize=(base_x * n_x, base_y * n_y), 
-              sharex=True, 
-              # sharey=True
-  )
-
-  for ax in axes.flatten():
-    ax.set_visible(False)
-
-  for method_i, method in enumerate(methods):
-    plans: List[Tuple[str, Dict[str, str]]] = []
-    if plan_ids is None:
-      plans = [(plan_id, plan_data['plan']) for plan_id, plan_data in all_plans.items() if plan_data['satisfiable'][method]]
-    else:
-      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
-
-    use_label = True
-    for var_i, var in enumerate(variables):
-      plot_i = var_i % n_x
-      plot_j = var_i // n_x
-
-      if n_y == 1:
-        ax = axes[plot_i]
-      else:
-        ax = axes[plot_j, plot_i]
-
-      ax.set_visible(True)
-
-      for target_error in target_errors[var]:
-        # draw target error line
-        ax.axhline(y=target_error, color='red', linestyle='--')
-
-        for plan_i, (plan_id, plan) in enumerate(plans):
-          if use_label:
-            label = get_label(plan)
-          else:
-            label = None
-
-          plan_id = int(plan_id)
-
-          # 90th percentile error over n runs
-          errors = data.loc[data['method'] == method]\
-                      .loc[data['plan_id'] == plan_id]\
-                      .groupby(['particles'])[var]\
-                      .quantile(0.9)
-          
-          # print( errors[errors < target_error])
-
-          # get max particle with error less than target error
-          smallest_error_particle = errors[errors < target_error].index.max()
-
-          # print(smallest_error_particle)
-
-          if np.isnan(smallest_error_particle):
-            runtimes = data.loc[data['method'] == method]\
-                          .loc[data['plan_id'] == plan_id]\
-                          .groupby(['particles'])['time']\
-                          .median()
-            
-            runtime = runtimes.max() + 1
-
-            # ax.plot(runtime, target_error, marker='x', color=COLORS[plan_i], label=label, markeredgecolor=COLORS[plan_i], markersize=MARKERSSIZE)
-            ax.scatter(runtime, target_error, marker='x', color=COLORS[plan_i], label=label, s=MARKERSSIZE)
-          else:
-            # get runtime of max particle rows
-            runtimes = data.loc[data['method'] == method]\
-                            .loc[data['plan_id'] == plan_id]\
-                            .loc[data['particles'] == smallest_error_particle]\
-                            .groupby(['particles'])['time']\
-                            .median()
-            
-            # ax.scatter(runtimes, target_error, marker=MARKERS[plan_i], color=COLORS[plan_i], label=label, 
-            #                           edgecolor=EDGECOLORS[plan_i], markersize=MARKERSSIZE)
-            ax.scatter(runtimes, target_error, marker=MARKERS[plan_i], color=COLORS[plan_i], label=label, 
-                                    edgecolor=EDGECOLORS[plan_i], s=MARKERSSIZE)
-
-          
-        ax.set_xscale('log')
-        ax.set_yscale('symlog', linthresh=1e-10)
-        ax.grid(**GRIDPARAMS)
-        ax.minorticks_on()
-
-        use_label = False
-      ax.set_title(f'{var}')
-
-    print('Saving accuracy plots')
-
-    fig.suptitle(f'Variable Accuracy to Execution Time')
-    # fig.tight_layout()
-    fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.53, -0.35))
-
-    # fig.supxlabel('Execution Time in s (log scale)')
-    # fig.supylabel('Error (log scale)')
-
-    if n_y == 1:
-      plt.setp(axes[1], xlabel='Execution Time in s (log scale)')
-      plt.setp(axes[0], ylabel='Error (log scale)')
-    else:
-      plt.setp(axes[n_vars // 2, :], xlabel='Execution Time in s (log scale)')
-      plt.setp(axes[:, 0], ylabel='Error (log scale)')
-
-    fig.savefig(os.path.join(output, f'{method}_accuracy.pdf'), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{method}_accuracy.png'), bbox_inches='tight')
-    # fig.savefig(os.path.join(output, f'particles.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    # fig.savefig(os.path.join(output, f'particles.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-    plt.close(fig)
-  
-def plot_accuracy_bar(data, baseline, output, methods, plan_ids, all_plans, target_errors, n_y, n_x, base_x, base_y, legend_width):
-  plt.rcParams.update(PLT_SETTINGS)
-
-
-  # first 4 columns are metadata
-  # n_variables = data.columns[4:].shape[0]
-  variables = data.columns[4:]
-
-  for method_i, method in enumerate(methods):
-    plans: List[Tuple[str, Dict[str, str]]] = []
-    if plan_ids is None:
-      plans = [(plan_id, plan_data['plan']) for plan_id, plan_data in all_plans.items() if plan_data['satisfiable'][method]]
-    else:
-      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
-
-    spacing = BARSPACING
-    barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
+    # combine
+    default_errors = pd.concat([runtimes, upper], axis=1)
+    default_errors['particles'] = default_errors.index
+    default_errors = default_errors.reset_index(drop=True)
     
-    # fig = plt.figure()
-    fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
-                                      gridspec_kw={'height_ratios': [1, 25]})
-    fig.subplots_adjust(hspace=0.03)
-
-    ax.spines['top'].set_visible(False)
-    ax_top.spines['top'].set_visible(False)
-    ax_top.spines['right'].set_visible(False)
-    ax_top.spines['left'].set_visible(False)
-    ax_top.spines['bottom'].set_visible(False)
-    ax_top.tick_params(axis='both', which='both', bottom=False, left=False, labelbottom=False, labelleft=False)
-
-    # y axis is runtime in log seconds
-    # x axis is variable * plan
-    # plan x variable
-
-    # baseline
-    # median time over n runs
-    runtime = baseline.loc[baseline['method'] == method]['time'].median()
-    all_runtimes = [[runtime for _ in range(len(variables))]]
-    all_particles = [[1000 for _ in range(len(variables))]]
-    all_x_pos = [list(np.arange(len(variables)))]
-    labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
-
-    for plan_i, (plan_id, plan) in enumerate(plans):
-      plan_id = int(plan_id)
-      print('plan', plan_id)
-
-      all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
- 
-      plan_runtimes = []
-      plan_particles = []
-      for var_i, var in enumerate(variables):
-        target_error = target_errors[var]
-
-        errors = data[(data['method'] == method) & (data['plan_id'] == plan_id) ]
-        errors.loc[:, var] = errors[var].map(lambda x: close_to_target_error(target_error, x))
-        # print(errors)
-        n_close = errors[errors[var]].groupby(['particles'])[var].count()
-        
-        # print(target_error)
-        # print(n_close)
-        # print(n_close[(n_close / N) >= 0.9])
-
-        # get max particle with error less than target error
-        smallest_error_particle = n_close[(n_close / N) >= 0.9].index.min()
-
-        # print(smallest_error_particle)
-
-        if np.isnan(smallest_error_particle):
-
-          plan_runtimes.append(-1)
-          plan_particles.append(None)
-
-        else:
-          # get runtime of max particle rows
-          runtime = data.loc[data['method'] == method]\
-                          .loc[data['plan_id'] == plan_id]\
-                          .loc[data['particles'] == smallest_error_particle]['time']\
-                          .median()
-          # print(runtime)
-          
-          plan_runtimes.append(runtime)
-          plan_particles.append(smallest_error_particle)
-
-      all_runtimes.append(plan_runtimes)
-      all_particles.append(plan_particles)
-
-    # print(all_runtimes)
-
-    max_runtime = max(all_runtimes, key=lambda x: max(x))[0]
-    for i, (x_pos, runtimes, particles) in enumerate(zip(all_x_pos, all_runtimes, all_particles)):
-      # replace -1 with max runtime
-      bot_runtimes = [1.1*max_runtime if r == -1 else r for i, r in enumerate(runtimes)]
-      bars = ax.bar(x_pos, bot_runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
-
-      top_runtimes = [1.1*max_runtime if r == -1 else 0 for i, r in enumerate(runtimes)]
-      ax_top.bar(x_pos, top_runtimes, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i])
-
-      for j, p in enumerate(particles):
-        if p is not None:
-          particle_labels = [f'{p:}' if p is not None else '' for p in particles]
-          ax.bar_label(bars, labels=particle_labels, padding=3, label_type = 'edge', rotation=0, fontsize=BARLABELSIZE)
-        else:
-          particle_labels = ['$>$ 1000' if p is None else '' for p in particles]
-          ax.text(x_pos[j], 0.2*max_runtime, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
-          # ax.bar_label(bars, labels=particle_labels, padding=-500, label_type = 'center', rotation=90, clip_on=False)
-
-    ax.set_yscale('log')
-    ax_top.set_yscale('log')
-    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
-    ax.set_axisbelow(True)
-
-    # add broken bars
-    ax_top.set_ylim(max_runtime, 1.1*max_runtime)    
-    ax.set_ylim(top=1.05*max_runtime)
-
-    # ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
-    #                                                 minor_thresholds=(3, 0.4)))
-    ax.get_yaxis().set_major_formatter(LogFormatterMathtext())
-    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
-    ax.tick_params(axis='x', which='minor', bottom=False)
-    ax.tick_params(axis='x', which='major', labelsize=XLABELSIZE)
-
-    # median of column of x_pos
-    tick_pos = np.median(all_x_pos, axis=0)
-    ax.set_xticks(tick_pos, [var for var in variables])
-
-    print('Saving accuracy plots')
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    # ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    for spine in ax.spines.values():
-      spine.set_edgecolor('#696969')
-
-    ax_top.set_title(f'{benchmark}')
-    # fig.tight_layout()
-    # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.5, -0.4))
-
-    ax.set_ylabel('Execution Time in s (log scale)', fontsize=12)
-    # ax.set_ylabel('Error (log scale)')
-
-    fig.savefig(os.path.join(output, f'{method}_accuracy.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{method}_accuracy.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{method}_accuracy.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
-
-    plt.close(fig)
-
-def plot_runtime_bar(data, baseline, output, methods, plan_ids, all_plans, target_runtime, n_y, n_x, base_x, base_y, legend_width):
-  plt.rcParams.update(PLT_SETTINGS)
-
-  # first 4 columns are metadata
-  # n_variables = data.columns[4:].shape[0]
+    return default_errors
+  
   variables = data.columns[4:]
 
-  data = data.loc[data['particles'] <= 512]
-  # baseline = baseline.loc[baseline['particles'] <= 512]
+  for method in methods:
+    if method not in default_plans:
+      continue
+    print('==============')
+    print(f'Method: {method}')
+    default_plan = int(default_plans[method])
 
-  for method_i, method in enumerate(methods):
-    plans: List[Tuple[str, Dict[str, str]]] = []
+    print('Default Plan:', default_plan)
+
     if plan_ids is None:
-      plans = [(plan_id, data['plan']) for plan_id, data in all_plans.items() if data['satisfiable'][method]]
-    else:
-      plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
+      plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
 
-    spacing = BARSPACING
-    barwidth = 1/((len(plans) + spacing * (len(plans) - 1)) * (len(target_errors) - MAGICSPACING))
+    plan_ids = map(int, plan_ids)
 
-    # fig = plt.figure()
-    fig, (ax_top, ax) = plt.subplots(2, 1, sharex=True, figsize=(base_x * n_x, base_y * n_y),
-                                      gridspec_kw={'height_ratios': [1, 25]})
-    fig.subplots_adjust(hspace=0.03)
+    default_errors = get_error_runtime(data, method, default_plan)
 
-    ax.spines['top'].set_visible(False)
-    ax_top.spines['top'].set_visible(False)
-    ax_top.spines['right'].set_visible(False)
-    ax_top.spines['left'].set_visible(False)
-    ax_top.spines['bottom'].set_visible(False)
-    ax_top.tick_params(axis='both', which='both', bottom=False, left=False, labelbottom=False, labelleft=False)
+    ratios = pd.DataFrame(columns=list(variables)+['plan', 'runtime'])
+    outlier_ratios = pd.DataFrame(columns=list(variables)+['plan', 'runtime'])
+    for j, plan_id in enumerate(plan_ids):
+      if plan_id == default_plan:
+        continue
+      # default 90th percentile error over n runs
+      errors = get_error_runtime(data, method, plan_id)
 
-    # y axis is runtime in log seconds
-    # x axis is variable * plan
-    # plan x variable
+      # compute ratio of error to default error based on runtime
+      for row in errors.iterrows():
+        runtime = row[1]['time']
+        error = row[1].drop(['time', 'particles'])
+        default_error = default_errors.loc[default_errors['time'].apply(lambda x: close_to_target_runtime(runtime, x))]
 
-    # baseline
-    # median accuracy over n runs
-    accuracies = baseline.loc[baseline['method'] == method].iloc[:, 4:].quantile(0.9)
-    all_accuracies = [accuracies]
-    all_particles = [[1000 for _ in range(len(variables))]]
-    all_x_pos = [list(np.arange(len(variables)))]
-    labels = ['Baseline'] + [get_label(plan) for plan_id, plan in plans]
+        if default_error.shape[0] == 0:
+          continue
 
-    for plan_i, (plan_id, plan) in enumerate(plans):
-      plan_id = int(plan_id)
+        default_error = default_error.iloc[-1].drop(['time', 'particles'])
 
-      all_x_pos.append([x + barwidth + spacing for x in all_x_pos[-1]])
+        ratio = default_error / error
 
-      runtimes = data[(data['method'] == method) & (data['plan_id'] == plan_id)]
-      
-      # print(runtimes)
-      runtimes.loc[:, 'time'] = runtimes['time'].map(lambda x: close_to_target_runtime(target_runtime, x))
-      n_close = runtimes[runtimes['time']].groupby(['particles'])['time'].count()
-      
-      # print(target_runtime)
-      # print(n_close)
-      # print(n_close[(n_close / N) >= 0.5])
+        if benchmark == 'outlier':
+          # get max ratio of error to default error when runtime > 10
+          if runtime > 10:
+            outlier_ratios.loc[len(outlier_ratios.index)] = list(ratio) + [plan_id, runtime]
 
-      # get max particle with runtime less than target runtime
-      smallest_runtime_particle = n_close[(n_close / N) >= 0.5].index.max()
+        if runtime > 0.1:        
+          ratios.loc[len(ratios.index)] = list(ratio) + [plan_id, runtime]
 
-      # print(smallest_runtime_particle)
+    max_ratio = ratios.drop(columns=['plan', 'runtime']).max().max()
+    print('Max Ratio:', max_ratio)
+    # find the plan that had the max ratio
+    for i, row in ratios.iterrows():
+      if row.drop(['plan','runtime']).max() == max_ratio:
+        print('Plan:', row['plan'])
+        print('Runtime:', row['runtime'])
+        break
 
-      if np.isnan(smallest_runtime_particle):
-        accuracy = data.loc[data['method'] == method]\
-                      .loc[data['plan_id'] == plan_id]\
-                      .groupby(['particles'])\
-                      .quantile(0.9)
-        
-        accuracy = [-1 for _ in range(len(variables))]
+    if benchmark == 'outlier' and method == 'ssi':
+      print('======')
+      print('Max Ratio when runtime > 10:')
+      max_outlier_ratio = outlier_ratios['xt'].max()
+      print('Max Ratio:', max_outlier_ratio)
+      print('Plan:', outlier_ratios.loc[outlier_ratios['xt'].idxmax()]['plan'])
+      print('Runtime:', outlier_ratios.loc[outlier_ratios['xt'].idxmax()]['runtime'])
+    elif benchmark == 'noise' and method == 'ssi':
+      print('======')
+      print('Max Ratio for x:')
+      max_x_ratio = ratios['x'].max()
+      print('Max Ratio:', max_x_ratio)
+      print('Plan:', ratios.loc[ratios['x'].idxmax()]['plan'])
+      print('Runtime:', ratios.loc[ratios['x'].idxmax()]['runtime'])
+      print('======')
+      print('Max Ratio for r with Plan 3:')
+      max_r_ratio = ratios.loc[ratios['plan'] == 3]['r'].max()
+      print('Max Ratio:', max_r_ratio)
+      print('Plan:', 3)
+      print('Runtime:', ratios.loc[ratios['plan'] == 3].iloc[0]['runtime'])
+    elif benchmark == 'runner' and method == 'bp':
+      print('======')
+      print('Max Ratio for Plan 3:')
+      max_r_ratio = ratios.loc[ratios['plan'] == 3].max().max()
+      print('Max Ratio:', max_r_ratio)
+      print('Plan:', 3)
+      for i, row in ratios.loc[ratios['plan'] == 3].iterrows():
+        if row.drop(['plan','runtime']).max() == max_r_ratio:
+          print('Runtime:', row['runtime'])
+          break
+    elif benchmark == 'example':
+      print('======')
+      print('Max Ratio for x:')
+      max_x_ratio = ratios['x'].max()
+      print('Max Ratio:', max_x_ratio)
+      print('Plan:', ratios.loc[ratios['x'].idxmax()]['plan'])
+      print('Runtime:', ratios.loc[ratios['x'].idxmax()]['runtime'])
 
-        all_accuracies.append(accuracy)
-        all_particles.append([None for _ in range(len(variables))])
-
-      else:
-        # get accuracy of max particle rows
-        accuracies = data.loc[data['method'] == method]\
-                        .loc[data['plan_id'] == plan_id]\
-                        .loc[data['particles'] == smallest_runtime_particle]\
-                        .drop(columns=['method', 'plan_id', 'time'])\
-                        .groupby(['particles'])\
-                        .quantile(0.9)
-        
-        all_accuracies.append(list(accuracies.iloc[0]))
-        all_particles.append([smallest_runtime_particle for _ in range(len(variables))])
-
-    max_accuracy = np.array(all_accuracies).max()
-    for i, (x_pos, accuracies, particles) in enumerate(zip(all_x_pos, all_accuracies, all_particles)):
-      # replace -1 with max runtime
-      bot_accuracies = [1.1*max_accuracy if r == -1 else r for i, r in enumerate(accuracies)]
-      bars = ax.bar(x_pos, bot_accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i], label=labels[i])
-
-      top_accuracies = [1.1*max_accuracy if r == -1 else 0 for i, r in enumerate(accuracies)]
-      ax_top.bar(x_pos, top_accuracies, width=barwidth, color=COLORS[i], edgecolor=EDGECOLORS[i])
-
-      for j, p in enumerate(particles):
-        if p is not None:
-          particle_labels = [f'{p:}' if p is not None else '' for p in particles]
-          ax.bar_label(bars, labels=particle_labels, padding=3, label_type = 'edge', rotation=0, fontsize=BARLABELSIZE)
-        else:
-          particle_labels = ['$>$ 1000' if p is None else '' for p in particles]
-          ax.text(x_pos[j], 0.55*max_accuracy, particle_labels[j], ha='center', va='bottom', rotation=90, fontsize=BARLABELSIZE)
-          # ax.bar_label(bars, labels=particle_labels, padding=-500, label_type = 'center', rotation=90, clip_on=False)
-
-    ax.set_yscale('log')
-    # ax_top.set_yscale('log')
-    ax.grid(**{'which': 'major', 'axis': 'y', 'color': 'gray', 'linestyle': '--', 'alpha': 0.2})
-    ax.set_axisbelow(True)
-
-    # add broken bars
-    ax_top.set_ylim(max_accuracy, 1.1*max_accuracy)    
-    ax.set_ylim(top=1.05*max_accuracy)
-
-    ax.get_yaxis().set_minor_formatter(LogFormatter(labelOnlyBase=False, 
-                                                    minor_thresholds=(2, 0.04)))
-    ax.get_yaxis().set_major_formatter(LogFormatterMathtext())
-    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
-    ax.tick_params(axis='x', which='minor', bottom=False)
-    ax.tick_params(axis='x', which='major', labelsize=XLABELSIZE)
-    ax.tick_params(axis='y', which='both', labelsize=YLABELSIZE)
-
-    # median of column of x_pos
-    tick_pos = np.median(all_x_pos, axis=0)
-    ax.set_xticks(tick_pos, [var for var in variables])
-
-    print('Saving time plots')
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    # ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    for spine in ax.spines.values():
-      spine.set_edgecolor('#696969')
-
-    ax_top.set_title(f'{benchmark}')
-    # fig.tight_layout()
-    # fig.tight_layout(rect=[0.04, 0.04, 1, 1.1])
-    lgd = fig.legend(loc='lower center', ncols=legend_width, bbox_to_anchor=(0.5, -0.4))
-
-    ax.set_ylabel('Error (log scale)', fontsize=12)
-
-    fig.savefig(os.path.join(output, f'{method}_runtime.pdf'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{method}_runtime.png'), bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{method}_runtime.pgf'), bbox_extra_artists=(lgd,), bbox_inches='tight', format='pgf')
-
-    plt.close(fig)
+    plan_ids = None
+  print()
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
+  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table')
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
   p.add_argument('--methods', '-m', type=str, required=False, nargs="+", default=DEFAULT_METHODS)
   p.add_argument('--particles', '-p', type=int, required=False, nargs='+')
-
-  sp = p.add_subparsers(dest='subparser_name')
-
-  table_parser = sp.add_parser('table')
-  plot_parser = sp.add_parser('plot')
+  p.add_argument('--example', '-e', action='store_true')
 
   args = p.parse_args()
 
-
   methods = [method for method in args.methods if method in DEFAULT_METHODS]
-
   particles = [int(particle) for particle in args.particles] if args.particles is not None else None
 
-  if args.subparser_name == 'table':
+  if args.task == 'table':
     # Load statistics
     all_statistics = {}
 
@@ -737,11 +540,14 @@ if __name__ == '__main__':
         statistics = json.load(f)
       all_statistics[benchmark] = statistics
     table(all_statistics)
-
   else:
+    if args.example:
+      args.benchmark = ['example']
+
     print(args.benchmark)
 
     for benchmark in args.benchmark:
+      print('=============================')
       print('Benchmark: {}'.format(benchmark))
 
       with open(os.path.join(benchmark, 'config.json')) as f:
@@ -757,32 +563,16 @@ if __name__ == '__main__':
       base_y = int(config['base_y']) if 'base_y' in config else 6
       legend_width = int(config['legend_width']) if 'legend_width' in config else n_vars
 
-
       if os.path.exists(os.path.join(output, 'results.csv')):
         data = pd.read_csv(os.path.join(output, 'results.csv'), delimiter=',')
 
-        if os.path.exists(os.path.join(output, 'baseline.csv')):
-          baseline = pd.read_csv(os.path.join(output, 'baseline.csv'), delimiter=',')
+        if args.task == 'plot':
+          if args.example:
+            plan_ids_sets = [['1', '2'], ['1', '2', '5'], ['1', '2', '4'], ['1', '2', '4', '5']]
+          else:
+            plan_ids_sets = [args.plan_ids]
+          for plan_ids in plan_ids_sets:
+            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, base_y, legend_width, args.example)
 
-          target_errors = config['target_errors']
-
-          plot_accuracy_bar(data, baseline, output, methods, args.plan_ids, config['plans'], target_errors, n_y, n_x, base_x, base_y, legend_width)
-
-          target_runtime = config['target_runtime']
-
-          plot_runtime_bar(data, baseline, output, methods, args.plan_ids, config['plans'], target_runtime, n_y, n_x, base_x, base_y, legend_width)
-
-      # if os.path.exists(os.path.join(output, 'particles.csv')):
-      #   data = pd.read_csv(os.path.join(output, 'particles.csv'), delimiter=',')
-
-      #   plot_particles(data, output, methods, plans, particles, n_y, n_x, base_x, base_y, legend_width)
-
-      # if os.path.exists(os.path.join(output, 'accuracy.csv')):
-      #   data = pd.read_csv(os.path.join(output, 'accuracy.csv'), delimiter=',')
-
-      #   target_errors = config['target_errors']
-
-      #   plot_accuracy(data, output, methods, plans, target_errors, n_y, n_x, base_x, base_y, legend_width)
-
-      
-
+        if args.task == 'compare':
+          compare_to_default(data, methods, args.plan_ids, config['plans'], config['default'])

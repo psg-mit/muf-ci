@@ -2,25 +2,22 @@ import re
 import os
 import itertools
 import json
+import argparse
 
-benchmarks = [
-  # 'gaussianmixture',
-  'envnoise',
-  # 'mixasymprior',
+DEFAULT_BENCHMARKS = [
   'noise',
+  'radar',
+  'envnoise',
   'outlier',
-  # 'serosurvey',
-  # 'slam',
-  # 'smsbehavior',
-  'gtree',
   'outlierheavy',
+  'gtree',
   'slds',
   'runner',
 ]
 
 ANNOTATIONS = ['symbolic', 'sample']
 
-def main():
+def main(benchmarks):
   for benchmark in benchmarks:
     print(f'Generating plans for {benchmark}...')
 
@@ -86,4 +83,8 @@ def main():
       json.dump(config, configfile, indent=2)
 
 if __name__ == '__main__':
-  main()
+  p = argparse.ArgumentParser()
+  p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
+
+  args = p.parse_args()
+  main(p.benchmark)
