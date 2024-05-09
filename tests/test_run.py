@@ -27,7 +27,7 @@ def run(program_path, inference_method):
 
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
 def test_coin(method):
-  program_path = os.path.join('test', 'programs', 'coin.si')
+  program_path = os.path.join('tests', 'programs', 'coin.si')
   var = Identifier(module=None, name='xt')
 
   res, runtime_plan = run(program_path, method)
@@ -40,7 +40,7 @@ def test_coin(method):
 
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
 def test_kalman(method):
-  program_path = os.path.join('test', 'programs', 'kalman.si')
+  program_path = os.path.join('tests', 'programs', 'kalman.si')
   var = Identifier(module=None, name='x')
 
   res, runtime_plan = run(program_path, method)
@@ -51,7 +51,7 @@ def test_kalman(method):
 
 @pytest.mark.parametrize("method", [SSIState, DSState])
 def test_envnoise(method):
-  program_path = os.path.join('test', 'programs', 'envnoise.si')
+  program_path = os.path.join('tests', 'programs', 'envnoise.si')
 
   res, runtime_plan = run(program_path, method)
   x, res = get_pair(res)
@@ -81,7 +81,7 @@ def test_envnoise(method):
 
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
 def test_tree(method):
-  program_path = os.path.join('test', 'programs', 'tree.si')
+  program_path = os.path.join('tests', 'programs', 'tree.si')
   true_bs = [2, 4, 6]
 
   res, runtime_plan = run(program_path, method)

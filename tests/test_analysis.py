@@ -21,7 +21,7 @@ def run(program_path, inference_method):
 
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState, AbsBPState])
 def test_coin(method):
-  program_path = os.path.join('test', 'programs', 'coin.si')
+  program_path = os.path.join('tests', 'programs', 'coin.si')
   var = Identifier(module=None, name='xt')
 
   inferred_plan = run(program_path, method)
@@ -32,7 +32,7 @@ def test_coin(method):
 
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState, AbsBPState])
 def test_kalman(method):
-  program_path = os.path.join('test', 'programs', 'kalman.si')
+  program_path = os.path.join('tests', 'programs', 'kalman.si')
   var = Identifier(module=None, name='x')
 
   inferred_plan = run(program_path, method)
@@ -40,7 +40,7 @@ def test_kalman(method):
 
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState])
 def test_envnoise(method):
-  program_path = os.path.join('test', 'programs', 'envnoise.si')
+  program_path = os.path.join('tests', 'programs', 'envnoise.si')
 
   inferred_plan = run(program_path, method)
   plan1 = InferencePlan({
@@ -62,7 +62,7 @@ def test_envnoise(method):
 
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState, AbsBPState])
 def test_tree(method):
-  program_path = os.path.join('test', 'programs', 'tree.si')
+  program_path = os.path.join('tests', 'programs', 'tree.si')
 
   inferred_plan = run(program_path, method)
   assert inferred_plan[Identifier(module=None, name='a')] == DistrEnc.symbolic
