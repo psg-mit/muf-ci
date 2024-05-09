@@ -232,218 +232,6 @@ def run_particles(benchmark, files, n, particles, methods, true_vars, results_fi
               *(program_output.values())
             ])
 
-# Run experiments to reach a given accuracy
-def run_accuracy(benchmark, files, n, plans, target_errors, methods, true_vars, results_file, error_func):
-  if len(files) == 0:
-    # If no files specified, get all files in programs directory
-    files = []
-    for file in os.listdir(os.path.join(benchmark, 'programs')):
-      if file.endswith('.si'):
-        files.append(file)
-
-    # harness in benchmarks directory already
-    for file in files:
-      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
-        raise Exception(f'File not found: {file}')
-
-    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
-    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
-    files = list(files)
-
-  for method in methods:
-    print(f'Running {method}...')
-    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
-    files = list(files)
-    print(files)
-
-    for file in files:
-      plan_id = get_plan_id(file)
-      if plan_id is None:
-        print(f'Invalid file: {file}')
-        continue
-      min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
-      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 10
-
-      # binary search for number of particles
-      attempted_p = set()
-      df = pd.read_csv(results_file)
-      existing_p = df.loc[df['method'] == method]\
-              .loc[df['plan_id'] == int(plan_id)]['particles'].unique()
-      for p in existing_p:
-        attempted_p.add(p)
-
-      print(existing_p)
-
-      for var in target_errors:
-        print(f'Running for {var}')
-        lower_p = min_p
-        upper_p = max_p
-
-        while True:
-          p = (lower_p + upper_p) // 2
-          print('Trying', p)
-
-          # get errors for this p
-          if p in attempted_p:
-            print(f'Already ran {p} particles')
-            df = pd.read_csv(results_file)
-            df = df.loc[df['method'] == method]\
-                    .loc[df['plan_id'] == int(plan_id)]\
-                    .loc[df['particles'] == p][var]
-            
-            n_close = 0
-            for error in df:
-              if close_to_target(target_errors[var], error):
-                n_close += 1
-
-          else:
-            print(f'Running with {p} particles')
-
-            n_close = 0
-            for i in range(n):
-              print(f'{plan_id} {method} - {p} particles - Run {i}')
-
-              run_outputs = None
-              while run_outputs is None:
-                run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
-                if run_outputs is not None:
-                  break
-              t, program_output = run_outputs
-
-              # write results to csv
-              with open(results_file, 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                  plan_id, 
-                  method, 
-                  p, 
-                  t,
-                  *program_output.values()
-                ])
-
-              if close_to_target(target_errors[var], program_output[var]):
-                n_close += 1
-
-            attempted_p.add(p)
-
-          if n_close / n > 0.9:
-            print('Too close to target')
-            # decrease number of particles
-            upper_p = p - 1
-          else:
-            print('Not close enough to target')
-            # increase number of particles
-            lower_p = p + 1
-
-          if lower_p > upper_p:
-            print('No more particles to try')
-            break
-
-# Run experiments to reach a given runtime
-def run_runtime(benchmark, files, n, plans, target_runtime, methods, true_vars, results_file, error_func):
-  if len(files) == 0:
-    # If no files specified, get all files in programs directory
-    files = []
-    for file in os.listdir(os.path.join(benchmark, 'programs')):
-      if file.endswith('.si'):
-        files.append(file)
-
-    # harness in benchmarks directory already
-    for file in files:
-      if not os.path.exists(os.path.join(benchmark, 'programs', os.path.basename(file))):
-        raise Exception(f'File not found: {file}')
-
-    files = sorted(files, key=lambda x: int(os.path.basename(x)[4:-3]))
-    files = map(lambda x: os.path.join(BENCHMARK_DIR, benchmark, 'programs', os.path.basename(x)), files)
-    files = list(files)
-
-  for method in methods:
-    print(f'Running {method}...')
-    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], files)
-    files = list(files)
-    print(files)
-
-    for file in files:
-      plan_id = get_plan_id(file)
-      if plan_id is None:
-        print(f'Invalid file: {file}')
-        continue
-      min_p = plans[plan_id]['min_particles'] if 'min_particles' in plans[plan_id] else 1
-      max_p = plans[plan_id]['max_particles'] if 'max_particles' in plans[plan_id] else 1000
-
-      # binary search for number of particles
-      attempted_p = set()
-      df = pd.read_csv(results_file)
-      existing_p = df.loc[df['method'] == method]\
-              .loc[df['plan_id'] == int(plan_id)]['particles'].unique()
-      for p in existing_p:
-        attempted_p.add(p)
-
-      print(existing_p)
-
-      lower_p = min_p
-      upper_p = max_p
-
-      while True:
-        p = (lower_p + upper_p) // 2
-        print('Trying', p)
-
-        # get errors for this p
-        if p in attempted_p:
-          print(f'Already ran {p} particles')
-          df = pd.read_csv(results_file)
-          df = df.loc[df['method'] == method]\
-                  .loc[df['plan_id'] == int(plan_id)]\
-                  .loc[df['particles'] == p]['time']
-          
-          n_close = 0
-          for error in df:
-            if close_to_target_runtime(target_runtime, error):
-              n_close += 1
-
-        else:
-          print(f'Running with {p} particles')
-
-          n_close = 0
-          for i in range(n):
-            print(f'{plan_id} {method} - {p} particles - Run {i}')
-
-            run_outputs = None
-            while run_outputs is None:
-              run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
-              if run_outputs is not None:
-                break
-            t, program_output = run_outputs
-
-            # write results to csv
-            with open(results_file, 'a') as f:
-              writer = csv.writer(f)
-              writer.writerow([
-                plan_id, 
-                method, 
-                p, 
-                t,
-                *program_output.values()
-              ])
-
-            if close_to_target_runtime(target_runtime, t):
-              n_close += 1
-
-          attempted_p.add(p)
-
-        if n_close / n > 0.5:
-          print('Too close to target')
-          # decrease number of particles
-          upper_p = p - 1
-        else:
-          print('Not close enough to target')
-          # increase number of particles
-          lower_p = p + 1
-
-        if lower_p > upper_p:
-          print('No more particles to try')
-          break
-
 def find_satisfiable_plans(benchmark, files, methods, plans, knowns):
   # print(plans)
   if len(files) == 0:
@@ -678,17 +466,12 @@ if __name__ == '__main__':
   rp = sp.add_parser('run')
   rp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
   rp.add_argument('--prange', '-pr', type=int, required=False, nargs=2, default=[1, 1000])
-  rp.add_argument('--accuracy', '-a', action='store_true')
-  rp.add_argument('--runtime', '-r', action='store_true')
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
   
   ap = sp.add_parser('analyze')
 
   rp = sp.add_parser('check')
-
-  bp = sp.add_parser('baseline')
-  bp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
 
   args = p.parse_args()
 
@@ -721,60 +504,29 @@ if __name__ == '__main__':
       os.makedirs(outdir, exist_ok=True)
       
       n = args.n
-
       true_vars = config['true_vars']
 
-      if args.accuracy and args.runtime:
-        raise Exception('Cannot run both accuracy and runtime')
-      elif args.runtime:
-        target_runtime = config['target_runtime']
-        plan_config = config['plans']
-
-        results_file = os.path.join(benchmark, args.output, 'results.csv')
-        if not os.path.exists(results_file):
-          with open(results_file, 'w') as f:
-            writer = csv.writer(f)
-            fieldnames = ['plan_id', 'method', 'particles', 'time']
-            fieldnames += [var[0] for var in true_vars]
-            writer.writerow(fieldnames)
-
-        run_runtime(benchmark, files, n, plan_config, target_runtime, methods, true_vars, results_file, args.error_func)
-      elif args.accuracy:
-        target_errors = config['target_errors']
-        plan_config = config['plans']
-
-        results_file = os.path.join(benchmark, args.output, 'results.csv')
-        if not os.path.exists(results_file):
-          with open(results_file, 'w') as f:
-            writer = csv.writer(f)
-            fieldnames = ['plan_id', 'method', 'particles', 'time']
-            fieldnames += [var[0] for var in true_vars]
-            writer.writerow(fieldnames)
-
-        run_accuracy(benchmark, files, n, plan_config, target_errors, methods, true_vars, results_file, args.error_func)
+      # Get list of particles
+      if args.particles is None:
+        particles = sorted([int(x) for x in np.unique(np.logspace(
+                                                np.log10(args.prange[0]), 
+                                                np.log10(args.prange[1]), 
+                                                N_INTERVALS, 
+                                                dtype=int
+                                              ))])
+        print('Particles:', particles)
       else:
-        # Just run with given number of particles
-        # Get list of particles
-        if args.particles is None:
-          particles = sorted([int(x) for x in np.unique(np.logspace(
-                                                  np.log10(args.prange[0]), 
-                                                  np.log10(args.prange[1]), 
-                                                  N_INTERVALS, 
-                                                  dtype=int
-                                                ))])
-          print('Particles:', particles)
-        else:
-          particles = args.particles
+        particles = args.particles
 
-        results_file = os.path.join(benchmark, args.output, 'results.csv')
-        if not os.path.exists(results_file):
-          with open(results_file, 'w') as f:
-            writer = csv.writer(f)
-            fieldnames = ['plan_id', 'method', 'particles', 'time']
-            fieldnames += [var[0] for var in true_vars]
-            writer.writerow(fieldnames)
+      results_file = os.path.join(benchmark, args.output, 'results.csv')
+      if not os.path.exists(results_file):
+        with open(results_file, 'w') as f:
+          writer = csv.writer(f)
+          fieldnames = ['plan_id', 'method', 'particles', 'time']
+          fieldnames += [var[0] for var in true_vars]
+          writer.writerow(fieldnames)
 
-        run_particles(benchmark, files, n, particles, methods, true_vars, results_file, args.error_func)
+      run_particles(benchmark, files, n, particles, methods, true_vars, results_file, args.error_func)
     elif args.subparser_name == 'analyze':
       filename = os.path.join(benchmark, args.output, 'statistics.json')
 
@@ -805,59 +557,6 @@ if __name__ == '__main__':
       with open(os.path.join(benchmark, 'config.json'), 'w') as f:
         json.dump(config, f, indent=2)
 
-    elif args.subparser_name == 'baseline':
-      # make output directory
-      outdir = os.path.join(benchmark, args.output)
-      os.makedirs(outdir, exist_ok=True)
-
-      n = 100
-      particles = 1000
-      file = os.path.join(BENCHMARK_DIR, benchmark, 'baseline.si')
-
-      true_vars = config['true_vars']
-
-      results_file = os.path.join(benchmark, args.output, 'baseline.csv')
-
-      # run baseline if it doesn't exist
-      if not os.path.exists(results_file):
-        with open(results_file, 'w') as f:
-          writer = csv.writer(f)
-          fieldnames = ['plan_id', 'method', 'particles', 'time']
-          fieldnames += [var[0] for var in true_vars]
-          writer.writerow(fieldnames)
-
-        run_particles(benchmark, [file], n, [particles], methods, true_vars, results_file, args.error_func)
-
-      # get median accuracy of each variable and median runtime without any annotations with 
-      # 1000 particles
-      config['target_errors'] = {}
-      config['target_runtime'] = {}
-      
-      with open(results_file, 'r') as f:
-        reader = csv.reader(f)
-        next(reader)
-        all_data = np.array(list(reader))
-
-        for method in methods:
-          data = all_data[all_data[:, 1] == method]
-
-          acc = np.median(data[:, 4:].astype(float), axis=0)
-          
-          print('Median accuracy:')
-          print(acc)
-
-          runtimes = data[:, 3].astype(float)
-          runtime = np.median(runtimes)
-
-          print('Median runtime:')
-          print(runtime)
-
-          config['target_errors'][method] = {var[0]: acc[i] for i, var in enumerate(true_vars)}
-          config['target_runtime'][method] = runtime
-
-        with open(os.path.join(benchmark, 'config.json'), 'w') as f:
-          json.dump(config, f, indent=2)
-        
     else:
       print('Invalid subcommand')
       exit(1)
