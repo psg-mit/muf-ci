@@ -1,6 +1,6 @@
 val make_observations = fun (yobs, xs) ->
   let pre_x = List.hd(xs) in
-  let symbolic x <- gaussian(pre_x, 1.) in
+  let sample x <- gaussian(pre_x, 1.) in
   let () = observe(gaussian(x, 1.), yobs) in
 
   let () = resample() in

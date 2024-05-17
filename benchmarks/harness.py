@@ -11,6 +11,7 @@ import csv
 import sys
 import pandas as pd
 import ast
+import tqdm
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -22,7 +23,7 @@ DEFAULT_BENCHMARKS = [
   'outlierheavy',
   'slds',
   'runner',
-  'radar',
+  # 'radar',
 ]
 
 DEFAULT_METHODS = [
@@ -101,7 +102,7 @@ def run_siren(benchmark, file, p, method, true_vars, error_func):
   # run siren file
   cmd = f'{sys.executable} siren.py {file} -m {method} -p {p}'
   
-  print('>', cmd)
+  # print('>', cmd)
 
   try:
     out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
@@ -176,7 +177,7 @@ def run_siren(benchmark, file, p, method, true_vars, error_func):
   return eval_time, program_output
 
 # Run experiments for each given number of particles
-def run_particles(benchmark, files, n, particles, methods, true_vars, results_file, error_func):
+def run_particles(benchmark, files, n, particles, methods, plans, true_vars, results_file, error_func):
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -198,21 +199,23 @@ def run_particles(benchmark, files, n, particles, methods, true_vars, results_fi
   for method in methods:
     print(f'Running {method}...')
 
-    files = filter(lambda x: config['plans'][get_plan_id(x)]["satisfiable"][method], all_files)
-    files = list(files)
-    print(files)
+    # print(all_files)
 
-    for file in files:
+    files = filter(lambda x: plans[get_plan_id(x)]["satisfiable"][method], all_files)
+    files = list(files)
+    # print(files)
+
+    for file in tqdm.tqdm(files, desc=f"Files", position=0, leave=True, total=len(files)):
       plan_id = get_plan_id(file)
       if plan_id is None:
         print(f'Invalid file: {file}')
         continue
       
-      for p in particles:
-        print(f'Running with {p} particles')
+      for p in tqdm.tqdm(particles, desc=f"Particles", position=1, leave=False, total=len(particles)):
+        # print(f'Running with {p} particles')
 
-        for i in range(n):
-          print(f'{plan_id} {method} - {p} particles - Run {i}')
+        for i in tqdm.tqdm(range(n), desc=f"Iteration", position=2, leave=False, total=n):
+          # print(f'{plan_id} {method} - {p} particles - Run {i}')
 
           run_outputs = None
           while run_outputs is None:
@@ -353,23 +356,23 @@ def analyze(benchmark, files, methods, variables, plans, results):
       if plan_data['satisfiable'][method]:
         satisfied_plans[plan_id] = plan_data['plan']
 
-    print(f'Satisfied plans: {list(satisfied_plans.keys())}')
-    print(satisfied_plans)
+    # print(f'Satisfied plans: {list(satisfied_plans.keys())}')
+    # print(satisfied_plans)
 
     n_true_satisfied = len(satisfied_plans.keys())
     n_inferred_satisfied = 0
 
-    for file in files:
+    for file in tqdm.tqdm(files, desc=f"Files", position=0, leave=True, total=len(files)):
       plan_id = get_plan_id(file)
       method_results['plan'][plan_id] = {}
 
       method_results['plan'][plan_id]['true_satisfied'] = plan_id in satisfied_plans
 
-      print(f'Analyzing {file}...')
+      # print(f'Analyzing {file}...')
 
       # get analysis output
       cmd = f'{sys.executable} siren.py {file} -m {method} --analyze-only'
-      print('>', cmd)
+      # print('>', cmd)
       try:
         out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
       except subprocess.CalledProcessError as e:
@@ -453,6 +456,48 @@ def analyze(benchmark, files, methods, variables, plans, results):
     results[method] = method_results
 
   return results
+
+def run_benchmark(benchmark, output, n, particles, methods, files, error_func):
+  outdir = os.path.join(benchmark)
+  os.makedirs(outdir, exist_ok=True)
+
+  with open(os.path.join(benchmark, 'config.json')) as f:
+    config = json.load(f)  
+  
+  true_vars = config['true_vars']
+
+  results_file = os.path.join(benchmark, output, 'results.csv')
+  if not os.path.exists(results_file):
+    os.makedirs(os.path.dirname(results_file), exist_ok=True)
+    with open(results_file, 'w') as f:
+      writer = csv.writer(f)
+      fieldnames = ['plan_id', 'method', 'particles', 'time']
+      fieldnames += [var[0] for var in true_vars]
+      writer.writerow(fieldnames)
+
+  run_particles(benchmark, files, n, particles, methods, config['plans'], true_vars, results_file, error_func)
+
+def analyze_benchmark(benchmark, files, output, methods):
+  with open(os.path.join(benchmark, 'config.json')) as f:
+    config = json.load(f)
+
+  filename = os.path.join(benchmark, output, 'statistics.json')
+
+  results = {}
+  if os.path.exists(filename):
+    with open(os.path.join(filename)) as f:
+      results = json.load(f)
+
+  variables = config['variables']
+  plans = config['plans']
+
+  results = analyze(benchmark, files, methods, variables, plans, results)
+
+  os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+  # write statistics
+  with open(filename, 'w') as f:
+    json.dump(results, f, indent=2)
   
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
@@ -473,92 +518,179 @@ if __name__ == '__main__':
 
   rp = sp.add_parser('check')
 
+  kp = sp.add_parser('kicktires')
+  aep = sp.add_parser('artifact-eval')
+
   args = p.parse_args()
 
-  benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
-  methods = [m.strip() for m in args.methods.split(',')] if args.methods is not None else DEFAULT_METHODS
-
   print('Start time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
+  start_time = time.time()
 
-  for benchmark in benchmarks:
-    print('Benchmark: {}'.format(benchmark))
-
-    with open(os.path.join(benchmark, 'config.json')) as f:
-      config = json.load(f)
+  if args.subparser_name == 'kicktires':
+    n = 1
+    particles = [1, 2, 4, 8, 16]
     
-    # If no files specified, get all files in programs directory
-    if args.files is None:
-      files = []
-    else: 
-      files = [f.strip() for f in args.files.split(',')]
+    print("Running the benchmark for Section 2 example with n=1 for Figure 4")
+    benchmark = 'example'
+    run_benchmark(benchmark, args.output, n, particles, ['ssi'], [], 'mse')
 
-    for file in files:
-      if not os.path.exists(file):
-        raise Exception(f'File not found: {file}')
+    print("Running the analysis for Section 5 Table 1")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      analyze_benchmark(benchmark, [], args.output, DEFAULT_METHODS)
 
-    methods = [method for method in methods if method in DEFAULT_METHODS]
+    print("Running the benchmarks for Section 5 with n=1 Figure 15")
+    for benchmark in ['outlier', 'noise']:
+      print('Benchmark: {}'.format(benchmark))
+      run_benchmark(benchmark, args.output, n, particles, ['ssi'], [], 'mse')
 
-    if args.subparser_name == 'run':
-      # make output directory
-      outdir = os.path.join(benchmark, args.output)
-      os.makedirs(outdir, exist_ok=True)
-      
-      n = args.n
-      true_vars = config['true_vars']
+    print("Running rest of the benchmarks with n=1 for Appendix E")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      if benchmark == 'slds':
+        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
+        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
 
-      # Get list of particles
-      if args.particles is None:
-        particles = sorted([int(x) for x in np.unique(np.logspace(
-                                                np.log10(args.prange[0]), 
-                                                np.log10(args.prange[1]), 
-                                                N_INTERVALS, 
-                                                dtype=int
-                                              ))])
-        print('Particles:', particles)
+      if benchmark in ['outlier', 'noise']:
+        methods = ['ds', 'bp']
+      elif benchmark == 'outlierheavy':
+        methods = ['ssi', 'ds']
+      elif benchmark == 'runner':
+        methods = ['ssi', 'bp']
       else:
-        particles = args.particles
+        methods = DEFAULT_METHODS
 
-      results_file = os.path.join(benchmark, args.output, 'results.csv')
-      if not os.path.exists(results_file):
-        with open(results_file, 'w') as f:
-          writer = csv.writer(f)
-          fieldnames = ['plan_id', 'method', 'particles', 'time']
-          fieldnames += [var[0] for var in true_vars]
-          writer.writerow(fieldnames)
+      run_benchmark(benchmark, args.output, n, particles, methods, [], 'mse')
+  elif args.subparser_name == 'artifact-eval':
+    n = 10
+    particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    
+    print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
+    benchmark = 'example'
+    run_benchmark(benchmark, args.output, n, particles, ['ssi'], [], 'mse')
 
-      run_particles(benchmark, files, n, particles, methods, true_vars, results_file, args.error_func)
-    elif args.subparser_name == 'analyze':
-      filename = os.path.join(benchmark, args.output, 'statistics.json')
+    print("Running the analysis for Section 5 Table 1")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      analyze_benchmark(benchmark, [], args.output, DEFAULT_METHODS)
 
-      results = {}
-      if os.path.exists(filename):
-        with open(os.path.join(filename)) as f:
-          results = json.load(f)
+    print(f"Running the benchmarks for Section 5 with n={n} Figure 15")
+    for benchmark in ['outlier', 'noise']:
+      print('Benchmark: {}'.format(benchmark))
+      run_benchmark(benchmark, args.output, n, particles, ['ssi'], [], 'mse')
 
-      variables = config['variables']
+    n = 1
+    print(f"Running rest of the benchmarks with n={n} for Appendix E")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      if benchmark == 'slds':
+        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
+        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
+      else:
+        if benchmark in ['outlier', 'noise']:
+          methods = ['ds', 'bp']
+        elif benchmark == 'outlierheavy':
+          methods = ['ssi', 'ds']
+        elif benchmark == 'runner':
+          methods = ['ssi', 'bp']
+        else:
+          methods = DEFAULT_METHODS
 
-      results = analyze(benchmark, files, methods, variables, config['plans'], results)
+        run_benchmark(benchmark, args.output, n, particles, methods, [], 'mse')
 
-      os.makedirs(os.path.dirname(filename), exist_ok=True)
+  elif args.subparser_name == 'full-replication':
+    n = 100
+    particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    
+    print("Running the analysis for Section 5 Table 1")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      analyze_benchmark(benchmark, [], args.output, DEFAULT_METHODS)
 
-      # write statistics
-      with open(os.path.join(filename), 'w') as f:
-        json.dump(results, f, indent=2)
+    print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
+    benchmark = 'example'
+    run_benchmark(benchmark, args.output, n, particles, ['ssi'], [], 'mse')
+    
+    print(f"Running all benchmarks with n={n} for full replication")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      if benchmark == 'slds':
+        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
+        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
+      else:
+        if benchmark == 'outlierheavy':
+          methods = ['ssi', 'ds']
+        elif benchmark == 'runner':
+          methods = ['ssi', 'bp']
+        else:
+          methods = DEFAULT_METHODS
 
-    elif args.subparser_name == 'check':
-      knowns = config['known_enc'] if 'known_enc' in config else None
-      satisfied_plan_ids = find_satisfiable_plans(benchmark, files, methods, config['plans'], knowns)
-      
-      for plan_id, plan_data in config['plans'].items():
-        plan_data['satisfiable'] = {} if 'satisfiable' not in plan_data else plan_data['satisfiable']
-        for method in methods:
-          plan_data['satisfiable'][method] = (plan_id in satisfied_plan_ids[method])
+        run_benchmark(benchmark, args.output, n, particles, methods, [], 'mse')
 
-      with open(os.path.join(benchmark, 'config.json'), 'w') as f:
-        json.dump(config, f, indent=2)
+  else:
+    benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
+    methods = [m.strip() for m in args.methods.split(',')] if args.methods is not None else DEFAULT_METHODS
 
-    else:
-      print('Invalid subcommand')
-      exit(1)
+    for benchmark in benchmarks:
+      print('Benchmark: {}'.format(benchmark))
 
+      # If no files specified, get all files in programs directory
+      if args.files is None:
+        files = []
+      else: 
+        files = [f.strip() for f in args.files.split(',')]
+
+      for file in files:
+        if not os.path.exists(file):
+          raise Exception(f'File not found: {file}')
+
+      methods = [method for method in methods if method in DEFAULT_METHODS]
+
+      if args.subparser_name == 'run':
+        # Get list of particles
+        if args.particles is None:
+          particles = sorted([int(x) for x in np.unique(np.logspace(
+                                                  np.log10(args.prange[0]), 
+                                                  np.log10(args.prange[1]), 
+                                                  N_INTERVALS, 
+                                                  dtype=int
+                                                ))])
+          print('Particles:', particles)
+        else:
+          particles = args.particles
+
+        run_benchmark(benchmark, args.output, args.n, particles, methods, files, args.error_func)
+      elif args.subparser_name == 'analyze':
+        analyze_benchmark(benchmark, files, args.output, methods)
+
+      elif args.subparser_name == 'check':
+        with open(os.path.join(benchmark, 'config.json')) as f:
+          config = json.load(f)
+
+        knowns = config['known_enc'] if 'known_enc' in config else None
+        satisfied_plan_ids = find_satisfiable_plans(benchmark, files, methods, config['plans'], knowns)
+        
+        for plan_id, plan_data in config['plans'].items():
+          plan_data['satisfiable'] = {} if 'satisfiable' not in plan_data else plan_data['satisfiable']
+          for method in methods:
+            plan_data['satisfiable'][method] = (plan_id in satisfied_plan_ids[method])
+
+        with open(os.path.join(benchmark, 'config.json'), 'w') as f:
+          json.dump(config, f, indent=2)
+
+      else:
+        print('Invalid subcommand')
+        exit(1)
+
+  end_time = time.time()
   print('End time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
+  print('Elapsed time: {}'.format(end_time - start_time))

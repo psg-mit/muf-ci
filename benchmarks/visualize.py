@@ -13,7 +13,7 @@ BENCHMARK_DIR = 'benchmarks'
 
 DEFAULT_BENCHMARKS = [
   'noise',
-  'radar',
+  # 'radar',
   'envnoise',
   'outlier',
   'outlierheavy',
@@ -31,7 +31,7 @@ DEFAULT_METHODS = [
 N_INTERVALS = 30
 
 BENCHMARK_LATEX_NAMES = {
-  'radar': r'\bRadar{}',
+  # 'radar': r'\bRadar{}',
   'envnoise': r"\bEnvnoise{}",
   'noise': r"\bNoise{}",
   'outlier': r"\bOutlier{}",
@@ -86,11 +86,11 @@ GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5
 
 PLT_SETTINGS = {
   'font.size': 14, 
-  'font.family': 'Linux Libertine', 
-  "text.usetex": True,                # use LaTeX to write all text
-  "text.latex.preamble": "\n".join([         # plots will use this preamble
-    '\\usepackage{libertine}'
-  ])
+  # 'font.family': 'Linux Libertine', 
+  # "text.usetex": True,                # use LaTeX to write all text
+  # "text.latex.preamble": "\n".join([         # plots will use this preamble
+  #   '\\usepackage{libertine}'
+  # ])
 }
 
 # https://stackoverflow.com/questions/20470892/how-to-place-minor-ticks-on-symlog-scale
@@ -372,7 +372,7 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
       y = 1.08
       bbox = (0.5, -0.1)
 
-    fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
+    # fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
     lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
 
     if n_y == 1:
@@ -392,7 +392,7 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
       filename = f'{method}_example_{plan_id_str}'
     else:
       filename = f'{method}_particles'
-    fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
+    # fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
     fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
 
     plt.close(fig)
