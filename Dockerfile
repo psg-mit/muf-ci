@@ -45,7 +45,8 @@ COPY . .
 ENV PATH="/usr/local/bin:$PATH"
 # ENV PYTHONPATH="/opt/venv:$PYTHONPATH"
 # ENV VIRTUAL_ENV="/opt/venv"
-RUN pip3.11 install -r requirements.txt
+# RUN pip3.11 install -r requirements.txt
+RUN pip3.11 install -e .
 
 # Enable venv
 # ENV PATH="/opt/venv:$PATH"
