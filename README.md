@@ -9,7 +9,7 @@ $ cd siren
 
 This software requires Python >= 3.10. To install dependencies:
 ```bash
-$ pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Quickstart
@@ -34,22 +34,22 @@ The program iterates over a range of of values from 1 to 100 (inclusive) as the 
 
 To run the inference plan satisfiability analysis, and execute the program if the analysis succeeds:
 ```bash
-$ python siren.py path/to/program.si -m {method} -p {particles} --analyze
+siren path/to/program.si -m {method} -p {particles} --analyze
 ```
 
 For example, to run the analysis and execute the program using the semi-symbolic inference algorithm with 100 particles:
 ```bash
-$ python siren.py path/to/program.si -m ssi -p 100 --analyze
+siren examples/kalman.si -m ssi -p 100 --analyze
 ```
 
 To execute without the analysis:
 ```bash
-$ python siren.py path/to/program.si -m {method}
+siren path/to/program.si -m {method}
 ```
 
 To run the analysis only:
 ```bash
-$ python siren.py path/to/program.si -m {method} --analyze-only
+siren path/to/program.si -m {method} --analyze-only
 ```
 
 ## Tests

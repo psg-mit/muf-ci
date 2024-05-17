@@ -99,7 +99,7 @@ def flatten_nested(structure):
 # Runs benchmark executable and computes the absolute error of each variable
 def run_siren(benchmark, file, p, method, true_vars, error_func):
   # run siren file
-  cmd = f'{sys.executable} siren.py {file} -m {method} -p {p}'
+  cmd = f'siren {file} -m {method} -p {p}'
   
   print('>', cmd)
 
@@ -275,7 +275,7 @@ def find_satisfiable_plans(benchmark, files, methods, plans, knowns):
           continue
 
       # get analysis output
-      cmd = f'{sys.executable} siren.py {file} -p 10 -m {method}'
+      cmd = f'siren {file} -p 10 -m {method}'
       print('>', cmd)
       try:
         out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
@@ -368,8 +368,8 @@ def analyze(benchmark, files, methods, variables, plans, results):
       print(f'Analyzing {file}...')
 
       # get analysis output
-      cmd = f'{sys.executable} siren.py {file} -m {method} --analyze-only'
-      print('>', cmd)
+      cmd = f'siren {file} -m {method} --analyze-only'
+      # print('>', cmd)
       try:
         out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
       except subprocess.CalledProcessError as e:
