@@ -11,7 +11,7 @@ pyvenv/
 .DS_Store
 muf.log
 benchmarks/*/*.ml
-benchmarks/*/output*/
+benchmarks/*/output/
 benchmarks/*/test*
 benchmarks/*/all_programs/*.ml
 .vscode/

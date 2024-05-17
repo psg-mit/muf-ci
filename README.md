@@ -132,6 +132,3 @@ This will take ~23 days.
 
 ## Guide
 To view Siren syntax and a description of the source files in this repository, please see [DESCRIPTION.md]().
-
-
-<!-- TODO: include the results.csv from the paper benchmarks -->
