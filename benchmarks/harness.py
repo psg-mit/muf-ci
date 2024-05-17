@@ -577,6 +577,7 @@ if __name__ == '__main__':
       print('Benchmark: {}'.format(benchmark))
       analyze_benchmark(benchmark, [], args.output, DEFAULT_METHODS)
 
+    n = 5
     print(f"Running the benchmarks for Section 5 with n={n} Figure 15")
     for benchmark in ['outlier', 'noise']:
       print('Benchmark: {}'.format(benchmark))
