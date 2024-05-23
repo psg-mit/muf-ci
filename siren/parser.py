@@ -16,7 +16,6 @@ expression:
   | INTEGER -> integer
   | STRING -> string
   | NAME -> variable
-  # | "(" expression ")" -> expression # doesn't freaking work with () 
   | "(" expression ("," expression)* ")" -> pair
   | "let" patternlist "=" expression "in" expression -> let
   | ops -> ops
