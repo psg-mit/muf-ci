@@ -22,3 +22,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 siren = 'siren.siren:main'
+
+[tool.pytest.ini_options]
+testpaths = "tests"

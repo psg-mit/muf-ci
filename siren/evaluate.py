@@ -463,8 +463,6 @@ def evaluate(
   n_particles: int, 
   method: type[SymState], 
   file_dir: str,
-  multiprocess: bool = False,
-  exclude_marginalizing: bool = False,
   seed: Optional[int] = None,
 ) -> Tuple[SymExpr, ProbState]:
   functions, expression = program.functions, program.main
@@ -473,50 +471,6 @@ def evaluate(
   functions = {f.name: f for f in functions}
 
   particles = ProbState(n_particles, expression, method, seed)
-
-  # if multiprocess:
-  #   n_processes = cpu_count() - 1
-  #   chunksize = n_particles // n_processes
-  #   in_queue, out_queue = Queue(), Queue()
-  #   done_queue = Queue()
-  #   processes = [Process(target=evaluate_consumer, args=(in_queue, out_queue, functions, file_dir)) for _ in range(n_processes)]
-  #   resample_process = Process(target=resample_consumer, args=(out_queue, done_queue, in_queue, n_particles, chunksize))
-
-  #   n_particles_per_process = [n_particles // n_processes] * n_processes
-  #   leftover = n_particles % n_processes
-  #   for i in range(leftover):
-  #     n_particles_per_process[i] += 1
-
-  #   for p in processes:
-  #     p.start()
-  #   resample_process.start()
-
-  #   curr = 0
-  #   for p in range(n_processes):
-  #     particles_chunk = particles.particles[curr:curr+n_particles_per_process[p]]
-  #     curr += n_particles_per_process[p]
-  #     in_queue.put(particles_chunk)
-
-  #   # for particle in particles:
-  #   #   in_queue.put(particle)
-
-  #   while True:
-  #     if not done_queue.empty():
-  #       # print('done')
-  #       particles = done_queue.get()
-  #       break
-
-  #   for p in processes:
-  #     in_queue.put(None)
-
-  #   for p in processes:
-  #     p.join()
-  #   resample_process.join()
-
-  #   particles = ProbState.from_particles(particles)
-    # print('hello')
-
-  # else:
   while True:
     for i, particle in enumerate(particles):
       if particle.finished:
@@ -528,9 +482,5 @@ def evaluate(
       break
     else:
       particles.resample()
-
-  if exclude_marginalizing:
-    orig_particles = copy(particles)
-    return particles.result(), orig_particles
 
   return particles.result(), particles

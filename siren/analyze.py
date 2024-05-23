@@ -407,11 +407,10 @@ def evaluate(program: Program, method: type[AbsSymState]) -> AbsProbState:
 
   return probstate
 
-def analyze(program: Program, method: type[AbsSymState], exclude_marginalizing: bool=False) -> InferencePlan:
+def analyze(program: Program, method: type[AbsSymState]) -> InferencePlan:
   prob = evaluate(program, method)
 
-  if not exclude_marginalizing:
-    prob.result()
+  prob.result()
 
   inferred_plan = prob.particles.state.plan
 

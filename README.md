@@ -42,7 +42,7 @@ let x0 = 0 in
 let xs = fold(make_observations, data, [x0]) in
 List.rev(xs)
 ```
-The program iterates over a range of of values from 1 to 100 (inclusive) as the observed data. The variable `x` is annotated with `sample` to indicate `x` should be represented as samples during inference. To indicate `x` should be represented as a symbolic distribution, replace `sample` with `symbolic`.
+The program iterates over a range of values from 1 to 100 (inclusive) as the observed data. The variable `x` is annotated with `sample` to indicate `x` should be represented as samples during inference. To indicate `x` should be represented as a symbolic distribution, replace `sample` with `symbolic`.
 
 To run the inference plan satisfiability analysis, and execute the program if the analysis succeeds:
 ```bash
