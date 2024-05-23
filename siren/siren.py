@@ -1,9 +1,6 @@
 import argparse
-from enum import Enum
 import os
 import time
-import cProfile
-import pstats
 
 from . import parser, evaluate, analyze
 from .inference import SSIState, DSState, BPState

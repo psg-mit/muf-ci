@@ -18,7 +18,6 @@ def run(program_path, inference_method):
       10, 
       inference_method, 
       file_dir, 
-      False,
       seed=0,
     )
     runtime_plan = runtime_inference_plan(particles)
