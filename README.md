@@ -53,6 +53,7 @@ For example, to run the analysis and execute the program using the semi-symbolic
 ```bash
 siren examples/kalman.si -m ssi -p 100 --analyze
 ```
+The compiler will throw an `AnalysisViolatedAnnotationError` and abort compilation if the annotated inference plan is not satisfiable.
 
 To execute without the analysis:
 ```bash
