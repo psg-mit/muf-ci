@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "siren"
 version = "0.1.0"
-description = ""
-authors = []
+description = "A first-order functional probabilistic programming language, implemented with the hybrid inference interface, with support for inference plans."
+authors = ["Ellie Cheng", "Eric Atkinson", "Guillaume Baudart", "Louis Mandel", "Michael Carbin"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
