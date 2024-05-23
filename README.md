@@ -130,5 +130,8 @@ python visualize.py --task plot
 ```
 This will take ~23 days.
 
+## Syntax
+The Siren syntax can be found in `siren/parser.py`.
+
 ## Guide
-To view Siren syntax and a description of the source files in this repository, please see [DESCRIPTION.md]().
+To view a description of the source files in this repository and instructions on how to extend Siren, please see [DESCRIPTION.md](DESCRIPTION.md).

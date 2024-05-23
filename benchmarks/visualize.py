@@ -221,6 +221,9 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
 
     plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
 
+    if len(plans) <= 1:
+      continue
+
     figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
 
     fig, axes = plt.subplots(
