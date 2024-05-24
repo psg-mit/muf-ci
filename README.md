@@ -1,8 +1,7 @@
 # Siren
 Siren is a first-order functional probabilistic programming language, implemented with the hybrid inference interface, with support for inference plans. Distributions encoding annotations can be added to random variables to select the representation of the variable's distribution to be used during inference. Siren is also equipped with the inference plan satisfiability analysis, which statically infers if the annotated inference plan is satisfiable. 
 
-<!-- TODO: what is reusable -->
-<!-- siren compiler, and inference plan analysis, how to extend -->
+The Siren interpreter, including the inference plan satisfiability analysis, is implemented with semi-symbolic inference, delayed sampling, and SMC with belief propagation. It can be extended with other hybrid inference algorithms that can implement the hybrid inference interface. 
 
 ## Install
 Checkout the repository on the Artifact Evaluation branch:
@@ -53,7 +52,7 @@ For example, to run the analysis and execute the program using the semi-symbolic
 ```bash
 siren examples/kalman.si -m ssi -p 100 --analyze
 ```
-The compiler will throw an `AnalysisViolatedAnnotationError` and abort compilation if the annotated inference plan is not satisfiable.
+The analysis will throw an `AnalysisViolatedAnnotationError` and abort without running the program if the annotated inference plan is not satisfiable.
 
 To execute without the analysis:
 ```bash

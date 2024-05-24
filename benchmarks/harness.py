@@ -548,22 +548,35 @@ if __name__ == '__main__':
     for benchmark in DEFAULT_BENCHMARKS:
       print('Benchmark: {}'.format(benchmark))
       if benchmark == 'slds':
-        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan67.si',
+          'benchmarks/slds/programs/plan81.si', 
+          'benchmarks/slds/programs/plan98.si', 
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
-        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan113.si', 
+          'benchmarks/slds/programs/plan114.si', 
+          'benchmarks/slds/programs/plan116.si', 
+          'benchmarks/slds/programs/plan120.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
-        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
-
-      if benchmark in ['outlier', 'noise']:
-        methods = ['ds', 'bp']
-      elif benchmark == 'outlierheavy':
-        methods = ['ssi', 'ds']
-      elif benchmark == 'runner':
-        methods = ['ssi', 'bp']
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], [], 'mse')
       else:
-        methods = DEFAULT_METHODS
+        if benchmark in ['outlier', 'noise']:
+          methods = ['ds', 'bp']
+        elif benchmark == 'outlierheavy':
+          methods = ['ssi', 'ds']
+        elif benchmark == 'runner':
+          methods = ['ssi', 'bp']
+        else:
+          methods = DEFAULT_METHODS
 
-      run_benchmark(benchmark, args.output, n, particles, methods, [], 'mse')
+        run_benchmark(benchmark, args.output, n, particles, methods, [], 'mse')
   elif args.subparser_name == 'artifact-eval':
     n = 10
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
@@ -588,11 +601,24 @@ if __name__ == '__main__':
     for benchmark in DEFAULT_BENCHMARKS:
       print('Benchmark: {}'.format(benchmark))
       if benchmark == 'slds':
-        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan67.si',
+          'benchmarks/slds/programs/plan81.si', 
+          'benchmarks/slds/programs/plan98.si', 
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
-        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan113.si', 
+          'benchmarks/slds/programs/plan114.si', 
+          'benchmarks/slds/programs/plan116.si', 
+          'benchmarks/slds/programs/plan120.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
-        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], [], 'mse')
       else:
         if benchmark in ['outlier', 'noise']:
           methods = ['ds', 'bp']
@@ -622,11 +648,24 @@ if __name__ == '__main__':
     for benchmark in DEFAULT_BENCHMARKS:
       print('Benchmark: {}'.format(benchmark))
       if benchmark == 'slds':
-        files = ['benchmarks/slds/programs/plan67.si', 'benchmarks/slds/programs/plan81.si', 'benchmarks/slds/programs/plan98.si', 'benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan67.si',
+          'benchmarks/slds/programs/plan81.si', 
+          'benchmarks/slds/programs/plan98.si', 
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ssi'], files, 'mse')
-        files = ['benchmarks/slds/programs/plan112.si', 'benchmarks/slds/programs/plan113.si', 'benchmarks/slds/programs/plan114.si', 'benchmarks/slds/programs/plan116.si', 'benchmarks/slds/programs/plan120.si', 'benchmarks/slds/programs/plan127.si']
+        files = [
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan113.si', 
+          'benchmarks/slds/programs/plan114.si', 
+          'benchmarks/slds/programs/plan116.si', 
+          'benchmarks/slds/programs/plan120.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
         run_benchmark(benchmark, args.output, n, particles, ['ds'], files, 'mse')
-        run_benchmark(benchmark, args.output, n, particles, ['bp'], files, 'mse')
+        run_benchmark(benchmark, args.output, n, particles, ['bp'], [], 'mse')
       else:
         if benchmark == 'outlierheavy':
           methods = ['ssi', 'ds']
