@@ -18,6 +18,8 @@ Number = int | float
   
 ### External grammar
 
+# Program expressions can use the SymExpr type (symbolic expressions for program evaluation) 
+# or AbsSymExpr type (abstract symbolic expressions for analysis)
 S = TypeVar("S", bound='SymExpr | AbsSymExpr')
 
 # Before operators gets evaluated into symbolic expressions,
@@ -230,14 +232,6 @@ class Add(SymExpr[Number], Op[SymExpr]):
   def subst_rv(self, rv: 'RandomVar', value: 'SymExpr') -> 'SymExpr':
     return Add(self.left.subst_rv(rv, value), self.right.subst_rv(rv, value))
 
-# @dataclass(frozen=True)
-# class Sub(SymExpr[T]):
-#   left: 'SymExpr[T]'
-#   right: 'SymExpr[T]'
-
-#   def __str__(self):
-#     return f"({self.left} - {self.right})"
-
 @dataclass(frozen=True)
 class Mul(SymExpr[Number], Op[SymExpr]):
   left: 'SymExpr[Number]'
@@ -382,6 +376,7 @@ class Lst(SymExpr[T]):
   def subst_rv(self, rv: 'RandomVar', value: 'SymExpr') -> 'SymExpr':
     return Lst([e.subst_rv(rv, value) for e in self.exprs])
 
+# Symbolic distributions are a type of symbolic expression and are built-in operators
 @dataclass(frozen=True)
 class SymDistr(SymExpr[T], Op[SymExpr]):
   
@@ -405,6 +400,7 @@ class Normal(SymDistr[float]):
   def __str__(self):
     return f"Normal({self.mu}, {self.var})"
   
+  # Variance must be > 0
   def marginal_parameters(self) -> Tuple[float, float]:
     assert isinstance(self.mu, Const)
     assert isinstance(self.var, Const)
@@ -412,16 +408,12 @@ class Normal(SymDistr[float]):
 
     return self.mu.v, self.var.v
 
-  # Native statistics.NormalDist is the fastest
   def draw(self, rng: np.random.Generator) -> float:
     mu, var = self.marginal_parameters()
-    # return stats.norm.rvs(mu, np.sqrt(var))
-    # return statistics.NormalDist(mu, np.sqrt(var)).samples(1)[0]
     return rng.normal(mu, np.sqrt(var))
 
   def score(self, v: float) -> float:
     mu, var = self.marginal_parameters()
-    # return float(stats.norm.logpdf(v, mu, np.sqrt(var)))
     return -0.5 * math.log(2 * math.pi * var) - ((v - mu) ** 2) / (2 * var)
   
   def mean(self) -> float:
@@ -442,6 +434,7 @@ class Bernoulli(SymDistr[bool]):
   def __str__(self):
     return f"Bernoulli({self.p})"
   
+  # Probability must be in [0, 1]
   def marginal_parameters(self) -> float:
     assert isinstance(self.p, Const)
     assert 0 <= self.p.v <= 1
@@ -450,7 +443,6 @@ class Bernoulli(SymDistr[bool]):
   
   def draw(self, rng: np.random.Generator) -> bool:
     p = self.marginal_parameters()
-    # return bool(stats.bernoulli.rvs(p))
     return bool(rng.binomial(1, p))
 
   def score(self, v: int) -> float:
@@ -476,6 +468,7 @@ class Beta(SymDistr[float]):
   def __str__(self):
     return f"Beta({self.a}, {self.b})"
   
+  # Parameters must be > 0
   def marginal_parameters(self) -> Tuple[float, float]:
     assert isinstance(self.a, Const)
     assert isinstance(self.b, Const)
@@ -486,12 +479,10 @@ class Beta(SymDistr[float]):
   
   def draw(self, rng: np.random.Generator) -> float:
     a, b = self.marginal_parameters()
-    # return stats.beta.rvs(a, b)
     return rng.beta(a, b)
   
   def score(self, v: float) -> float:
     a, b = self.marginal_parameters()
-    # return float(stats.beta.logpdf(v, a, b))
     if v >= 0 and v <= 1:
       return - logbeta(a, b) + (a - 1) * math.log(v) + (b - 1) * math.log(1 - v)
     return -np.inf
@@ -515,6 +506,7 @@ class Binomial(SymDistr[int]):
   def __str__(self):
     return f"Binomial({self.n}, {self.p})"
   
+  # n must be >= 0, p must be in [0, 1]
   def marginal_parameters(self) -> Tuple[int, float]:
     assert isinstance(self.n, Const)
     assert isinstance(self.p, Const)
@@ -525,12 +517,10 @@ class Binomial(SymDistr[int]):
   
   def draw(self, rng: np.random.Generator) -> int:
     n, p = self.marginal_parameters()
-    # return stats.binom.rvs()(n, p)
     return rng.binomial(n, p)
   
   def score(self, v: int) -> float:
     n, p = self.marginal_parameters()
-    # return float(stats.binom.logpmf(v, n, p))
     if v >= 0 and v <= n:
       return logcomb(n, v) + v * math.log(p) + (n - v) * math.log(1 - p)
     return -np.inf
@@ -555,6 +545,7 @@ class BetaBinomial(SymDistr[int]):
   def __str__(self):
     return f"BetaBinomial({self.n}, {self.a}, {self.b})"
   
+  # n must be >= 0, a and b must be > 0
   def marginal_parameters(self) -> Tuple[int, float, float]:
     assert isinstance(self.n, Const)
     assert isinstance(self.a, Const)
@@ -567,12 +558,10 @@ class BetaBinomial(SymDistr[int]):
   
   def draw(self, rng: np.random.Generator) -> int:
     n, a, b = self.marginal_parameters()
-    # return stats.betabinom.rvs(n, a, b)
     return rng.binomial(n, rng.beta(a, b))
   
   def score(self, v: int) -> float:
     n, a, b = self.marginal_parameters()
-    # return float(stats.betabinom.logpmf(v, n, a, b))
     if v >= 0 and v <= n:
       return logcomb(n, v) + logbeta(v + a, n - v + b) - logbeta(a, b)
     return -np.inf
@@ -596,6 +585,7 @@ class NegativeBinomial(SymDistr[int]):
   def __str__(self):
     return f"NegativeBinomial({self.n}, {self.p})"
   
+  # Probability must be in [0, 1]
   def marginal_parameters(self) -> Tuple[int, float]:
     assert isinstance(self.n, Const)
     assert isinstance(self.p, Const)
@@ -605,12 +595,10 @@ class NegativeBinomial(SymDistr[int]):
   
   def draw(self, rng: np.random.Generator) -> int:
     n, p = self.marginal_parameters()
-    # return stats.nbinom.rvs(n, p)
     return rng.negative_binomial(n, p)
   
   def score(self, v: int) -> float:
     n, p = self.marginal_parameters()
-    # return float(stats.nbinom.logpmf(v, n, p))
     if v >= 0:
       return logcomb(v + n - 1, v) + n * math.log(p) + v * math.log(1 - p)
     return -np.inf
@@ -634,6 +622,7 @@ class Gamma(SymDistr[float]):
   def __str__(self):
     return f"Gamma({self.a}, {self.b})"
   
+  # Parameters must be > 0
   def marginal_parameters(self) -> Tuple[float, float]:
     assert isinstance(self.a, Const)
     assert isinstance(self.b, Const)
@@ -644,12 +633,10 @@ class Gamma(SymDistr[float]):
   
   def draw(self, rng: np.random.Generator) -> float:
     a, b = self.marginal_parameters()
-    # return stats.gamma.rvs()(a, scale=1 / b)
     return rng.gamma(a, 1 / b)
   
   def score(self, v: float) -> float:
     a, b = self.marginal_parameters()
-    # return float(stats.gamma.logpdf(v, a, scale=1 / b))
     if v >= 0:
       return (a - 1) * math.log(v) - b * v - math.lgamma(a) + a * math.log(b)
     return -np.inf
@@ -672,6 +659,7 @@ class Poisson(SymDistr[int]):
   def __str__(self):
     return f"Poisson({self.l})"
   
+  # Rate must be >= 0
   def marginal_parameters(self) -> float:
     assert isinstance(self.l, Const)
     assert self.l.v >= 0
@@ -680,12 +668,10 @@ class Poisson(SymDistr[int]):
   
   def draw(self, rng: np.random.Generator) -> int:
     l = self.marginal_parameters()
-    # return stats.poisson.rvs(l)
     return rng.poisson(l)
   
   def score(self, v: int) -> float:
     l = self.marginal_parameters()
-    # return float(stats.poisson.logpmf(v, l))
     if v >= 0:
       return v * math.log(l) - l - math.lgamma(v + 1)
     return -np.inf
@@ -710,6 +696,7 @@ class StudentT(SymDistr[float]):
   def __str__(self):
     return f"StudentT({self.mu}, {self.tau2}, {self.nu})"
   
+  # Variance and degrees of freedom must be > 0
   def marginal_parameters(self) -> Tuple[float, float, float]:
     assert isinstance(self.mu, Const)
     assert isinstance(self.tau2, Const)
@@ -721,12 +708,10 @@ class StudentT(SymDistr[float]):
   
   def draw(self, rng: np.random.Generator) -> float:
     mu, tau2, nu = self.marginal_parameters()
-    # return stats.t.rvs(nu, mu, np.sqrt(tau2))
     return rng.standard_t(nu) * np.sqrt(tau2) + mu
   
   def score(self, v: float) -> float:
     mu, tau2, nu = self.marginal_parameters()
-    # return float(stats.t.logpdf(v, nu, mu, np.sqrt(tau2)))
     return math.lgamma((nu + 1) / 2) - math.lgamma(nu / 2) - 0.5 * math.log(nu) - 0.5 * math.log(math.pi) - 0.5 * math.log(tau2) - 0.5 * (nu + 1) * math.log(1 + (v - mu) ** 2 / (nu * tau2))
   
   def mean(self) -> float:
@@ -751,6 +736,8 @@ class Categorical(SymDistr[int]):
   def __str__(self):
     return f"Categorical({self.lower}, {self.upper}, {self.probs})"
   
+  # Lower must be >= 0, upper must be >= lower, probabilities must sum to 1
+  # Upper is inclusive
   def marginal_parameters(self) -> Tuple[int, int, List[float]]:
     assert isinstance(self.lower, Const)
     assert isinstance(self.upper, Const)
@@ -765,7 +752,6 @@ class Categorical(SymDistr[int]):
   
   def draw(self, rng: np.random.Generator) -> int:
     lower, upper, probs = self.marginal_parameters()
-    # return stats.rv_discrete(values=(range(lower, upper + 1), probs)).rvs()()
     return rng.choice(range(lower, upper + 1), p=probs)
   
   def score(self, v: int) -> float:
@@ -801,7 +787,6 @@ class Delta(SymDistr[T]):
   
   def score(self, v: T) -> float:
     inner_v = self.marginal_parameters()
-    # raise ValueError("Scoring a Delta distribution is not supported")
     return 0 if v == inner_v else -np.inf
   
   def mean(self) -> float:
@@ -846,6 +831,8 @@ class TopE(AbsSymExpr[T]):
   def __str__(self):
     return "TopE"
   
+  # TopE is the top element of the lattice, so it "references" all random variables
+  # But this should be treated as a special case
   def rvs(self) -> List['AbsRandomVar']:
     return []
   
@@ -855,6 +842,8 @@ class TopE(AbsSymExpr[T]):
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymExpr':
     return self
   
+# UnkE represents an unknown expression that depends on a set of random variables
+# It's a refinement of TopE
 @dataclass(frozen=True)
 class UnkE(AbsSymExpr[T]):
   parents: List['AbsRandomVar']
@@ -878,6 +867,7 @@ class UnkE(AbsSymExpr[T]):
     self.parents.extend(new_parents)
     return self
 
+# UnkC represents an unknown constant
 @dataclass(frozen=True)
 class UnkC:
   def __str__(self):
@@ -1091,6 +1081,7 @@ class AbsSymDistr(AbsSymExpr[T], Op[AbsSymExpr]):
   def subst_rv(self, rv: AbsRandomVar, value: AbsSymExpr) -> 'AbsSymDistr':
     raise NotImplementedError()
   
+# Analogous to TopE
 @dataclass(frozen=True)
 class TopD(AbsSymDistr[T]):
   def __str__(self):
@@ -1105,6 +1096,7 @@ class TopD(AbsSymDistr[T]):
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymDistr':
     return self
 
+# Analogous to UnkE
 @dataclass(frozen=True)
 class UnkD(AbsSymDistr[T]):
   parents: List[AbsRandomVar]

@@ -3,6 +3,8 @@ from typing import Optional, Tuple
 from siren.grammar import *
 from siren.inference.interface import SymState
 
+# Helper functions for manipulating conjugate distributions
+
 # If expr scales rv, returns the scaling factor
 # Not complete
 def is_scaled(state: SymState, expr: SymExpr, e: SymExpr) -> Optional[SymExpr]:
@@ -57,6 +59,7 @@ def is_scaled(state: SymState, expr: SymExpr, e: SymExpr) -> Optional[SymExpr]:
     case _:
       raise ValueError(expr)
 
+# Returns (a, b) such that expr = a * rv + b
 def is_affine(state: SymState, expr: SymExpr, rv: RandomVar) -> Optional[Tuple[SymExpr, SymExpr]]:
   match expr:
     case Const(_):

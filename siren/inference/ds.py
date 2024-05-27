@@ -5,15 +5,21 @@ from siren.grammar import RandomVar
 import siren.inference.conjugate as conj
 from siren.inference.interface import *
 
+# Implementation of delayed sampling
+# Adapted from https://github.com/IBM/probzelus/
+
+### Directed Sampling node types
 @dataclass(frozen=True)
 class DSNode():
   pass
 
+# DSRealized: the node has been observed/sampled
 @dataclass(frozen=True)
 class DSRealized(DSNode):
   def __str__(self) -> str:
     return 'DSRealized'
 
+# DSMarginalized: the node has been marginalized
 @dataclass(frozen=True)
 class DSMarginalized(DSNode):
   edge: Optional[Tuple[RandomVar, SymDistr]]
@@ -21,6 +27,7 @@ class DSMarginalized(DSNode):
   def __str__(self):
     return f'DSMarginalized({self.edge})'
 
+# DSInitialized: the node is initialized
 @dataclass(frozen=True)
 class DSInitialized(DSNode):
   edge: Tuple[RandomVar, SymDistr]
@@ -71,18 +78,25 @@ class DSState(SymState):
         case _:
           return False
 
+    # create a new random variable and assign annotation
     rv = self.new_var()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
       else:
         self.annotations[name] = annotation
+    # simplify distribution
     distribution = self.eval_distr(distribution)
-
     children = []
+
+    # if the distribution refers to no random variables, the RV is marginalized
     if len(distribution.rvs()) == 0:
       node = DSMarginalized(None)
     else:
+      # Otherwise, can only keep one parent and it has to be conjugate
+      # Greedily choose the first conjugate parent
+
+      # Remove duplicate parents, in place
       parents = []
       for rv_par in distribution.rvs():
         if rv_par not in parents:
@@ -92,14 +106,18 @@ class DSState(SymState):
       canonical_parent = None
       has_parent = False
       for rv_par in parents:
+        # if already sampled, skip
         if rv_par not in distribution.rvs():
           continue
+        # still need a conjugate parent
         if not has_parent:
           match self.node(rv_par):
+            # If the parent is already realized, just simplify the distribution
             case DSRealized():
               distribution = self.eval_distr(distribution)
               continue
             case DSMarginalized(_):
+              # If the parent is marginalized, check if it is conjugate
               parent_dist = self.distr(rv_par)
               if _check_conjugacy(parent_dist, distribution, rv_par, rv):
                 if rv not in self.children(rv_par):
@@ -110,6 +128,8 @@ class DSState(SymState):
 
                 continue
             case DSInitialized((_, parent_dist)):
+              # If the parent is initialized, check if it is conjugate
+              # using the conditional distribution expression of the node
               if _check_conjugacy(parent_dist, distribution, rv_par, rv):
                 if rv not in self.children(rv_par):
                   self.children(rv_par).append(rv)
@@ -120,13 +140,15 @@ class DSState(SymState):
             case _:
               raise ValueError(f'{rv_par} is {self.node(rv_par)}')
 
+        # Parent was not conjugate, sample it
         self.value(rv_par)
         distribution = self.eval_distr(distribution)
 
-      # all parents were sampled
+      # all parents were sampled, RV is marginalized
       if len(distribution.rvs()) == 0:
         node = DSMarginalized(None)
       else:
+        # If there is a conjugate parent, initialize the RV with the parent
         assert canonical_parent is not None
         node = DSInitialized((canonical_parent, distribution))
 
@@ -154,21 +176,25 @@ class DSState(SymState):
     self.graft(rv)
     return self.do_sample(rv)
   
-  # Make rv marginal
+  # Make rv marginal and terminal
   def marginalize(self, rv: RandomVar) -> None:
     match self.node(rv):
       case DSRealized():
         assert len(self.children(rv)) == 0
       case DSMarginalized(_):
+        # Turn rv into terminal node if it has children
         if len(self.children(rv)) > 0:
           self.graft(rv)
       case DSInitialized((rv_par, _)):
         match self.node(rv_par):
           case DSInitialized(_):
+            # recursively marginalize parent
             self.marginalize(rv_par)
             assert not isinstance(self.node(rv_par), DSInitialized)
+        # Turn RV into DSMarginalized
         self.do_marginalize(rv)
             
+        # Turn rv into terminal node if it has children
         if len(self.children(rv)) > 0:
           self.graft(rv)
       case _:
@@ -187,6 +213,7 @@ class DSState(SymState):
           case DSInitialized(_):
             raise ValueError(f'Cannot marginalize {rv} because {rv_par} is not marginalized')
           case DSRealized():
+            # Parent is realized, simplify the distribution
             d = self.distr(rv_par)
             # simplify delta
             if not isinstance(d, Delta):
@@ -195,10 +222,13 @@ class DSState(SymState):
             self.eval_entry(rv)
             self.set_node(rv, DSMarginalized(None))
           case DSMarginalized(_):
+            # Try to make rv marginal, preserving the edge and conditional distribution
             if self.make_marginal(rv_par, rv):
               self.eval_entry(rv)
               self.set_node(rv, DSMarginalized((rv_par, cdistr)))
             else:
+              # Parent is not conjugate, sample it
+              # This will automatically make RV marginal with no edge
               self.value(rv_par)
               self.eval_entry(rv)
               self.set_node(rv, DSMarginalized(None))
@@ -206,7 +236,7 @@ class DSState(SymState):
         raise ValueError(f'{rv} is {self.node(rv)}')
 
   def do_sample(self, rv: RandomVar) -> Const:
-    # sample
+    # sample only works on marginalized nodes
     match self.node(rv):
       case DSMarginalized(_):
         v = self.draw(rv)
@@ -233,6 +263,7 @@ class DSState(SymState):
     return None
   
   def make_marginal(self, rv_par: RandomVar, rv_child: RandomVar) -> bool:
+    # Update saves the marginal distribution to rv_child
     def _update(marginal: Optional[SymDistr]) -> bool:
       if marginal is None:
         return False
@@ -240,6 +271,8 @@ class DSState(SymState):
       self.set_distr(rv_child, self.eval_distr(marginal))
       return True
 
+    # Try to make rv_child marginal, using the original conditional distribution
+    # to check for conjugacy
     prior = self.distr(rv_par)
     match self.node(rv_child):
       case DSInitialized((_, likelihood)):
@@ -264,7 +297,9 @@ class DSState(SymState):
       case _:
         raise ValueError(f'{rv_child} is {self.node(rv_child)}')
       
+  # Tries to update parent node with the updated child (that should have been Marginalized)
   def make_conditional(self, rv_par: RandomVar, rv_child: RandomVar, x: SymExpr) -> bool:
+    # Update saves the posterior distribution to rv_par
     def _update(posterior: Optional[SymDistr]) -> bool:
       if posterior is None:
         return False
@@ -273,6 +308,8 @@ class DSState(SymState):
       self.set_distr(rv_par, posterior)
       return True
 
+    # Using the original conditional distribution
+    # to check for conjugacy
     prior = self.distr(rv_par)
     match self.node(rv_child):
       case DSMarginalized((_, likelihood)):
@@ -297,11 +334,14 @@ class DSState(SymState):
       case _:
         raise ValueError(f'{rv_child} is {self.node(rv_child)}')
 
+  # Move RV from M to R and update its distribution
   def realize(self, rv: RandomVar, x: Delta) -> None:
     match self.node(rv):
       case DSMarginalized(None):
         pass
       case DSMarginalized((rv_par, _)):
+        # If it has a parent, update the parent with the updated child values
+        # Assumes that parent is conjugate, otherwise make_marginal would have failed earlier
         match self.node(rv_par):
           case DSMarginalized(edge):
             if self.make_conditional(rv_par, rv, x.v):
@@ -317,29 +357,34 @@ class DSState(SymState):
     self.set_distr(rv, x)
     self.set_node(rv, DSRealized())
 
-    # new roots from children
+    # new roots from children being orphaned
     for rv_child in self.children(rv):
       self.do_marginalize(rv_child)
 
     self.set_children(rv, [])
     
+  # Makes RV a terminal node
   def graft(self, rv: RandomVar) -> None:
     match self.node(rv):
       case DSRealized():
         raise ValueError(f'Cannot graft {rv} because it is already realized')
       case DSMarginalized(_):
+        # Terminal nodes do not have marginal children
         rv_child = self.marginal_child(rv)
         if rv_child is not None:
           self.prune(rv_child)
       case DSInitialized((rv_par, _)):
+        # Recurse on parent, then try to marginalize rv
         self.graft(rv_par)
         self.do_marginalize(rv)
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
+  # Samples the RV to remove the edge to its parent
   def prune(self, rv: RandomVar) -> None:
     match self.node(rv):
       case DSMarginalized(_):
+        # Recurse on children before sampling
         rv_child = self.marginal_child(rv)
         if rv_child is not None:
           self.prune(rv_child)

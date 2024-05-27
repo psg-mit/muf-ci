@@ -48,6 +48,7 @@ class AbsBPState(AbsSymState):
   def set_node(self, rv: AbsRandomVar, node: AbsBPNode) -> None:
     self.set_entry(rv, node=node)
 
+  # Get reachable random variables from rvs
   def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
     ref_rvs = super().entry_referenced_rvs(rvs)
 
@@ -58,12 +59,15 @@ class AbsBPState(AbsSymState):
 
     return ref_rvs
   
+  # Also check parent to rename  
   def entry_rename_rv(self, rv: AbsRandomVar, old: AbsRandomVar, new: AbsRandomVar) -> None:
     super().entry_rename_rv(rv, old, new)
     match self.node(rv):
       case AbsBPInitialized(rv_par):
         self.set_node(rv, AbsBPInitialized(new if rv_par == old else rv_par))
 
+  # Join nodes by checking node type. If they don't match or the edges don't match
+  # then make the node top
   def entry_join(self, rv: AbsRandomVar, other: 'AbsBPState') -> None:
     def _make_unk(
       parents1: Set[AbsRandomVar],
@@ -245,9 +249,6 @@ class AbsBPState(AbsSymState):
           self.value(rv_par)
           self.observe(rv, value)
       case AbsBPUnk():
-        # All of rv's parents might have been valued, so need to spread unk
-        # for rv_par in parents:
-        #   self.set_dynamic(rv_par)
         self.intervene(rv, AbsDelta(value, sampled=False))
           
   def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
@@ -270,10 +271,6 @@ class AbsBPState(AbsSymState):
         else:
           self.value(rv_par)
           self.marginalize(rv)
-      # case AbsBPUnk():
-        # for rv_par in parents:
-        #   self.marginalize(rv_par)
-        #   self.set_dynamic(rv_par)
 
   ########################################################################
 
@@ -313,19 +310,6 @@ class AbsBPState(AbsSymState):
       case TopD(), _:
         self.set_dynamic(rv_par)
         return False
-          # return True
-      #   else:
-      #     return _update(conj.AbsNormal_inverse_gamma_AbsNormal_conjugate(self, rv_par, rv_child))
-      # case Bernoulli(_), Bernoulli(_):
-      #   return _update(conj.bernoulli_conjugate(self, rv_par, rv_child))
-      # case Beta(_), Bernoulli(_):
-      #   return _update(conj.beta_bernoulli_conjugate(self, rv_par, rv_child))
-      # case Beta(_), Binomial(_):
-      #   return _update(conj.beta_binomial_conjugate(self, rv_par, rv_child))
-      # case Gamma(_), Poisson(_):
-      #   return _update(conj.gamma_poisson_conjugate(self, rv_par, rv_child))
-      # case Gamma(_), AbsNormal(_):
-      #   return _update(conj.gamma_AbsNormal_conjugate(self,rv_par, rv_child))
       case _:
         return False
       
@@ -347,9 +331,6 @@ class AbsBPState(AbsSymState):
           _set_unk_node(rv_par)
         case AbsBPUnk():
           pass
-          # Could be any, including I, so should just recurse on parents
-          # for rv_par in parents:
-          #   _set_unk_node(rv_par)
         case _:
           raise ValueError(f'{rv} is {self.node(rv)}')
 

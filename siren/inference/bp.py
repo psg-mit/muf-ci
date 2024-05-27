@@ -5,20 +5,27 @@ from collections import deque
 import siren.inference.conjugate as conj
 from siren.inference.interface import *
 
+# Implementation of the SMC with Belief Propagation algorithm
+# Adapted from https://github.com/wazizian/OnlineSampling.jl/
+
+### Belief Propagation node types
 @dataclass(frozen=True)
 class BPNode():
   pass
 
+# BPRealized: the node has been observed/sampled
 @dataclass(frozen=True)
 class BPRealized(BPNode):
   def __str__(self) -> str:
     return 'BPRealized'
 
+# BPMarginalized: the node has been marginalized
 @dataclass(frozen=True)
 class BPMarginalized(BPNode):
   def __str__(self):
     return f'BPMarginalized()'
 
+# BPInitialized: the node is initialized
 @dataclass(frozen=True)
 class BPInitialized(BPNode):
   parent: RandomVar
@@ -52,17 +59,25 @@ class BPState(SymState):
         case _:
           return False
 
+    # create a new random variable and assign annotation
     rv = self.new_var()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
       else:
         self.annotations[name] = annotation
+
+    # simplify the given distribution
     distribution = self.eval_distr(distribution)
 
+    # if the distribution refers to no random variables, the RV is marginalized
     if len(distribution.rvs()) == 0:
       node = BPMarginalized()
     else:
+      # Otherwise, can only keep one parent and it has to be conjugate
+      # Greedily choose the first conjugate parent
+
+      # Remove duplicate parents, in place
       parents = []
       for rv_par in distribution.rvs():
         if rv_par not in parents:
@@ -72,25 +87,32 @@ class BPState(SymState):
       canonical_parent = None
       has_parent = False
       for rv_par in parents:
+        # if already sampled, skip
         if rv_par not in distribution.rvs():
           continue
+        # still need a conjugate parent
         if not has_parent:
           match self.node(rv_par):
+            # If the parent is already realized, just simplify the distribution
             case BPRealized():
               distribution = self.eval_distr(distribution)
               continue
             case _: # BPInitialized or BPMarginalized
+              # If conjugate, keep it
               if _check_conjugacy(self.distr(rv_par), distribution, rv_par, rv):
                 canonical_parent = rv_par
                 has_parent = True
                 continue
+
+        # Parent was not conjugate, sample it
         self.value(rv_par)
         distribution = self.eval_distr(distribution)
 
-      # all parents were sampled
+      # all parents were sampled, RV is marginalized
       if len(distribution.rvs()) == 0:
         node = BPMarginalized()
       else:
+        # If there is a conjugate parent, initialize the RV with the parent
         assert canonical_parent is not None
         node = BPInitialized(canonical_parent)
 
@@ -110,21 +132,26 @@ class BPState(SymState):
         return s
       case BPInitialized(rv_par):
         assert rv_par is not None
+        # Recursively marginalize the parent
         self.marginalize(rv_par)
 
+        # Now try to make the RV a root
         if self.condition_cd(rv_par, rv):
+          # If the parent is conjugate, we can condition on it
           s = self.score(rv, value.v)
           self.intervene(rv, Delta(value, sampled=False))
           self.set_distr(rv_par, self.eval_distr(self.distr(rv_par)))
           self.set_node(rv_par, BPMarginalized())
           return s
         else:
+          # Sample the parent if it is not conjugate
           self.value(rv_par)
           return self.observe(rv, value)
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
   def value(self, rv: RandomVar[T]) -> Const[T]:
+    # Marginalize the RV first
     self.marginalize(rv)
     match self.node(rv):
       case BPInitialized(_):
@@ -137,13 +164,17 @@ class BPState(SymState):
   # make rv a root
   # postcondition: rv is not BPInitialized
   def marginalize(self, rv: RandomVar) -> None:
+    # Do nothing if the RV is already marginalized
     match self.node(rv):
       case BPInitialized(rv_par):
+        # recursively marginalize the parent
         self.marginalize(rv_par)
 
+        # If the parent is conjugate, we can condition on it
         if self.condition_cd(rv_par, rv):
           return
         else:
+          # Sample the parent if it is not conjugate
           self.value(rv_par)
           self.marginalize(rv)
 
@@ -160,6 +191,7 @@ class BPState(SymState):
     self.set_distr(rv, v)
 
   def condition_cd(self, rv_par: RandomVar, rv_child: RandomVar) -> bool:
+    # Update takes the pair (marginal, posterior) and updates the state, where rv_par is the posterior and rv_child is the marginal
     def _update(marginal_posterior: Optional[Tuple[SymDistr, SymDistr]]) -> bool:
       if marginal_posterior is None:
         return False
@@ -178,23 +210,11 @@ class BPState(SymState):
 
       return True
 
+    # Only handles Normal distributions (and the edge case of a Delta parent that just needs to be simplified)
     match self.distr(rv_par), self.distr(rv_child):
       case Delta(v, sampled), cdistr:
         return _update((self.eval_distr(cdistr), Delta(v, sampled)))
       case Normal(_), Normal(_):
         return _update(conj.gaussian_conjugate(self, rv_par, rv_child))
-          # return True
-      #   else:
-      #     return _update(conj.normal_inverse_gamma_normal_conjugate(self, rv_par, rv_child))
-      # case Bernoulli(_), Bernoulli(_):
-      #   return _update(conj.bernoulli_conjugate(self, rv_par, rv_child))
-      # case Beta(_), Bernoulli(_):
-      #   return _update(conj.beta_bernoulli_conjugate(self, rv_par, rv_child))
-      # case Beta(_), Binomial(_):
-      #   return _update(conj.beta_binomial_conjugate(self, rv_par, rv_child))
-      # case Gamma(_), Poisson(_):
-      #   return _update(conj.gamma_poisson_conjugate(self, rv_par, rv_child))
-      # case Gamma(_), Normal(_):
-      #   return _update(conj.gamma_normal_conjugate(self,rv_par, rv_child))
       case _:
         return False

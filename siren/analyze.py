@@ -7,6 +7,9 @@ from siren.utils import get_abs_pair, get_abs_lst
 from siren.analysis.interface import *
 from siren.inference_plan import DistrEnc
 
+# Inference plan analysis
+# Mostly mirrors siren/evaluate.py
+
 def assume(name: Identifier, annotation: Optional[Annotation], distribution: AbsSymExpr, 
            state: AbsSymState) -> AbsConst | AbsRandomVar:
   assert isinstance(distribution, AbsSymDistr)
@@ -26,11 +29,12 @@ def observe(distribution: AbsSymExpr, v: AbsSymExpr, state: AbsSymState) -> None
 # true if expr does not contain resample and observe
 def pure(expr: Expr[AbsSymExpr], functions: Dict[Identifier, Function]) -> bool:
   def _pure(expr: Expr[AbsSymExpr]) -> bool:
+    # All symbolic expressions are pure
     if isinstance(expr, AbsSymExpr):
       return True
     
     match expr:
-      case Const(_): # a bit hacky, but Const counts has external grammar as well
+      case Const(_): # a bit hacky, but Const counts has external grammar as well, so have to check here
         return True
       case Resample():
         return False
@@ -113,6 +117,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
       case "cons":
         def _make_cons(fst, snd):
           l = get_abs_lst(snd)
+          # If the list is a list of unknown length (UnkE), the result is also an unknown length list
           if isinstance(l, UnkE):
             parents = []
             for p in fst.rvs() + l.rvs():
@@ -158,6 +163,8 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         a, b = particle.state.eval(a), particle.state.eval(b)
         match (a, b):
           case (AbsConst(a), AbsConst(b)):
+            # If either a or b is unknown, the probabilities are unknown
+            # But it has to be constant, so UnkC
             if isinstance(a, UnkC) or isinstance(b, UnkC):
               return _evaluate_ops(particle, Operator.categorical, 
                                   AbsPair(AbsConst(a), AbsPair(AbsConst(b), AbsConst(UnkC()))))
@@ -191,6 +198,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         exprs = get_abs_lst(new_args)
+        # If the list is unknown expression, the result is also an unknown expression
         if isinstance(exprs, UnkE):
           return p1.update(cont=exprs)
         if len(exprs) == 0:
@@ -202,6 +210,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         exprs = get_abs_lst(new_args)
+        # If the list is unknown expression, the result is also an unknown expression
         if isinstance(exprs, UnkE):
           return p1.update(cont=exprs)
         if len(exprs) == 0:
@@ -215,6 +224,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         exprs = get_abs_lst(new_args)
+        # If the list is a list of unknown length (UnkE), we don't know the length, but it has to be constant
         if isinstance(exprs, UnkE):
           return p1.update(cont=AbsConst(UnkC()))
         return p1.update(cont=AbsConst(len(exprs)))
@@ -224,6 +234,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         a, b = get_abs_pair(new_args)
+        # If a or b are unknown, the result is also an unknown expression
         if isinstance(a, UnkE) or isinstance(b, UnkE):
           return p1.update(cont=UnkE([]))
         match a, b:
@@ -239,6 +250,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         exprs = get_abs_lst(new_args)
+        # If the list is unknown expression, the result is also an unknown expression
         if isinstance(exprs, UnkE):
           return p1.update(cont=exprs)
         l: List[AbsSymExpr] = exprs[::-1]
@@ -252,6 +264,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         
         exprs = get_abs_lst(new_args)
+        # If the list is unknown expression, the result is also an unknown expression
         if isinstance(exprs, UnkE):
           return p1.update(cont=exprs)
         new_e = AbsLst([])
@@ -268,6 +281,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
     assert func.module == 'File'
     match func.name:
       case 'read':
+        # File operations can only read in constants, but we don't know the length of the file
         (p1, old_args, new_args) = _evaluate_args(particle, args, [])
         assert len(old_args) == 0
         new_args = _convert_args(new_args)
@@ -284,7 +298,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
     if isinstance(particle.cont, AbsSymExpr):
       return particle
     match particle.cont:
-      case Const(v): # a bit hacky, but Const counts has external grammar as well
+      case Const(v): # a bit hacky, but Const counts has external grammar as well, so have to check here
         return particle.update(cont=AbsConst(v))
       case Identifier(_, _):
         return particle.update(cont=particle.state.ctx[particle.cont])
@@ -294,6 +308,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         new_args = _convert_args(new_args)
         return _evaluate_ops(p1, op, new_args)
       case Fold(func, lst, acc):
+        # evaluate parameters first
         p1 = _evaluate(particle.update(cont=lst))
         lst_val = p1.final_expr
 
@@ -301,6 +316,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         acc_val = p2.final_expr
         match lst_val:
           case AbsLst(exprs):
+            # if we know the length of the list, we can unroll the fold
             if len(exprs) == 0:
               return p2.update(cont=acc_val)
             else:
@@ -311,13 +327,18 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
                       Fold(func, AbsLst(tl), tempvar))
               return _evaluate(p2.update(cont=e))
           case UnkE(_):
+            # we don't know the length/content of the list, so do fixpoint computation
             state_old = copy(p2.state)
             p3 = _evaluate(p2.copy(cont=Apply(func, [lst_val, acc_val])))
+            # narrow_join_expr (rename_join) renames and joins the two expressions and states from before the apply
+            # and after the apply
             acc_new = p2.state.narrow_join_expr(acc_val, p3.final_expr, p3.state)
-            p2.state.clean(acc_new)
+            p2.state.clean(acc_new) # remove unreachable rvs before comparison
             if acc_val == acc_new and state_old == p2.state:
+              # fixpoint, return result
               return p3.update(cont=acc_new, state=state_old)
             else:
+              # not fixpoint, continue with new accumulator
               return _evaluate(p3.update(cont=Fold(func, lst_val, acc_new), state=p2.state))
           case _:
             raise ValueError(lst_val)
@@ -339,18 +360,20 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
           ctx = copy(p1.state.ctx)
           p1.state.ctx = match_pattern(function.args, new_args)
           p2 = _evaluate(p1.update(cont=function.body))
-          p2.state.ctx = ctx
+          p2.state.ctx = ctx # restore context
           return p2
       case IfElse(cond, true, false):
         p1 = _evaluate(particle.update(cont=cond))
         cond_val = p1.final_expr
 
+        # if both branches are pure, we can evaluate them as ite
         if pure(true, functions) and pure(false, functions):
           p2 = _evaluate(p1.update(cont=true))
           then_val = p2.final_expr
           p3 = _evaluate(p2.update(cont=false))
           return p3.update(cont=p3.state.ex_ite(cond_val, then_val, p3.final_expr))
         else:
+          # otherwise, value the condition, evaluate both branch, and compute the join
           cond_value = p1.state.value_expr(p1.final_expr)
           match cond_value:
             case AbsConst(v):
@@ -373,7 +396,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         p1 = _evaluate(particle.update(cont=v))
         p1.state.ctx |= match_pattern(pattern, p1.final_expr)
         p2 = _evaluate(p1.update(cont=body))
-        p2.state.ctx = ctx
+        p2.state.ctx = ctx # restore context
         return p2
       case LetRV(identifier, annotation, distribution, expression):
         p1 = _evaluate(particle.update(cont=distribution))
@@ -389,6 +412,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         observe(d, p2.final_expr, p2.state)
         return p2
       case Resample():
+        # resample is a no-op in the analysis
         return particle.update(cont=AbsConst(None))
       case _:
         raise ValueError(particle.cont)

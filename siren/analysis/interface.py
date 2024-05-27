@@ -5,14 +5,20 @@ from siren.inference_plan import InferencePlan, DistrEnc
 from siren.grammar import *
 from siren.utils import is_abs_pair, is_abs_lst, get_abs_pair, get_abs_lst, fast_copy, match_rvs
 
+# Shared code between different inference algorithms
+# Contains the AbsSymState interface algorithms must subclass and implement
+
+# Maximum number of random variables to track in UnkE before collapsing to TopE
 MAX_RVS = 4
 
 ED = TypeVar('ED', bound=AbsSymExpr | AbsSymDistr)
 OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
 
+# Exception for an annotation is detected to be potentially violated
 class AnalysisViolatedAnnotationError(Exception):
   pass
 
+# Abstract Symbolic state used for the abstract inference interface
 class AbsSymState(object):
 
   ### Shared functions ###
@@ -222,6 +228,7 @@ class AbsSymState(object):
     # set counter to max of both states
     self.counter = max(self.counter, other.counter)
 
+  # Rename_join: rename the variable in e2 and join the states (and expressions)
   def narrow_join_expr(self, e1: AbsSymExpr, e2: AbsSymExpr, other: 'AbsSymState') -> AbsSymExpr:
     e1, e2, other = self.unify(e1, e2, other)
     
@@ -229,6 +236,8 @@ class AbsSymState(object):
     self.join(other)
 
     return e
+  
+  # Simplifies expressions as they are created
   
   def ex_add(self, e1: AbsSymExpr[Number], e2: AbsSymExpr[Number]) -> AbsSymExpr[Number]:
     match e1, e2:
@@ -360,6 +369,7 @@ class AbsSymState(object):
       case _:
         return AbsLt(e1, e2)
       
+  # Simplifies the expression
   def eval(self, expr: AbsSymExpr) -> AbsSymExpr:
     def _const_list(es: List[AbsSymExpr]) -> Optional[AbsConst[List[AbsSymExpr]]]:
       consts = []
@@ -463,6 +473,7 @@ class AbsSymState(object):
       case _:
         raise ValueError(distr)
       
+  # Computes the join of two expressions
   def join_expr(self, e1: AbsSymExpr, e2: AbsSymExpr, other: 'AbsSymState') -> AbsSymExpr:
     match e1, e2:
       case AbsConst(v1), AbsConst(v2):
@@ -658,6 +669,7 @@ class AbsSymState(object):
           return TopD()
         return UnkD(parents)
       
+  # Simulates computing the expectation of an expression
   def mean(self, expr: AbsSymExpr) -> None:
     expr = self.eval(expr)
 
@@ -669,8 +681,6 @@ class AbsSymState(object):
       case AbsAdd(left, right):
         self.mean(left)
         self.mean(right)
-      # case Sub(left, right):
-      #   return mean(left, state) - mean(right, state)
       case AbsMul(left, right):
         self.mean(left)
         self.mean(right)
@@ -689,6 +699,7 @@ class AbsSymState(object):
       case _:
         raise ValueError(expr)
   
+  # Need to be implemented by subclasses
   def marginalize(self, rv: AbsSymExpr) -> None:
     raise NotImplementedError()
 
@@ -700,14 +711,6 @@ class AbsSymState(object):
         return self.value(expr)
       case AbsAdd(fst, snd):
         return AbsConst(self.value_expr(fst).v + self.value_expr(snd).v)
-      # case Sub(fst, snd):
-      #   fst = value(fst, state).v
-      #   snd = value(snd, state).v
-      #   if (isinstance(fst, float) and isinstance(snd, float)) or \
-      #     isinstance(fst, int) and isinstance(snd, int):
-      #     return Const(fst - snd)
-      #   else:
-      #     raise ValueError(fst, snd)
       case AbsMul(fst, snd):
         return AbsConst(self.value_expr(fst).v * self.value_expr(snd).v)
       case AbsDiv(fst, snd):
@@ -885,6 +888,7 @@ class AbsParticle(object):
   def __str__(self):
     return f"AbsParticle({self.cont}, {self.state})"
   
+# Abstract mixture
 class AbsMixture(object):
   def __init__(self, mixture: Tuple[AbsSymExpr, AbsSymState]):
     super().__init__()
@@ -918,6 +922,7 @@ class AbsMixture(object):
     expr, state = self.mixture
     state.mean(expr)
 
+# Set of particles for abstract interpretation
 class AbsProbState(object):
   def __init__(self, cont: Expr, method: type[AbsSymState]) -> None:
     super().__init__()

@@ -13,6 +13,7 @@ def assume(name: Identifier, annotation: Optional[Annotation], distribution: Sym
            state: SymState) -> Const | RandomVar:
   assert isinstance(distribution, SymDistr)
   rv = state.assume(name, annotation, distribution)
+  # If the annotation is sample, sample the value
   if annotation is Annotation.sample:
     return state.value(rv)
   return rv
@@ -20,6 +21,7 @@ def assume(name: Identifier, annotation: Optional[Annotation], distribution: Sym
 def observe(score: float, distribution: SymExpr, v: SymExpr, state: SymState) -> float:
   assert isinstance(distribution, SymDistr)
   rv = state.assume(None, None, distribution)
+  # the conditioned value must be a constant
   v = state.value_expr(v)
   s = state.observe(rv, v)
   return score + s
@@ -27,6 +29,7 @@ def observe(score: float, distribution: SymExpr, v: SymExpr, state: SymState) ->
 # true if expr does not contain resample and observe
 def pure(expr: Expr[SymExpr], functions: Dict[Identifier, Function]) -> bool:
   def _pure(expr: Expr[SymExpr]) -> bool:
+    # All symbolic expressions are pure
     if isinstance(expr, SymExpr):
       return True
     
@@ -59,6 +62,7 @@ def pure(expr: Expr[SymExpr], functions: Dict[Identifier, Function]) -> bool:
       
   return _pure(expr)
 
+# Match pattern to expression
 def match_pattern(pattern: List[Any], expr: SymExpr) -> Context:
     if len(pattern) == 0:
       return Context()
@@ -74,7 +78,11 @@ def match_pattern(pattern: List[Any], expr: SymExpr) -> Context:
       else:
         return match_pattern(pattern[0], fst) | match_pattern(pattern[1:], snd)
 
+# Evaluates a single particle 
+# file_dir is the directory of the file being evaluated, used for file operations for relative paths
 def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[SymExpr]], file_dir: str) -> Particle:
+  # Evaluates arguments, from left to right. Returning the particle, the remaining arguments, and the evaluated arguments
+  # If an argument is not finished, the particle is returned with the remaining arguments
   def _evaluate_args(particle: Particle, 
                      args: List[Expr[SymExpr]], 
                      new_args: List[SymExpr]) -> Tuple[Particle, List[Expr[SymExpr]], List[SymExpr]]:
@@ -87,6 +95,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
     new_args.append(p1.final_expr)
     return _evaluate_args(p1, args[1:], new_args)
 
+  # Evaluate built-in operators
   def _evaluate_ops(particle: Particle, op: Operator, args: SymExpr) -> Particle:
     def _evaluate_unops(particle: Particle, constructor: Any, args: SymExpr) -> Particle:
       return particle.update(cont=constructor(args), finished=True)
@@ -100,10 +109,12 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       snd, trd = get_pair(args2)
       return particle.update(cont=constructor(fst, snd, trd), finished=True)
         
+    # Map to the correct operator
     match op.name:
       case "add":
         return _evaluate_binops(particle, Add, args)
       case "sub":
+        # a - b = a + (-1 * b)
         return _evaluate_binops(particle, lambda fst,snd: Add(fst, Mul(Const(-1), snd)), args)
       case "mul":
         return _evaluate_binops(particle, Mul, args)
@@ -116,6 +127,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       case "cons":
         return _evaluate_binops(particle, lambda fst,snd: Lst([fst] + get_lst(snd)), args)
       case "lst":
+        # Empty list is considered a Constant
         def _make_list(x):
           if isinstance(x, Const):
             if x.v is None:
@@ -137,6 +149,9 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       case "negative_binomial":
         return _evaluate_binops(particle, NegativeBinomial, args)
       case "exponential":
+        # Exponential is a special case of Gamma
+        # Represented as a Gamma so can be detected when applying 
+        # conjugacy rules
         return _evaluate_binops(particle, Gamma, Pair(Const(1.0), args))
       case "gamma":
         return _evaluate_binops(particle, Gamma, args)
@@ -150,6 +165,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         a, b = get_pair(args)
         # For now, uniform only takes constants
         # [a, b]
+        # Represented as a categorical distribution
         match (particle.state.eval(a), particle.state.eval(b)):
           case (Const(a), Const(b)):
             assert isinstance(a, Number) and isinstance(b, Number)\
@@ -165,6 +181,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       case _:
         raise ValueError(op.name)
       
+  # Args can be a list of expressions, so need to extract them 
+  # if only a single argument (or none)
   def _convert_args(args: List[SymExpr]) -> SymExpr:
     if len(args) == 0:
       return Const(None)
@@ -172,7 +190,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       return args[0]
     else:
       return Pair(args[0], _convert_args(args[1:]))
-    
+  
+  # Evaluate list operations. Evaluates arguments first, interrupting if args did not finish evaluation
   def _evaluate_list(particle: Particle, func: Identifier, args: List[Expr[SymExpr]]) -> Particle:
     assert func.module == 'List'
     match func.name:
@@ -210,6 +229,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
           return p1.update(cont=Apply(func, old_args + new_args), finished=False)
         new_args = _convert_args(new_args)
         
+        # Range only takes constants
         a, b = get_pair(new_args)
         match a, b:
           case Const(a), Const(b):
@@ -235,6 +255,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
           return p1.update(cont=Apply(func, old_args + new_args), finished=False)
         new_args = _convert_args(new_args)
         
+        # Map is syntactic sugar of a list, calling the function on each element
         exprs = get_lst(new_args)
         new_e = Lst([])
         for e in exprs[::-1]:
@@ -246,6 +267,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       case _:
         raise ValueError(func)
       
+  # Evaluate file operations. These only take constants as arguments
   def _evaluate_file(particle: Particle, func: Identifier, args: List[Expr[SymExpr]]) -> Particle:
     assert func.module == 'File'
     match func.name:
@@ -274,6 +296,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
       case _:
         raise ValueError(func)
 
+  # Evaluate the particle, returning an evaluated particle 
+  # or a particle with the next expression to evaluate if interrupted by resample
   def _evaluate(particle: Particle) -> Particle:
     if isinstance(particle.cont, SymExpr):
       return particle.update(finished=True)
@@ -287,6 +311,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         new_args = _convert_args(new_args)
         return _evaluate_ops(p1, op, new_args)
       case Fold(func, lst, acc):
+        # Fold is syntactic sugar for a chain of let expressions
+        # It's a bounded loop
         p1 = _evaluate(particle.update(cont=lst))
         if not p1.finished:
           return p1.update(cont=Fold(func, p1.cont, acc), finished=False)
@@ -302,6 +328,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
               return p2.update(cont=acc_val, finished=True)
             else:
               hd, tl = exprs[0], exprs[1:]
+              # Create a temporary variable to store the result of the function
               tempvar = p2.state.ctx.temp_var()
               e = Let([tempvar], 
                       Apply(func, [hd, acc_val]), 
@@ -337,6 +364,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
           return p1.update(cont=IfElse(p1.cont, true, false), finished=False)
         cond_val = p1.final_expr
         
+        # If both branches are pure, evaluate them and represent as ite symbolic expression
         if pure(true, functions) and pure(false, functions):
           p2 = _evaluate(p1.update(cont=true))
           if not p2.finished:
@@ -347,6 +375,8 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
             return p3.update(cont=IfElse(p1.cont, p2.cont, p3.cont), finished=False)
           return p3.update(cont=p3.state.ex_ite(cond_val, then_val, p3.final_expr), finished=True)
         else:
+          # If not pure, fully evaluate the condition, sampling RVs if necessary, 
+          # and then evaluate only the branch that is taken
           cond_value = p1.state.value_expr(p1.final_expr)
           match cond_value:
             case Const(v):
@@ -364,6 +394,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         val = p1.final_expr
         p1.state.ctx |= match_pattern(pattern, val)
         p2 = _evaluate(p1.update(cont=body))
+        # If the body is finished, restore the original context
         if p2.finished:
           p2.state.ctx = ctx
         return p2
@@ -374,6 +405,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
           return p1.update(cont=LetRV(identifier, annotation, p1.cont, expression), finished=False)
         assert identifier.name is not None # RVs should always be named
         rv = assume(identifier, annotation, p1.final_expr, p1.state)
+        # After creating the RV, it is just a let expression
         return _evaluate(p1.update(cont=Let([identifier], rv, expression)))
       case Observe(expression, v):
         p1 = _evaluate(particle.update(cont=expression))
@@ -386,8 +418,10 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         if not p2.finished:
           return p2.update(cont=Observe(d, p2.cont), finished=False)
         w = observe(p2.score, d, p2.final_expr, p2.state)
+        # Update the particle with the new score
         return p2.update(score=w)
       case Resample():
+        # Resample interrupts the evalution
         return particle.update(cont=Const(None), finished=False)
       case _:
         raise ValueError(particle.cont)
@@ -406,7 +440,9 @@ def evaluate(
   # Make lookup for functions
   functions = {f.name: f for f in functions}
 
+  # Initialize particles
   particles = ProbState(n_particles, expression, method, seed)
+  # Evaluate particles until all are finished
   while True:
     for i, particle in enumerate(particles):
       if particle.finished:
@@ -414,6 +450,7 @@ def evaluate(
       else:
         particles[i] = evaluate_particle(particle, functions, file_dir)
 
+    # If not all particles are finished, resample the particles
     if particles.finished:
       break
     else:

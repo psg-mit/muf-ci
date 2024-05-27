@@ -18,6 +18,8 @@ class AbsSSIState(AbsSymState):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsSSIState(\n\t{s}\n)" if s else "AbsSSIState()"
   
+  # Returns reachable random variables from the given set of random variables
+  # Used for determining which random variables to consider during fixpoint
   def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
     # Don't need to remember the Deltas because always eval before anything
 
@@ -294,7 +296,8 @@ class AbsSSIState(AbsSymState):
           return False
         case _:
           return False
-
+    
+    # Detects if the distribution contains a TopD or TopE
     def _contains_top(rv: AbsRandomVar) -> bool:
       def _contains_top_expr(expr: AbsSymExpr) -> bool:
         match expr:
@@ -385,6 +388,10 @@ class AbsSSIState(AbsSymState):
       # Hoist current node
       for rv_par in parents[::-1]:
         if rv_par not in ghost_roots:
+          # Circular dependencies caused by joins means we don't know
+          # what to do, so just set to Top
+          # which will cause analysis to conservatively raise exception
+          # if variable is annotated
           if not _can_swap(rv_par, rv_cur):
             self.set_dynamic(rv_cur)
             self.set_distr(rv_cur, TopD())

@@ -5,13 +5,19 @@ import warnings
 from siren.grammar import *
 from siren.utils import is_pair, is_lst, get_pair, get_lst, fast_copy
 
+# Shared code between different inference algorithms
+# Contains the SymState interface algorithms must subclass and implement
+
+# Exception for when an annotation is violated
 class RuntimeViolatedAnnotationError(Exception):
   pass
 
+# Symbolic state used for the hybrid inference interface
 class SymState(object):
   def __init__(self, seed=None) -> None:
     super().__init__()
     # State has to have distribution and pv
+    # State entries are maintained as a dictionary
     self.state: Dict[RandomVar, Dict[str, Any]] = {}
     self.ctx: Context = Context()
     self.counter: int = 0
@@ -35,6 +41,7 @@ class SymState(object):
   def vars(self) -> Set[RandomVar]:
     return set(self.state.keys())
   
+  # Use this to get the value of a variable, which handles checking if the variable is in the state
   def get_entry(self, rv: RandomVar, key: str) -> Any:
     if rv not in self.state:
       raise ValueError(f"{rv} not in state")
@@ -42,6 +49,8 @@ class SymState(object):
       raise ValueError(f"{key} not in {rv}")
     return self.state[rv][key]
   
+  # Use this to set the value of a variable, which handles checking if the variable is in the state and if the annotation is violated
+  # By trying to update a symbolic variable with a sampled distribution
   def set_entry(self, variable: RandomVar, **kwargs) -> None:
     if variable not in self.state:
       self.state[variable] = {}
@@ -88,6 +97,7 @@ class SymState(object):
   def __str__(self):
     return f"SymState({', '.join(map(str, self.state.items()))})"
   
+  # Removes unreachable variables from the state
   def clean(self) -> None:
     used_vars = set().union(*(expr.rvs() for expr in self.ctx.context.values()))
     # get referenced vars in the distribution of each ctx variable
@@ -153,6 +163,8 @@ class SymState(object):
         return f"({self.str_expr(e1)}, {self.str_expr(e2)})"
       case _:
         raise ValueError(expr)
+      
+  # Simplifies expressions as they are created
   
   def ex_add(self, e1: SymExpr[Number], e2: SymExpr[Number]) -> SymExpr[Number]:
     match e1, e2:
@@ -218,6 +230,7 @@ class SymState(object):
       case _:
         return Lt(e1, e2)
 
+  # Simplify expressions 
   def eval(self, expr: SymExpr) -> SymExpr:
     def _const_list(es: List[SymExpr]) -> Optional[Const[List[SymExpr]]]:
       consts = []
@@ -294,6 +307,7 @@ class SymState(object):
       case _:
         raise ValueError(distr)
       
+  # Computes the expectation of the given symbolic expression
   def mean(self, expr: SymExpr) -> float:
     expr = self.eval(expr)
 
@@ -305,8 +319,6 @@ class SymState(object):
         return self.get_entry(expr, 'distribution').mean()
       case Add(left, right):
         return self.mean(left) + self.mean(right)
-      # case Sub(left, right):
-      #   return mean(left, state) - mean(right, state)
       case Mul(left, right):
         return self.mean(left) * self.mean(right)
       case Div(left, right):
@@ -319,9 +331,11 @@ class SymState(object):
       case _:
         raise ValueError(expr)
 
+  # Needs to be overridden by the implementation
   def marginalize(self, expr: RandomVar) -> None:
     raise NotImplementedError()
       
+  # Samples all the random variables in the expression and simplifies it
   def value_expr(self, expr: SymExpr) -> Const:
     match expr:
       case Const(_):
@@ -330,14 +344,6 @@ class SymState(object):
         return self.value(expr)
       case Add(fst, snd):
         return Const(self.value_expr(fst).v + self.value_expr(snd).v)
-      # case Sub(fst, snd):
-      #   fst = value(fst, state).v
-      #   snd = value(snd, state).v
-      #   if (isinstance(fst, float) and isinstance(snd, float)) or \
-      #     isinstance(fst, int) and isinstance(snd, int):
-      #     return Const(fst - snd)
-      #   else:
-      #     raise ValueError(fst, snd)
       case Mul(fst, snd):
         return Const(self.value_expr(fst).v * self.value_expr(snd).v)
       case Div(fst, snd):
@@ -366,6 +372,8 @@ class SymState(object):
       case _:
         raise ValueError(expr)
   
+  # Hybrid inference interface
+  # Needs to be overridden by the implementation
   def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     raise NotImplementedError()
 
@@ -375,6 +383,7 @@ class SymState(object):
   def value(self, rv: RandomVar[T]) -> Const[T]:
     raise NotImplementedError()
       
+# Context class for tracking program variable assignments
 class Context(object):
   def __init__(self, init={}) -> None:
     super().__init__()
@@ -406,6 +415,9 @@ class Context(object):
         return identifier
       i += 1
 
+# Particle object used for the hybrid inference
+# Maintains a symbolic state and an expression to simplfy
+# It also has a score, and a flag to indicate if it is finished
 class Particle(object):
   def __init__(
     self, cont: Expr[SymExpr], 
@@ -419,6 +431,8 @@ class Particle(object):
     self.score: float = score  # logscale
     self.finished: bool = finished
 
+  # Asserts that the particle is finished and returns the final expression
+  # which must be a symbolic expression
   @property
   def final_expr(self) -> SymExpr:
     if self.finished:
@@ -427,6 +441,7 @@ class Particle(object):
     else:
       raise ValueError(f'Particle not finished: {self}')
     
+  # Update the particle with new values (or keep the same if None is passed)
   def update(self, cont: Optional[Expr] = None,
               state: Optional[SymState] = None, 
               score: Optional[float] = None,
@@ -458,6 +473,8 @@ class Particle(object):
       self.state.set_entry(rv, distribution=self.state.eval_distr(self.state.get_entry(rv, 'distribution')))
     return self
 
+# Mixture object is the final result object of the program
+# it's a mixture distribution constructed from the particles
 class Mixture(object):
   def __init__(self, mixture: List[Tuple[SymExpr, SymState, float]]):
     super().__init__()
@@ -519,6 +536,7 @@ class Mixture(object):
           acc[i].append((lst[i], state, weight))
     return list(map(lambda x: Mixture(x), acc))
       
+  # Computes the expectation of the mixture
   def mean(self) -> float:
     if len(self.mixture) == 0:
       raise ValueError("No results")
@@ -541,6 +559,7 @@ class Mixture(object):
       acc += weight * v
     return acc
 
+# A set of particles, returns a Mixture distribution
 class ProbState(object):
   def __init__(self, n_particles: int, cont: Expr, method: type[SymState], seed: Optional[int] = None) -> None:
     super().__init__()
@@ -587,6 +606,7 @@ class ProbState(object):
     
     # return "\n".join([f"{i}: {p}" for i, p in enumerate(self.particles)])
   
+  # Normalize the probabilities of the particles based on their scores
   def normalized_probabilities(self) -> List[float]:
     scores = np.array([p.score for p in self.particles])
     if np.max(scores) == -np.inf:
@@ -596,6 +616,7 @@ class ProbState(object):
     probabilities = np.exp(scores - np.max(scores))
     return list(probabilities / probabilities.sum())
   
+  # Create the mixture distribution of the particles
   def mixture(self) -> Mixture:
     probabilities = self.normalized_probabilities()
     values = [p.final_expr for p in self.particles]
@@ -605,6 +626,8 @@ class ProbState(object):
 
     return unique_values
 
+  # Compute the expectation of the result of the particles
+  # Pairs and Lists are handled recursively
   def result(self) -> SymExpr:
     mixture = self.mixture()
     
@@ -626,6 +649,7 @@ class ProbState(object):
   def finished(self) -> bool:
     return all(p.finished for p in self.particles)
   
+  # Resamples its set of particles based on their scores, resetting the scores at the end.
   def resample(self) -> 'ProbState':
     particles = self.particles
     probabilities = self.normalized_probabilities()

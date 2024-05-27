@@ -4,6 +4,7 @@ from typing import Any, Optional, Dict
 from siren.grammar import Annotation, Identifier
 from siren.inference.interface import ProbState, Particle
 
+# Distribution encoding
 class DistrEnc(Enum):
   symbolic = 1
   sample = 2
@@ -38,7 +39,7 @@ class DistrEnc(Enum):
   def __repr__(self) -> str:
     return self.__str__()
   
-
+  # Convert from Annotation to DistrEnc
   @staticmethod
   def from_annotation(ann: Optional[Annotation]) -> 'DistrEnc':
     if ann is None:
@@ -51,6 +52,9 @@ class DistrEnc(Enum):
       case _:
         raise ValueError(ann)
       
+# Inference Plan object maps program variable names to distribution encodings
+# Assumes that the program variables are unique
+# Used for printing out runtime inference plan and inferred inference plan
 class InferencePlan(object):
   def __init__(self, plan=None):
     super().__init__()
@@ -101,6 +105,8 @@ class InferencePlan(object):
 
     return eq
 
+  # Computes the join of two inference plans
+  # symbolic <= dynamic, sample <= dynamic
   def __or__(self, __value: Any) -> 'InferencePlan':
     if isinstance(__value, InferencePlan):
       res = InferencePlan()
@@ -116,6 +122,7 @@ class InferencePlan(object):
     else:
       raise ValueError(__value)
     
+# Get the distribution encodings for a particle
 def distribution_encodings(particle: Particle) -> InferencePlan:
   inf_plan = InferencePlan()
   for rv in particle.state:
@@ -131,6 +138,7 @@ def distribution_encodings(particle: Particle) -> InferencePlan:
       inf_plan[pv] = DistrEnc.symbolic
   return inf_plan
     
+# Get the runtime inference plan by inspecting the particles
 def runtime_inference_plan(prob: ProbState) -> InferencePlan:
     inf_plan = InferencePlan()
     for particle in prob.particles:

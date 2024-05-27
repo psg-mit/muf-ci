@@ -8,13 +8,12 @@ from .analysis import AbsSSIState, AbsDSState, AbsBPState
 from .inference_plan import runtime_inference_plan
 import sys
 
-
+# Maps the command line arguments to the symbolic state classes
 method_states = {
     "ssi": (SSIState, AbsSSIState),
     "ds": (DSState, AbsDSState),
     "bp": (BPState, AbsBPState),
 }
-
 
 def main():
     sys.setrecursionlimit(5000)
@@ -38,6 +37,7 @@ def main():
         program = parser.parse_program(f.read())
         # print(program)
 
+    # Get the symbolic state classes for the selected inference method
     (inference_method, analysis_method) = method_states[args.method]
 
     print("===== Inference Algorithm =====")
@@ -51,6 +51,7 @@ def main():
         case _:
             raise ValueError("Invalid method")
 
+    # Run the inference plan satisfiability analysis
     if args.analyze or args.analyze_only:
         print("===== Inferred Inference Plan =====")
         t1 = time.time()
@@ -62,6 +63,7 @@ def main():
         print("===== Analysis Time =====")
         print(f"{t2 - t1}")
 
+    # If the user only wants to analyze the program, we can stop here
     if not args.analyze_only:
         file_dir = os.path.dirname(os.path.realpath(args.filename))
         t1 = time.time()
@@ -79,10 +81,11 @@ def main():
         print("===== Result =====")
         print(res)
 
+        # Get the runtime inference plan by inspecting the particles
         plan = runtime_inference_plan(particles)
 
         if args.verbose:
-            # Only for debugging
+            # Only for debugging to reduce the expressions
             particles.simplify()
             print("===== Mixture =====")
             print(particles.mixture())

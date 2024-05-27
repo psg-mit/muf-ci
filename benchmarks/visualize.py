@@ -215,14 +215,6 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
     methods = ['ssi']
 
   for method_i, method in enumerate(methods):
-    # plans: List[Tuple[str, Dict[str, str]]] = []
-    # if original_plan_ids is None:
-    #   plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
-
-    # plans = [(plan_id, all_plans[str(plan_id)]['plan']) for plan_id in plan_ids]
-
-    # if len(plans) <= 1:
-    #   continue
 
     figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
 

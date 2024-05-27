@@ -74,7 +74,7 @@ method_states = {
   "new_alg": (SubState, AbsSubState),
 }
 ```
-and add the alias as an option to the `method` argument on [Line 32](siren/siren.py#L32):
+and add the alias as an option to the `method` argument on [Line 31](siren/siren.py#L31):
 ```python
 p.add_argument(
   "--method",
