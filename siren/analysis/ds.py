@@ -590,9 +590,7 @@ class AbsDSState(AbsSymState):
         self.graft(rv_par)
         self.do_marginalize(rv)
       case AbsDSUnk():
-        # all children are Unk nodes, so don't need to call prune
-        # all parents are Unk nodes, so don't need to call prune
-        self.do_marginalize(rv)
+        self.set_dynamic(rv)
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
