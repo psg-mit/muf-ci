@@ -579,8 +579,13 @@ class AbsDSState(AbsSymState):
         raise ValueError(f'Cannot graft {rv} because it is already realized')
       case AbsDSMarginalized(_):
         rv_children = self.marginal_child(rv)
-        for rv_child in rv_children:
-          self.prune(rv_child)
+        if len(rv_children) > 1:
+          for rv_child in rv_children:
+            self.set_dynamic(rv_child)
+          # raise ValueError(f'Cannot graft {rv} because it has multiple marginalized children')
+        else:
+          for rv_child in rv_children:
+            self.prune(rv_child)
       case AbsDSInitialized((rv_par, _)):
         self.graft(rv_par)
         self.do_marginalize(rv)
@@ -595,15 +600,24 @@ class AbsDSState(AbsSymState):
     match self.node(rv):
       case AbsDSMarginalized(_):
         rv_children = self.marginal_child(rv)
-        for rv_child in rv_children:
-          self.prune(rv_child)
+        if len(rv_children) > 1:
+          # raise ValueError(f'Cannot prune {rv} because it has multiple marginalized children')
+          for rv_child in rv_children:
+            self.set_dynamic(rv_child)
+        else:
+          for rv_child in rv_children:
+            self.prune(rv_child)
         
         self.value(rv)
       case AbsDSUnk():
         rv_children = self.marginal_child(rv)
-        for rv_child in rv_children:
-          self.prune(rv_child)
-        
+        if len(rv_children) > 1:
+          for rv_child in rv_children:
+            self.set_dynamic(rv_child)
+        else:
+          for rv_child in rv_children:
+            self.prune(rv_child)
+            
         self.value(rv)
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
