@@ -456,8 +456,6 @@ class AbsDSState(AbsSymState):
       match self.node(rv_child):
         case AbsDSMarginalized(_):
           mc.add(rv_child)
-        case AbsDSUnk():
-          mc.add(rv_child)
         case _:
           continue
       
@@ -606,16 +604,6 @@ class AbsDSState(AbsSymState):
           for rv_child in rv_children:
             self.prune(rv_child)
         
-        self.value(rv)
-      case AbsDSUnk():
-        rv_children = self.marginal_child(rv)
-        if len(rv_children) > 1:
-          for rv_child in rv_children:
-            self.set_dynamic(rv_child)
-        else:
-          for rv_child in rv_children:
-            self.prune(rv_child)
-            
         self.value(rv)
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
