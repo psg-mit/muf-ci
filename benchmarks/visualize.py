@@ -8,6 +8,10 @@ from typing import List, Tuple, Dict
 import numpy as np
 from math import log10
 from matplotlib.ticker import Locator
+from scipy.stats import gmean
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -39,6 +43,7 @@ BENCHMARK_LATEX_NAMES = {
   'outlierheavy': r"\bOutlierheavy{}",
   'slds': r"\bSlds{}",
   'runner': r"\bRunner{}",
+  'example': r"\bExample{}",
 }
 
 N_INTERVALS = 30
@@ -198,7 +203,8 @@ def close_to_target_runtime(target_runtime, runtime):
 
   return False
   
-def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n_x, base_x, base_y, legend_width, is_example):
+def plot_particles(data, output, methods, plan_ids, all_plans, 
+                   particles, n_y, n_x, base_x, base_y, legend_width, is_example, error_bar):
   plt.rcParams.update(PLT_SETTINGS)
 
   # first 4 columns are metadata
@@ -329,10 +335,12 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
           mec = EDGECOLORS[plan_i]
           marker = MARKERS[plan_i]
 
-        # ax.errorbar(runtimes, median, yerr=yerr, marker=MARKERS[plan_i], mfc=mfc, mec=mec, ecolor=mec, label=label,
-        #             capsize=5, markersize=5, xerr=None, ls='none')
+        if error_bar:
+          ax.errorbar(runtimes, median, yerr=yerr, marker=MARKERS[plan_i], mfc=mfc, mec=mec, ecolor=mec, label=label,
+                    capsize=5, markersize=5, xerr=None, ls='none')
           
-        ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
+        else:
+          ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
                                     edgecolor=mec, s=MARKERSSIZE)
         
         # if y range doesn't cross any power of 10, use log scale
@@ -362,7 +370,7 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
 
       ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
       # check if there are any major ticks
-      if use_log:
+      if use_log and not error_bar:
         # label minor ticks
         ax.yaxis.set_minor_formatter(ScalarFormatter())
 
@@ -395,6 +403,8 @@ def plot_particles(data, output, methods, plan_ids, all_plans, particles, n_y, n
       filename = f'{method}_example_{plan_id_str}'
     else:
       filename = f'{method}_particles'
+    if error_bar:
+      filename += '_errorbar'
     # fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
     fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
 
@@ -415,11 +425,13 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
                   .median()
 
     # combine
-    default_errors = pd.concat([runtimes, upper], axis=1)
-    default_errors['particles'] = default_errors.index
-    default_errors = default_errors.reset_index(drop=True)
+    errors = pd.concat([runtimes, upper], axis=1)
+    errors['particles'] = errors.index
+    errors = errors.reset_index(drop=True)
     
-    return default_errors
+    return errors
+  
+  original_plan_ids = plan_ids
   
   variables = data.columns[4:]
 
@@ -432,19 +444,19 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
 
     print('Default Plan:', default_plan)
 
-    if plan_ids is None:
+    if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
 
     plan_ids = map(int, plan_ids)
 
     default_errors = get_error_runtime(data, method, default_plan)
 
-    ratios = pd.DataFrame(columns=list(variables)+['plan', 'runtime'])
+    ratios = pd.DataFrame(columns=list(variables)+['plan', 'runtime', 'particles'])
     outlier_ratios = pd.DataFrame(columns=list(variables)+['plan', 'runtime'])
     for j, plan_id in enumerate(plan_ids):
       if plan_id == default_plan:
         continue
-      # default 90th percentile error over n runs
+      # 90th percentile error over n runs
       errors = get_error_runtime(data, method, plan_id)
 
       # compute ratio of error to default error based on runtime
@@ -466,8 +478,9 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
             outlier_ratios.loc[len(outlier_ratios.index)] = list(ratio) + [plan_id, runtime]
 
         if runtime > 0.1:        
-          ratios.loc[len(ratios.index)] = list(ratio) + [plan_id, runtime]
+          ratios.loc[len(ratios.index)] = list(ratio) + [plan_id, runtime, row[1]['particles']]
 
+    print(ratios)
     max_ratio = ratios.drop(columns=['plan', 'runtime']).max().max()
     print('Max Ratio:', max_ratio)
     # find the plan that had the max ratio
@@ -518,15 +531,320 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
     plan_ids = None
   print()
 
+def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans):
+  def get_error_runtime(data, method, plan_id):
+    # default 90th percentile error over n runs
+    upper = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .drop(columns=['plan_id', 'method', 'time'])\
+                  .groupby(['particles'])\
+                  .quantile(0.9)
+
+    runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .median()
+
+    # combine
+    errors = pd.concat([runtimes, upper], axis=1)
+    errors['particles'] = errors.index
+    errors = errors.reset_index(drop=True)
+    
+    return errors
+  
+  original_plan_ids = plan_ids
+  
+  variables = data.columns[4:]
+
+  plan5 = get_error_runtime(data, 'ssi', 5)
+  plan2 = get_error_runtime(data, 'ssi', 2)
+
+  # ratio of errors matching by particles
+  ratios = pd.DataFrame(columns=list(variables)+['plan', 'particles'])
+  for j, particles in enumerate(plan5['particles']):
+    # get error for particles
+    error5 = plan5.loc[plan5['particles'] == particles].drop(columns=['particles', 'time'])
+    error2 = plan2.loc[plan2['particles'] == particles].drop(columns=['particles', 'time'])
+
+    ratio = error5 / error2
+
+    ratios.loc[len(ratios.index)] = list(ratio.iloc[0]) + [5, particles]
+
+  print(ratios)
+  
+
+def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, default_plans):
+  def get_error_runtime(data, method, plan_id, median=False):
+    # default 90th percentile error over n runs
+    if median:
+      data_slice = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .drop(columns=['plan_id', 'method', 'time'])\
+                  .groupby(['particles'])\
+                  .median()
+    else:
+      data_slice = data.loc[data['method'] == method]\
+                    .loc[data['plan_id'] == plan_id]\
+                    .drop(columns=['plan_id', 'method', 'time'])\
+                    .groupby(['particles'])\
+                    .quantile(0.9)
+
+    median_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .median()
+    
+    upper_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .quantile(0.9)
+    
+    lower_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .quantile(0.1)
+
+    # combine
+    errors = pd.concat([median_runtimes, lower_runtimes, upper_runtimes, data_slice], axis=1)
+    errors.columns = ['median_time', 'lower_time', 'upper_time'] + list(data_slice.columns)
+    errors['particles'] = errors.index
+    errors = errors.reset_index(drop=True)
+    
+    return errors
+  
+  variables = data.columns[4:]
+
+  original_plan_ids = plan_ids
+
+  row_size = {
+    'noise': 5,
+    'envnoise': 5,
+    'outlier': 3,
+    'outlierheavy': 3,
+    'gtree': 3,
+    'slds': 10,
+    'runner': 7,
+    'example': 5,
+  }
+
+  print("\\midrule")
+  print(f"\\multirow{{{row_size[benchmark]}}}{{*}}{{{BENCHMARK_LATEX_NAMES[benchmark]}}}", end='')
+
+  all_times = pd.DataFrame(columns=['method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
+
+  for method in methods:
+    if method not in default_plans:
+      continue
+
+    if original_plan_ids is None:
+      plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
+
+    if len(list(plan_ids)) <= 1:
+      continue
+
+    default_plan = int(default_plans[method])
+    plan_ids = map(int, plan_ids)
+
+    target_errors = get_error_runtime(data, method, default_plan)
+    target = target_errors[target_errors['particles'] == 1024]
+
+    default = get_error_runtime(data, method, default_plan)
+
+    min_time = pd.DataFrame(columns=['variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
+    for j, plan_id in enumerate(plan_ids):
+
+      # 90th percentile error over n runs
+      errors = get_error_runtime(data, method, plan_id)
+
+      for k, var in enumerate(variables):
+        # compute particles where error is close to default error for var
+        is_close = errors[var].apply(lambda x: close_to_target_error(target[var].values[0], x))
+
+        # get smallest runtime where error is close to default error
+        close = errors.loc[is_close]
+        if close.shape[0] == 0:
+          particles = np.nan
+          median_runtime = np.nan
+          error = np.nan
+        else:
+          min_idx = close['median_time'].idxmin()
+          particles = errors.loc[min_idx]['particles']
+          median_runtime = round(errors.loc[min_idx]['median_time'], 2)
+          error = round(errors.loc[min_idx][var], 2)
+
+        # compute particles where error is close to default error for var
+        default_is_close = default[var].apply(lambda x: close_to_target_error(target[var].values[0], x))
+
+        # get smallest runtime where error is close to default error
+        default_close = default.loc[default_is_close]
+        if default_close.shape[0] == 0:
+          default_particles = np.nan
+          default_median_runtime = np.nan
+          default_error = np.nan
+        else:
+          default_min_idx = default_close['median_time'].idxmin()
+          default_particles = default_close.loc[default_min_idx]['particles']
+          default_median_runtime = round(default_close.loc[default_min_idx]['median_time'], 2)
+          default_error = round(default_close.loc[default_min_idx][var], 2)
+
+        speedup = round(default_median_runtime / median_runtime, 2)
+
+        min_time.loc[len(min_time.index)] = [
+          var, plan_id, particles, median_runtime, default_particles, default_median_runtime, speedup
+        ]
+
+    # print(min_time)
+
+    # keep the plan with the smallest runtime, make nan infinity
+    min_time = min_time.replace(np.nan, np.inf)
+    min_time = min_time.loc[min_time.groupby('variable')['median'].idxmin()]
+    min_time = min_time.replace(np.inf, np.nan)
+
+    min_time['method'] = method
+    if all_times.empty:
+      all_times = min_time
+    else:
+      all_times = pd.concat([all_times, min_time])
+    
+    # print(min_time)
+
+  all_times = all_times.reset_index(drop=True)
+
+  table_values = {
+    var: [] for var in variables
+  }
+  table_plans = {
+    var: [] for var in variables
+  }
+  for var in variables:
+    for method in methods:
+      row = all_times.loc[(all_times['variable'] == var) & (all_times['method'] == method)]
+      if len(row) == 0:
+        table_values[var].append(["--", "--"])
+        table_plans[var].append("")
+      elif row['median'].isnull().all():
+        table_values[var].append(["\\xmark", round(row['default'].values[0], 2)])
+        table_plans[var].append("")
+      else:
+        table_values[var].append([round(row['median'].values[0], 2), round(row['default'].values[0], 2)])
+        table_plans[var].append(int(row['plan'].values[0]))
+
+  for var in variables:
+    var_str = var.replace("_", "\\_")
+    print(f"& \mkw{{{var_str}}} ", end='')
+    for i, method in enumerate(methods):
+      if isinstance(table_values[var][i][0], str) or table_values[var][i][0] >= table_values[var][i][1]:
+        print(f"& {table_values[var][i][0]} & {table_values[var][i][1]} ", end='')
+      else:
+        print(f"& \\textbf{{{table_values[var][i][0]}}} & {table_values[var][i][1]} ", end='')
+      
+      if i == len(methods) - 1:
+        print("\\\\[-0.4em]")
+
+    for i, method in enumerate(methods):
+
+      if table_plans[var][i] == "":
+        print("& & ", end='')
+      else:
+        default_plan = int(default_plans[method])
+        if table_plans[var][i] == default_plan:
+          print("& & \defaultplan{} ", end='')
+        else:
+          print("& & \\plan{" + str(table_plans[var][i]) + "}", end='')
+      if i == len(methods) - 1:
+        print("\\\\")
+
+  non_default = all_times.apply(lambda x: x['plan'] != int(default_plans[x['method']]), axis=1)
+  non_default_times = all_times.loc[non_default].copy()
+  return all_times, non_default_times
+
+def compare_to_default_accuracy_example(data, all_plans):
+  def get_error_runtime(data, method, plan_id, median=False):
+    # default 90th percentile error over n runs
+    if median:
+      data_slice = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .drop(columns=['plan_id', 'method', 'time'])\
+                  .groupby(['particles'])\
+                  .median()
+    else:
+      data_slice = data.loc[data['method'] == method]\
+                    .loc[data['plan_id'] == plan_id]\
+                    .drop(columns=['plan_id', 'method', 'time'])\
+                    .groupby(['particles'])\
+                    .quantile(0.9)
+
+    median_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .median()
+    
+    upper_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .quantile(0.9)
+    
+    lower_runtimes = data.loc[data['method'] == method]\
+                  .loc[data['plan_id'] == plan_id]\
+                  .groupby(['particles'])['time']\
+                  .quantile(0.1)
+
+    # combine
+    errors = pd.concat([median_runtimes, lower_runtimes, upper_runtimes, data_slice], axis=1)
+    errors.columns = ['median_time', 'lower_time', 'upper_time'] + list(data_slice.columns)
+    errors['particles'] = errors.index
+    errors = errors.reset_index(drop=True)
+    
+    return errors
+  
+  variables = data.columns[4:]
+  methods = ['ssi']
+  plan_ids = [2, 5]
+
+  original_plan_ids = plan_ids
+
+  all_times = pd.DataFrame(columns=['method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
+
+  for method in methods:
+    if original_plan_ids is None:
+      plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
+
+    if len(list(plan_ids)) <= 1:
+      continue
+
+    plan_ids = map(int, plan_ids)
+
+    target_errors = get_error_runtime(data, method, 5)
+    target = target_errors[target_errors['particles'] == 1024]
+
+    sample_r_errors = get_error_runtime(data, method, 2)
+    sample_all_errors = get_error_runtime(data, method, 5)
+
+    is_close = sample_r_errors['r'].apply(lambda x: close_to_target_error(target['r'].values[0], x))
+    close = sample_r_errors.loc[is_close]
+    sample_r_runtime = close['median_time'].min()
+    print('Sample r')
+    print(close)
+
+    is_close = sample_all_errors['r'].apply(lambda x: close_to_target_error(target['r'].values[0], x))
+    close = sample_all_errors.loc[is_close]
+    sample_all_runtime = close['median_time'].min()
+    print('Sample all')
+    print(close)
+
+    print("Ratio of fastest runtime Sample r to Sample all")
+    print(sample_r_runtime / sample_all_runtime)
+
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
-  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table')
+  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table, accuracy')
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
   p.add_argument('--methods', '-m', type=str, required=False, nargs="+", default=DEFAULT_METHODS)
   p.add_argument('--particles', '-p', type=int, required=False, nargs='+')
-  p.add_argument('--example', '-e', action='store_true')
+  p.add_argument('--example', action='store_true')
+  p.add_argument('--error-bar', action='store_true')
 
   args = p.parse_args()
 
@@ -549,9 +867,13 @@ if __name__ == '__main__':
 
     print(args.benchmark)
 
+    all_times = pd.DataFrame(columns=['benchmark', 'method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
+    all_non_default_times = pd.DataFrame(columns=['benchmark', 'method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
+
     for benchmark in args.benchmark:
-      print('=============================')
-      print('Benchmark: {}'.format(benchmark))
+      if not args.task == 'accuracy':
+        print('=============================')
+        print('Benchmark: {}'.format(benchmark))
 
       with open(os.path.join(benchmark, 'config.json')) as f:
         config = json.load(f)
@@ -575,7 +897,52 @@ if __name__ == '__main__':
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
-            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, base_y, legend_width, args.example)
+            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, base_y, legend_width, args.example, args.error_bar)
 
         if args.task == 'compare':
-          compare_to_default(data, methods, args.plan_ids, config['plans'], config['default'])
+          if args.example:
+            compare_to_default_example(data, methods, args.plan_ids, config['plans'], config['default'])
+          else:
+            compare_to_default(data, methods, args.plan_ids, config['plans'], config['default'])
+        
+        if args.task == "accuracy":
+
+          if args.example:
+            compare_to_default_accuracy_example(data, config['plans'])
+          else:
+            benchmark_times, non_default_times = compare_to_default_accuracy(benchmark, data, methods, args.plan_ids, config['plans'], config['default'])
+
+            benchmark_times['benchmark'] = benchmark
+            non_default_times['benchmark'] = benchmark
+            if all_times.empty:
+              all_times = benchmark_times
+            else:
+              all_times = pd.concat([all_times, benchmark_times])
+
+            if all_non_default_times.empty:
+              all_non_default_times = non_default_times
+            else:
+              all_non_default_times = pd.concat([all_non_default_times, non_default_times])
+
+    if args.task == 'accuracy' and not args.example:
+      # print(all_times)
+      # print(all_non_default_times)
+
+      # compute geometric mean of speedups
+      gm = gmean(list(all_times['speedup'].values) + [1] * 9)
+      min_speedup = all_times['speedup'].min()
+      max_speedup = all_times['speedup'].max()
+
+      print('Across All')
+      print(f"Geometric Mean Speedup: {round(gm, 2)}")
+      print(f"Min Speedup: {round(min_speedup, 2)}")
+      print(f"Max Speedup: {round(max_speedup, 2)}")
+
+      print('Non Default')
+      gm = gmean(all_non_default_times['speedup'].values)
+      min_speedup = all_non_default_times['speedup'].min()
+      max_speedup = all_non_default_times['speedup'].max()
+
+      print(f"Geometric Mean Speedup: {round(gm, 2)}")
+      print(f"Min Speedup: {round(min_speedup, 2)}")
+      print(f"Max Speedup: {round(max_speedup, 2)}")
