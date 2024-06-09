@@ -87,4 +87,4 @@ if __name__ == '__main__':
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
 
   args = p.parse_args()
-  main(p.benchmark)
+  main(args.benchmark)
