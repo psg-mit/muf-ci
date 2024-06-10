@@ -705,6 +705,12 @@ class AbsSymState(object):
         cond = self.mean(cond)
         true = self.mean(true)
         false = self.mean(false)
+      case AbsEq(left, right):
+        self.mean(left)
+        self.mean(right)
+      case AbsLt(left, right):
+        self.mean(left)
+        self.mean(right)
       case UnkE(parents):
         for parent in parents:
           self.marginalize(parent)

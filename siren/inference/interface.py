@@ -328,7 +328,12 @@ class SymState(object):
         true = self.mean(true)
         false = self.mean(false)
         return true if cond else false
+      case Eq(left, right):
+        return self.mean(left) == self.mean(right)
+      case Lt(left, right):
+        return self.mean(left) < self.mean(right)
       case _:
+        # print(type(expr))
         raise ValueError(expr)
 
   # Needs to be overridden by the implementation
@@ -402,7 +407,10 @@ class Context(object):
     return iter(self.context)
 
   def __or__(self, other: 'Context') -> 'Context':
-    return Context({**self.context, **other.context})
+    new = copy(self)
+    for k, v in other.context.items():
+      new.context[k] = v
+    return new
 
   def __str__(self) -> str:
     return f"Context({', '.join(map(str, self.context.items()))})"
