@@ -9,7 +9,6 @@ from siren.utils import is_abs_pair, is_abs_lst, get_abs_pair, get_abs_lst, fast
 # Contains the AbsSymState interface algorithms must subclass and implement
 
 # Maximum number of random variables to track in UnkE before collapsing to TopE
-MAX_RVS = 4
 
 ED = TypeVar('ED', bound=AbsSymExpr | AbsSymDistr)
 OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
@@ -23,13 +22,14 @@ class AbsSymState(object):
 
   ### Shared functions ###
   # These should not need to be overridden
-  def __init__(self) -> None:
+  def __init__(self, max_rvs: int=4) -> None:
     super().__init__()
     self.state: Dict[AbsRandomVar, Dict[str, Any]] = {}
     self.plan: InferencePlan = InferencePlan()
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
     self.annotations: Dict[Identifier, Annotation] = {}
+    self.max_rvs = max_rvs
 
   def __copy__(self):
     new_state = type(self)()
@@ -305,6 +305,15 @@ class AbsSymState(object):
         return AbsConst(v1 / v2)
       case e1, AbsConst(1):
         return e1
+      case AbsConst(v1), UnkE(parents):
+        return UnkE(parents)
+        if len(parents) == 0:
+          return UnkE([])
+        return AbsDiv(AbsConst(v1), UnkE(parents))
+      case UnkE(parents), AbsConst(v2):
+        return UnkE(parents)
+        if len(parents) == 0:
+          return UnkE([])
       case _:
         return AbsDiv(e1, e2)
 
@@ -516,6 +525,10 @@ class AbsSymState(object):
           raise ValueError(c)
       case AbsLst(es1), AbsLst(es2):
         es = []
+        if len(es1) == 0:
+          return e2
+        if len(es2) == 0:
+          return e1
         max_len = max(len(es1), len(es2))
         for i in range(max_len):
           if i < len(es1) and i < len(es2):
@@ -573,7 +586,7 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
           for rv_par in parents:
             if rv_par in other.vars():
               other.set_dynamic(rv_par)
@@ -584,7 +597,7 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
           for rv_par in parents:
             if rv_par in self.vars():
               self.set_dynamic(rv_par)
@@ -595,7 +608,8 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
+          # print(e1, e2)
           for rv_par in parents:
             if rv_par in self.vars():
               self.set_dynamic(rv_par)
@@ -638,7 +652,7 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
           for rv_par in parents:
             if rv_par in other.vars():
               other.set_dynamic(rv_par)
@@ -649,7 +663,7 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
           for rv_par in parents:
             if rv_par in self.vars():
               self.set_dynamic(rv_par)
@@ -660,7 +674,7 @@ class AbsSymState(object):
           if p in parents:
             continue
           parents.append(p)
-        if len(parents) > MAX_RVS:
+        if len(parents) > self.max_rvs:
           for rv_par in parents:
             if rv_par in self.vars():
               self.set_dynamic(rv_par)
@@ -730,7 +744,7 @@ class AbsSymState(object):
         if isinstance(fst, UnkC) or isinstance(snd, UnkC):
           return AbsConst(UnkC())
         return AbsConst(fst == snd)
-      case Lt(fst, snd):
+      case AbsLt(fst, snd):
         fst = self.value_expr(fst).v
         snd = self.value_expr(snd).v
         if isinstance(fst, UnkC) or isinstance(snd, UnkC):
@@ -839,7 +853,10 @@ class AbsContext(object):
     return iter(self.context)
 
   def __or__(self, other: 'AbsContext') -> 'AbsContext':
-    return AbsContext({**self.context, **other.context})
+    new = copy(self)
+    for k, v in other.context.items():
+      new.context[k] = v
+    return new
 
   def __str__(self) -> str:
     return f"AbsContext({', '.join(map(str, self.context.items()))})"
@@ -857,7 +874,7 @@ class AbsContext(object):
       self.context[k] = v.rename(old, new)
 
 class AbsParticle(object):
-  def __init__(self, cont: Expr[AbsSymExpr], state: AbsSymState = AbsSymState()) -> None:
+  def __init__(self, cont: Expr[AbsSymExpr], state: AbsSymState) -> None:
     super().__init__()
     self.cont: Expr[AbsSymExpr] = cont
     self.state: AbsSymState = state
@@ -924,9 +941,9 @@ class AbsMixture(object):
 
 # Set of particles for abstract interpretation
 class AbsProbState(object):
-  def __init__(self, cont: Expr, method: type[AbsSymState]) -> None:
+  def __init__(self, cont: Expr, method: type[AbsSymState], max_rvs: int=4) -> None:
     super().__init__()
-    self.particles : AbsParticle = AbsParticle(cont, method())
+    self.particles : AbsParticle = AbsParticle(cont, method(max_rvs))
 
   def __str__(self) -> str:
     return f"{self.particles}"

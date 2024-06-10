@@ -231,7 +231,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         
         # Range only takes constants
         a, b = get_pair(new_args)
-        match a, b:
+        match p1.state.eval(a), p1.state.eval(b):
           case Const(a), Const(b):
             assert isinstance(a, Number) and isinstance(b, Number) and a <= b
             l : List[SymExpr] = list(map(Const, range(int(a), int(b))))
@@ -365,7 +365,7 @@ def evaluate_particle(particle: Particle, functions: Dict[Identifier, Function[S
         cond_val = p1.final_expr
         
         # If both branches are pure, evaluate them and represent as ite symbolic expression
-        if pure(true, functions) and pure(false, functions):
+        if len(cond_val.rvs()) > 0 and pure(true, functions) and pure(false, functions):
           p2 = _evaluate(p1.update(cont=true))
           if not p2.finished:
             return p2.update(cont=IfElse(cond_val, p2.cont, false), finished=False)

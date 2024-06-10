@@ -31,6 +31,7 @@ def main():
         choices=["ssi", "ds", "bp"],
     )
     p.add_argument("--seed", "-s", type=int, default=None)
+    p.add_argument("--max-rvs", type=int, default=4, help="Maximum number of random variables to track in abstract expression types")
     args = p.parse_args()
 
     with open(args.filename, "r") as f:
@@ -56,7 +57,7 @@ def main():
         print("===== Inferred Inference Plan =====")
         t1 = time.time()
         inferred_plan = analyze.analyze(
-            program, analysis_method,
+            program, analysis_method, args.max_rvs
         )
         t2 = time.time()
         print(inferred_plan)

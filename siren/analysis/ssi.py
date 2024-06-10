@@ -53,8 +53,8 @@ class AbsSSIState(AbsSymState):
       else:
         self.annotations[name] = annotation
 
-    self.set_distr(rv, distribution)
     self.set_pv(rv, pv)
+    self.set_distr(rv, distribution)
     return rv
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> None:
@@ -256,7 +256,7 @@ class AbsSSIState(AbsSymState):
         case AbsDelta(v, _):
           return self.depends_on(v, rv_par, False) and (not _has_other_deps_on_par(v))
         case UnkD(parents):
-          return False
+          return not (rv_par in parents)
         case TopD():
           return False
         case _:
@@ -359,20 +359,34 @@ class AbsSSIState(AbsSymState):
         
     def _contains_cycle(rv: AbsRandomVar) -> bool:
       visited = set()
-      queue = deque()
-      queue.append(rv)
-      while queue:
-        rv_cur = queue.popleft()
-        if rv_cur in visited:
-          return True
-        visited.add(rv_cur)
-        queue.extend(self.parents(rv_cur))
-      return False
+      stack = []
+
+      def dfs(rv_cur):
+        if rv_cur not in visited:
+          visited.add(rv_cur)
+          stack.append(rv_cur)
+
+          parents = []
+          for par in self.parents(rv_cur):
+            if not par in parents:
+              parents.append(par)
+
+          for par in parents:
+            if par not in visited and dfs(par):
+              return True
+            elif par in stack:
+              return True
+          stack.remove(rv_cur)
+        return False
+      
+      return dfs(rv)
         
     def _hoist_inner(rv_cur: AbsRandomVar, ghost_roots: Set[AbsRandomVar]) -> None:
       # Joins can cause cycles so we need to detect them
       # Before we do topological sort
       if _contains_cycle(rv_cur):
+        # print(rv_cur)
+        # print(self.state)
         self.set_dynamic(rv_cur)
         self.set_distr(rv_cur, TopD())
         return

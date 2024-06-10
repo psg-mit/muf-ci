@@ -237,7 +237,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         # If a or b are unknown, the result is also an unknown expression
         if isinstance(a, UnkE) or isinstance(b, UnkE):
           return p1.update(cont=UnkE([]))
-        match a, b:
+        match particle.state.eval(a), particle.state.eval(b):
           case AbsConst(a), AbsConst(b):
             assert isinstance(a, Number) and isinstance(b, Number) and a <= b
             l : List[AbsSymExpr] = list(map(AbsConst, range(int(a), int(b))))
@@ -328,12 +328,22 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
               return _evaluate(p2.update(cont=e))
           case UnkE(_):
             # we don't know the length/content of the list, so do fixpoint computation
+            # print('=====')
+            # print('before')
+            # print(p2.state)
+            # print(p2.cont)
             state_old = copy(p2.state)
             p3 = _evaluate(p2.copy(cont=Apply(func, [lst_val, acc_val])))
             # narrow_join_expr (rename_join) renames and joins the two expressions and states from before the apply
             # and after the apply
+            # print('after')
+            # print(p3.state)
+            # print(p3.cont)
             acc_new = p2.state.narrow_join_expr(acc_val, p3.final_expr, p3.state)
             p2.state.clean(acc_new) # remove unreachable rvs before comparison
+            # print('joined')
+            # print(p2.state)
+            # print(acc_new)
             if acc_val == acc_new and state_old == p2.state:
               # fixpoint, return result
               return p3.update(cont=acc_new, state=state_old)
@@ -367,7 +377,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         cond_val = p1.final_expr
 
         # if both branches are pure, we can evaluate them as ite
-        if pure(true, functions) and pure(false, functions):
+        if len(cond_val.rvs()) > 0 and pure(true, functions) and pure(false, functions):
           p2 = _evaluate(p1.update(cont=true))
           then_val = p2.final_expr
           p3 = _evaluate(p2.update(cont=false))
@@ -409,6 +419,9 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
         assert isinstance(p1.cont, Op) # should still be an Op
         d = p1.final_expr
         p2 = _evaluate(p1.update(cont=v))
+        # print(p2.state)
+        # print('====')
+        # print(d, p2.final_expr)
         observe(d, p2.final_expr, p2.state)
         return p2
       case Resample():
@@ -419,20 +432,20 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
       
   return _evaluate(particle)
 
-def evaluate(program: Program, method: type[AbsSymState]) -> AbsProbState:
+def evaluate(program: Program, method: type[AbsSymState], max_rvs: int=4) -> AbsProbState:
   functions, expression = program.functions, program.main
 
   # Make lookup for functions
   functions = {f.name: f for f in functions}
 
-  probstate = AbsProbState(expression, method)
+  probstate = AbsProbState(expression, method, max_rvs)
 
   probstate.particles = evaluate_particle(probstate.particles, functions)
 
   return probstate
 
-def analyze(program: Program, method: type[AbsSymState]) -> InferencePlan:
-  prob = evaluate(program, method)
+def analyze(program: Program, method: type[AbsSymState], max_rvs: int) -> InferencePlan:
+  prob = evaluate(program, method, max_rvs)
 
   prob.result()
 

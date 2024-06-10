@@ -842,6 +842,9 @@ class TopE(AbsSymExpr[T]):
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymExpr':
     return self
   
+  def depends_on(self, rv: 'AbsRandomVar', transitive: bool = False) -> bool:
+    return True
+  
 # UnkE represents an unknown expression that depends on a set of random variables
 # It's a refinement of TopE
 @dataclass(frozen=True)
@@ -862,10 +865,13 @@ class UnkE(AbsSymExpr[T]):
     
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymExpr':
     new_parents = value.rvs()
-    if rv in self.parents:
-      self.parents.remove(rv)
-    self.parents.extend(new_parents)
-    return self
+    parents = self.parents.copy()
+    if rv in parents:
+      parents.remove(rv)
+    for p in new_parents:
+      if p not in parents:
+        parents.append(p)
+    return UnkE(parents)
 
 # UnkC represents an unknown constant
 @dataclass(frozen=True)
@@ -876,13 +882,25 @@ class UnkC:
   def __add__(self, other):
     return UnkC()
   
+  def __radd__(self, other):
+    return UnkC()
+  
   def __sub__(self, other):
+    return UnkC()
+  
+  def __rsub__(self, other):
     return UnkC()
   
   def __mul__(self, other):
     return UnkC()
   
+  def __rmul__(self, other):
+    return UnkC()
+  
   def __truediv__(self, other):
+    return UnkC()
+  
+  def __rtruediv__(self, other):
     return UnkC()
   
   def __neg__(self):
@@ -1115,10 +1133,11 @@ class UnkD(AbsSymDistr[T]):
   
   def subst_rv(self, rv: AbsRandomVar, value: AbsSymExpr) -> AbsSymDistr:
     new_parents = value.rvs()
-    if rv in self.parents:
-      self.parents.remove(rv)
-    self.parents.extend(new_parents)
-    return self
+    parents = self.parents.copy()
+    if rv in parents:
+      parents.remove(rv)
+    parents.extend(new_parents)
+    return UnkD(parents)
 
 @dataclass(frozen=True)
 class AbsNormal(AbsSymDistr[float]):
