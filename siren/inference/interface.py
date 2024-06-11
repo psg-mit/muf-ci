@@ -330,7 +330,7 @@ class SymState(object):
         cond = self.mean(cond)
         true = self.mean(true)
         false = self.mean(false)
-        return true if cond else false
+        return cond * true + (1 - cond) * false
       case Eq(left, right):
         return self.mean(left) == self.mean(right)
       case Lt(left, right):
