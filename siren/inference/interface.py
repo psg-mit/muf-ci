@@ -410,7 +410,7 @@ class Context(object):
     return iter(self.context)
 
   def __or__(self, other: 'Context') -> 'Context':
-    new = copy(self)
+    new = deepcopy(self)
     for k, v in other.context.items():
       new.context[k] = v
     return new

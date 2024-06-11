@@ -859,7 +859,7 @@ class AbsContext(object):
     return iter(self.context)
 
   def __or__(self, other: 'AbsContext') -> 'AbsContext':
-    new = copy(self)
+    new = deepcopy(self)
     for k, v in other.context.items():
       new.context[k] = v
     return new
