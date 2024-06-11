@@ -27,14 +27,15 @@ val step = fun (yobs, ((trans_prob0, trans_prob1, obs_noise0, obs_noise1), ss, x
   in
 
   (* p(x_t | x_{t-1}, s_t) *)
+  let symbolic x1 <- gaussian(prev_xt, 1.2429) in
+  let symbolic x0 <- gaussian(prev_xt, 0.02248262) in
   let xt = if st then
-    let symbolic x1 <- gaussian(prev_xt, 1.2429) in
     x1
   else
-    let symbolic x0 <- gaussian(prev_xt, 0.02248262) in
     x0
   in
 
+  (* p(z_t | x_t, s_t) *)
   let var = if st then obs_noise1 else obs_noise0 in
 
   let () = observe(gaussian(xt, var), yobs) in
