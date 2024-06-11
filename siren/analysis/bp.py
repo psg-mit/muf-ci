@@ -128,7 +128,7 @@ class AbsBPState(AbsSymState):
             raise ValueError(f'{rv} is {self.node(rv)}')
         
         parents2 = set()
-        match self.node(rv):
+        match other.node(rv):
           case AbsBPRealized():
             parents2 = set()
           case AbsBPMarginalized():
