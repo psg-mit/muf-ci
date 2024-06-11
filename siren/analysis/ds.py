@@ -258,8 +258,7 @@ class AbsDSState(AbsSymState):
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-      else:
-        self.annotations[name] = annotation
+    self.set_annotation(rv, annotation)
     distribution = self.eval_distr(distribution)
     
     children = []

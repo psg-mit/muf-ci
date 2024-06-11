@@ -21,7 +21,6 @@ class SymState(object):
     self.state: Dict[RandomVar, Dict[str, Any]] = {}
     self.ctx: Context = Context()
     self.counter: int = 0
-    self.annotations: Dict[Identifier, Annotation] = {}
     self.rng = np.random.default_rng(seed=seed)
 
   # Needs to be overridden if the state contains mutable objects
@@ -30,7 +29,6 @@ class SymState(object):
     new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
-    new_state.annotations = self.annotations
     new_state.rng = self.rng
     return new_state
 
@@ -62,8 +60,7 @@ class SymState(object):
     if 'distribution' in kwargs:
       distribution = kwargs['distribution']
       if isinstance(distribution, Delta):
-        pv = self.get_entry(variable, 'pv')
-        if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
+        if self.annotation(variable) == Annotation.symbolic\
           and distribution.sampled:
           raise RuntimeViolatedAnnotationError(
             f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
@@ -75,11 +72,17 @@ class SymState(object):
     distribution = self.get_entry(rv, 'distribution')
     return distribution
   
+  def annotation(self, rv: RandomVar) -> Optional[Annotation]:
+    return self.get_entry(rv, 'annotation')
+  
   def set_distr(self, rv: RandomVar, distribution: SymDistr) -> None:
     self.set_entry(rv, distribution=distribution)
 
   def set_pv(self, rv: RandomVar, pv: Optional[Identifier]) -> None:
     self.set_entry(rv, pv=pv)
+
+  def set_annotation(self, rv: RandomVar, annotation: Optional[Annotation]) -> None:
+    self.set_entry(rv, annotation=annotation)
 
   def is_sampled(self, variable: RandomVar) -> bool:
     match self.get_entry(variable, 'distribution'):

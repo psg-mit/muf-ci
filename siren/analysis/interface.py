@@ -28,7 +28,6 @@ class AbsSymState(object):
     self.plan: InferencePlan = InferencePlan()
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
-    self.annotations: Dict[Identifier, Annotation] = {}
     self.max_rvs = max_rvs
 
   def __copy__(self):
@@ -36,7 +35,6 @@ class AbsSymState(object):
     new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
-    new_state.annotations = self.annotations
     new_state.plan = copy(self.plan)
     return new_state
   
@@ -98,11 +96,10 @@ class AbsSymState(object):
       distribution = kwargs['distribution']
       if isinstance(distribution, AbsDelta):
         pv = self.get_entry(variable, 'pv')
-        for pv in self.pv(variable):
-          if pv in self.annotations and self.annotations[pv] == Annotation.symbolic \
-            and distribution.sampled:
-            raise AnalysisViolatedAnnotationError(
-              f"{self.get_entry(variable, 'pv')} is annotated as symbolic but will be sampled")
+        if self.get_entry(variable, 'annotation') == Annotation.symbolic\
+          and distribution.sampled:
+          raise AnalysisViolatedAnnotationError(
+            f"Some of {pv} has symbolic annotation but might be sampled")
         
   def is_sampled(self, variable: AbsRandomVar) -> bool:
     match self.get_entry(variable, 'distribution'):
@@ -305,15 +302,6 @@ class AbsSymState(object):
         return AbsConst(v1 / v2)
       case e1, AbsConst(1):
         return e1
-      case AbsConst(v1), UnkE(parents):
-        return UnkE(parents)
-        if len(parents) == 0:
-          return UnkE([])
-        return AbsDiv(AbsConst(v1), UnkE(parents))
-      case UnkE(parents), AbsConst(v2):
-        return UnkE(parents)
-        if len(parents) == 0:
-          return UnkE([])
       case _:
         return AbsDiv(e1, e2)
 
@@ -789,6 +777,9 @@ class AbsSymState(object):
     distribution = self.get_entry(rv, 'distribution')
     return distribution
   
+  def annotation(self, rv: AbsRandomVar) -> Optional[Annotation]:
+    return self.get_entry(rv, 'annotation')
+  
   ## Mutators
   # Sets the specified entry for the given variable
   # Base symbolic state only has 'distribution' and 'pv' entries
@@ -797,6 +788,9 @@ class AbsSymState(object):
 
   def set_pv(self, rv: AbsRandomVar, pv: Set[Identifier]) -> None:
     self.set_entry(rv, pv=pv)
+
+  def set_annotation(self, rv: AbsRandomVar, annotation: Annotation) -> None:
+    self.set_entry(rv, annotation=annotation)
 
   def remove_unused(self, rv: AbsRandomVar) -> None:
     del self.state[rv]
@@ -816,14 +810,20 @@ class AbsSymState(object):
   def entry_join(self, rv: AbsRandomVar, other: 'AbsSymState') -> None:
     self.set_distr(rv, self.join_distr(self.distr(rv), other.distr(rv), other))
     self.set_pv(rv, self.pv(rv) | other.pv(rv))
+    annotations = [self.annotation(rv), other.annotation(rv)]
+    if Annotation.symbolic in annotations:
+      self.set_annotation(rv, Annotation.symbolic)
+    elif Annotation.sample in annotations:
+      self.set_annotation(rv, Annotation.sample)
+    else:
+      self.set_annotation(rv, None)
 
   # Sets the inferred distribution encoding as dynamic
   # May need to be overridden by subclasses
   def set_dynamic(self, variable: AbsRandomVar) -> None:
-    for pv in self.pv(variable):
-      if pv in self.annotations:
-        raise AnalysisViolatedAnnotationError(
-          f"{self.get_entry(variable, 'pv')} is annotated as {self.annotations[pv]} but cannot be determined")
+    if self.annotation(variable) == Annotation.symbolic:
+      raise AnalysisViolatedAnnotationError(
+        f"{self.get_entry(variable, 'pv')} is annotated as symbolic but cannot be determined")
     
     for pv in self.pv(variable):
       self.plan[pv] = DistrEnc.dynamic

@@ -31,8 +31,7 @@ class SSIState(SymState):
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-      else:
-        self.annotations[name] = annotation
+    self.set_annotation(rv, annotation)
 
     self.set_distr(rv, distribution)
     self.set_pv(rv, name)

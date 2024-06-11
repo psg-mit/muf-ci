@@ -390,6 +390,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
               if isinstance(v, UnkC):
                 p2 = _evaluate(p1.copy(cont=true))
                 then_val = p2.final_expr
+                p1.state.counter = max(p1.state.counter, p2.state.counter)
                 p3 = _evaluate(p1.copy(cont=false))
                 else_val = p3.final_expr
                 e = p2.state.narrow_join_expr(then_val, else_val, p3.state)
