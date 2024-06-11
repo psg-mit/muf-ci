@@ -12,6 +12,8 @@ pyvenv/
 muf.log
 benchmarks/*/*.ml
 benchmarks/*/output/
+benchmarks/*/output_paper/*.pdf
+benchmarks/*/output_paper/*.png
 benchmarks/*/test*
 benchmarks/*/all_programs/*.ml
 .vscode/
