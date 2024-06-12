@@ -12,6 +12,7 @@ import sys
 import pandas as pd
 import ast
 import tqdm
+import wandb
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -37,6 +38,8 @@ N_INTERVALS = 30
 INC = 1
 
 CWD = '..'
+
+LOGGING = False
 
 def squared_error(true_x, x):
   return (true_x - x) ** 2
@@ -223,6 +226,16 @@ def run_particles(benchmark, files, n, particles, methods, plans, true_vars, res
             if run_outputs is not None:
               break
           t, program_output = run_outputs
+
+          global LOGGING
+          if LOGGING:
+            wandb.log({
+              'plan_id': plan_id,
+              'method': method,
+              'particles': p,
+              'time': t,
+              **program_output
+            })
 
           # write results to csv
           with open(results_file, 'a') as f:
@@ -513,6 +526,7 @@ if __name__ == '__main__':
   rp.add_argument('--prange', '-pr', type=int, required=False, nargs=2, default=[1, 1000])
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
+  rp.add_argument('--logging', '-l', action='store_true')
   
   ap = sp.add_parser('analyze')
 
@@ -525,6 +539,9 @@ if __name__ == '__main__':
 
   print('Start time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
   start_time = time.time()
+
+  if args.logging:
+    wandb.init(project=f'siren-{args.subparser_name}')
 
   if args.subparser_name == 'kicktires':
     n = 1
@@ -734,3 +751,6 @@ if __name__ == '__main__':
   end_time = time.time()
   print('End time: {}'.format(time.strftime('%Y-%m-%d %H:%M:%S')))
   print('Elapsed time: {}'.format(end_time - start_time))
+
+  if args.logging:
+    wandb.finish()
