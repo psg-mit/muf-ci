@@ -110,10 +110,13 @@ def run_siren(benchmark, file, p, method, true_vars, error_func):
   # print('>', cmd)
 
   try:
-    out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+    out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
+  except subprocess.TimeoutExpired as e:
+    tqdm.tqdm.write(f'Timeout: {file}')
+    return None
   except subprocess.CalledProcessError as e:
     output = e.output.decode("utf-8")
-    print(output)
+    tqdm.tqdm.print(output)
     return None
   
   program_output = {}
@@ -170,12 +173,7 @@ def run_siren(benchmark, file, p, method, true_vars, error_func):
         error += cross_entropy(true_val, val)
       error /= len(true_vals)
     else:
-      # print('compute max error')
-      # compute max error
-      error = 0
-      for true_val, val in zip(true_vals, out):
-        # print(true_val, val)
-        error = max(error, squared_error(true_val, val))
+      raise ValueError('Invalid error function')
 
     program_output[var] = error
 
@@ -218,16 +216,17 @@ def run_particles(benchmark, files, n, particles, methods, plans, true_vars, res
       
       for p in tqdm.tqdm(particles, desc=f"Particles", position=1, leave=False, total=len(particles)):
         # print(f'Running with {p} particles')
-
         for i in tqdm.tqdm(range(n), desc=f"Iteration", position=2, leave=False, total=n):
           # print(f'{plan_id} {method} - {p} particles - Run {i}')
 
-          run_outputs = None
-          while run_outputs is None:
-            run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
-            if run_outputs is not None:
-              break
-          t, program_output = run_outputs
+          run_outputs = run_siren(benchmark, file, p, method, true_vars, error_func)
+          if run_outputs is None:
+            # timeout
+            tqdm.tqdm.write(f'Timed out: {plan_id} {method} - {p} particles')
+            t = -1
+            program_output = {var[0]: -1 for var in true_vars}
+          else:
+            t, program_output = run_outputs
 
           global LOGGING
           if LOGGING:
@@ -248,6 +247,8 @@ def run_particles(benchmark, files, n, particles, methods, plans, true_vars, res
               t,
               *(program_output.values())
             ])
+          if t == -1:
+            break
 
 def find_satisfiable_plans(benchmark, files, methods, plans, knowns):
   # print(plans)
@@ -519,6 +520,7 @@ if __name__ == '__main__':
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--files', '-f', type=str, required=False)
   p.add_argument('--methods', '-m', type=str, required=False)
+  p.add_argument('--logging', '-l', action='store_true')
 
   sp = p.add_subparsers(dest='subparser_name')
 
@@ -527,7 +529,6 @@ if __name__ == '__main__':
   rp.add_argument('--prange', '-pr', type=int, required=False, nargs=2, default=[1, 1000])
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
-  rp.add_argument('--logging', '-l', action='store_true')
   
   ap = sp.add_parser('analyze')
 
@@ -547,7 +548,7 @@ if __name__ == '__main__':
 
   if args.subparser_name == 'kicktires':
     n = 1
-    particles = [1, 2, 4, 8, 16]
+    particles = [1, 2]
     
     print("Running the benchmark for Section 2 example with n=1 for Figure 4")
     benchmark = 'example'
