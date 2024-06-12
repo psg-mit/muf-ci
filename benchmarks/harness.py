@@ -25,6 +25,8 @@ DEFAULT_BENCHMARKS = [
   'slds',
   'runner',
   # 'radar',
+  'wheels',
+  'slam',
 ]
 
 DEFAULT_METHODS = [

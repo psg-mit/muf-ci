@@ -24,6 +24,8 @@ DEFAULT_BENCHMARKS = [
   'gtree',
   'slds',
   'runner',
+  'wheels',
+  'slam',
 ]
 
 DEFAULT_METHODS = [
@@ -44,6 +46,8 @@ BENCHMARK_LATEX_NAMES = {
   'slds': r"\bSlds{}",
   'runner': r"\bRunner{}",
   'example': r"\bExample{}",
+  'wheels': r"\bWheels{}",
+  'slam': r"\bSlam{}",
 }
 
 N_INTERVALS = 30
