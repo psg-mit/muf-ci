@@ -542,6 +542,8 @@ if __name__ == '__main__':
 
   if args.logging:
     wandb.init(project=f'siren-{args.subparser_name}')
+    global LOGGING
+    LOGGING = True
 
   if args.subparser_name == 'kicktires':
     n = 1
