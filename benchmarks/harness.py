@@ -41,6 +41,8 @@ CWD = '..'
 
 LOGGING = False
 
+TIMEOUT = 500
+
 def squared_error(true_x, x):
   return (true_x - x) ** 2
 
@@ -229,13 +231,12 @@ def run_particles(benchmark, files, n, particles, methods, plans, true_vars, res
 
           global LOGGING
           if LOGGING:
-            wandb.log({
-              'plan_id': plan_id,
-              'method': method,
-              'particles': p,
-              'time': t,
-              **program_output
-            })
+            logging_output = {
+              f'{method}-{plan_id}-{p}-time': t,
+              **{f'{method}-{plan_id}-{p}-{key}: {val}' for key, val in program_output.items()},
+            }
+
+            wandb.log(logging_output)
 
           # write results to csv
           with open(results_file, 'a') as f:
@@ -294,7 +295,7 @@ def find_satisfiable_plans(benchmark, files, methods, plans, knowns):
       cmd = f'siren {file} -p 10 -m {method}'
       print('>', cmd)
       try:
-        out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+        out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
       except subprocess.CalledProcessError as e:
         output = e.output.decode("utf-8")
         if 'RuntimeViolatedAnnotationError' in output:
