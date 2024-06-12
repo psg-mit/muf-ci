@@ -146,7 +146,7 @@ class SymState(object):
         raise ValueError(self.get_entry(rv, 'distribution'))
 
   def str_expr (self, expr: SymExpr) -> str:
-    expr = self.eval(expr)
+    # expr = self.eval(expr)
     match expr:
       case Const(value):
         return str(value)
@@ -164,6 +164,10 @@ class SymState(object):
         return f"[{', '.join(map(self.str_expr, es))}]"
       case Pair(e1, e2):
         return f"({self.str_expr(e1)}, {self.str_expr(e2)})"
+      case Eq(left, right):
+        return f"({self.str_expr(left)} = {self.str_expr(right)})"
+      case Lt(left, right):
+        return f"({self.str_expr(left)} < {self.str_expr(right)})"
       case _:
         raise ValueError(expr)
       
