@@ -130,9 +130,12 @@ class AbsDSState(AbsSymState):
       parents2: Set[AbsRandomVar],
     ) -> None:
       for rv_par in parents1:
+        if rv_par not in self.state:
+          other.set_dynamic(rv_par)
         self.set_dynamic(rv_par)
       for rv_par in parents2:
         other.set_dynamic(rv_par)
+      self.children(rv).extend(other.children(rv))
       self.set_distr(rv, TopD())
       self.set_node(rv, AbsDSUnk())
 
@@ -151,7 +154,6 @@ class AbsDSState(AbsSymState):
         self.set_node(rv, AbsDSMarginalized(edge))
       case AbsDSMarginalized((self_par, self_cdistr)), AbsDSMarginalized((other_par, other_cdistr)):
         cdistr = self.join_distr(self_cdistr, other_cdistr, other)
-        self.set_distr(rv, cdistr)
 
         if isinstance(cdistr, TopD):
           _make_unk(set(), set())
@@ -164,17 +166,18 @@ class AbsDSState(AbsSymState):
         
         if len(parents) == 0:
           self.set_node(rv, AbsDSMarginalized(None))
+          self.set_distr(rv, cdistr)
           return
         if len(parents) == 1:
           self.set_node(rv, AbsDSMarginalized((parents[0], cdistr)))
+          self.set_distr(rv, cdistr)
           return
         
         # Set to top because only allowed one parent
-        _make_unk(set(parents), set())
+        _make_unk(parents, set())
         
       case AbsDSInitialized((self_par, self_cdistr)), AbsDSInitialized((other_par, other_cdistr)):
         cdistr = self.join_distr(self_cdistr, other_cdistr, other)
-        self.set_distr(rv, cdistr)
         
         if isinstance(cdistr, TopD):
           _make_unk(set(), set())
@@ -189,11 +192,11 @@ class AbsDSState(AbsSymState):
           raise ValueError(f'{rv} is {self.node(rv)}')
         if len(parents) == 1:
           self.set_node(rv, AbsDSInitialized((parents[0],  cdistr)))
+          self.set_distr(rv, cdistr)
           return
         
         # Set to top because only allowed one parent
-        _make_unk(set(parents), set())
-
+        _make_unk(parents, set())
       case _, _:
         parents1 = set()
         match self.node(rv):
@@ -452,6 +455,10 @@ class AbsDSState(AbsSymState):
   def marginal_child(self, rv: AbsRandomVar) -> Set[AbsRandomVar]:
     mc = set()
     for rv_child in self.children(rv):
+      if rv_child not in self:
+        self.set_distr(rv_child, TopD())
+        self.set_node(rv_child, AbsDSUnk())
+        self.set_children(rv_child, [])
       match self.node(rv_child):
         case AbsDSMarginalized(_):
           mc.add(rv_child)
