@@ -118,7 +118,7 @@ def run_siren(benchmark, file, p, method, true_vars, error_func):
     return None
   except subprocess.CalledProcessError as e:
     output = e.output.decode("utf-8")
-    tqdm.tqdm.print(output)
+    tqdm.tqdm.write(output)
     return None
   
   program_output = {}
