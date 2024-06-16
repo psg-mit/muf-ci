@@ -220,9 +220,9 @@ def bernoulli_marginal(state: SymState, prior: Bernoulli, likelihood: Bernoulli,
     return None
   
   p1, p2 = prior.p, likelihood.p
-  p2_new = state.ex_add(state.ex_mul(p1, p2.subst_rv(rv_par, Const(True))),
+  p2_new = state.ex_add(state.ex_mul(p1, state.eval(p2.subst_rv(rv_par, Const(True)))),
                         state.ex_mul(state.ex_add(Const(1), state.ex_mul(Const(-1), p1)),
-                                    p2.subst_rv(rv_par, Const(False))))
+                                    state.eval(p2.subst_rv(rv_par, Const(False)))))
   return Bernoulli(p2_new)
     
 def bernoulli_posterior(state: SymState, prior: Bernoulli, likelihood: Bernoulli, 
@@ -233,12 +233,12 @@ def bernoulli_posterior(state: SymState, prior: Bernoulli, likelihood: Bernoulli
   x = rv_child if obs is None else obs
   
   p1, p2 = prior.p, likelihood.p
-  p2_new = state.ex_add(state.ex_mul(p1, p2.subst_rv(rv_par, Const(True))),
+  p2_new = state.ex_add(state.ex_mul(p1, state.eval(p2.subst_rv(rv_par, Const(True)))),
                         state.ex_mul(state.ex_add(Const(1), state.ex_mul(Const(-1), p1)),
-                                    p2.subst_rv(rv_par, Const(False))))
+                                    state.eval(p2.subst_rv(rv_par, Const(False)))))
   
   p1_num_sub = state.ex_ite(x, p2, state.ex_add(Const(1), state.ex_mul(Const(-1), p2)))
-  p1_num = state.ex_mul(p1, p1_num_sub.subst_rv(rv_par, Const(True)))
+  p1_num = state.ex_mul(p1, state.eval(p1_num_sub.subst_rv(rv_par, Const(True))))
   p1_denom = state.ex_ite(x, p2_new, state.ex_add(Const(1), state.ex_mul(Const(-1), p2_new)))
   p1_new = state.ex_div(p1_num, p1_denom)
 

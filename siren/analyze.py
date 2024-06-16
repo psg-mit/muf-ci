@@ -433,7 +433,7 @@ def evaluate_particle(particle: AbsParticle, functions: Dict[Identifier, Functio
       
   return _evaluate(particle)
 
-def evaluate(program: Program, method: type[AbsSymState], max_rvs: int=4) -> AbsProbState:
+def evaluate(program: Program, method: type[AbsSymState], max_rvs: int) -> AbsProbState:
   functions, expression = program.functions, program.main
 
   # Make lookup for functions
