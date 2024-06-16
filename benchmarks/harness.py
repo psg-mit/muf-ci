@@ -230,11 +230,9 @@ def run_particles(benchmark, files, n, particles, methods, plans, true_vars, res
           else:
             t, program_output = run_outputs
 
-          global LOGGING
           if LOGGING:
             logging_output = {
-              f'{method}-{plan_id}-{p}-time': t,
-              **{f'{method}-{plan_id}-{p}-{key}: {val}' for key, val in program_output.items()},
+              f'{method}-plan{plan_id}-{p}-it': i,
             }
 
             wandb.log(logging_output)
@@ -493,6 +491,11 @@ def run_benchmark(benchmark, output, n, particles, methods, files, error_func):
       writer.writerow(fieldnames)
 
   run_particles(benchmark, files, n, particles, methods, config['plans'], true_vars, results_file, error_func)
+
+  if LOGGING:
+    artifact = wandb.Artifact(f'{benchmark}_results.csv', type='results')
+    artifact.add_file(results_file)
+    wandb.log_artifact(artifact)
 
 def analyze_benchmark(benchmark, files, output, methods):
   with open(os.path.join(benchmark, 'config.json')) as f:
