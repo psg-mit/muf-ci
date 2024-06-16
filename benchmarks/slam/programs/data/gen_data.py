@@ -3,9 +3,9 @@ import numpy as np
 map = [False, False, True, False, False, True, True, True, False, True, True]
 wheel_noise = 0.1
 sensor_noise = 0.1
-max_pos = 1
-n = max_pos * 2 + 1
-# n = 3
+max_pos = 10
+# n = max_pos * 2 + 1
+n = 100
 
 with open('processed_data.csv', 'w') as out:
   out.write('true_x, obs, cmd\n')

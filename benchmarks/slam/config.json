@@ -5,14 +5,22 @@
       "map",
       [
         false,
-        false
+        false,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true
       ]
     ],
     [
       "x",
       [
-        1,
-        0
+        5
       ]
     ]
   ],

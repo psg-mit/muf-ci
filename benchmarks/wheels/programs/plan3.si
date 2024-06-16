@@ -9,7 +9,10 @@ val preprocess_data = fun entry ->
   (left_wheel_rate, right_wheel_rate)
 in
 
-val step = fun ((left_wheel_rate, right_wheel_rate), (start, prev_v, prev_o)) ->
+val step = fun ((left_wheel_rate, right_wheel_rate), (start, vs, os)) ->
+  let prev_o = List.hd(os) in
+  let prev_v = List.hd(vs) in
+
   let wb = 2.0 in 
   let sensor_err_l = 1.0 in
   let sensor_err_r = 0.95 in
@@ -23,10 +26,13 @@ val step = fun ((left_wheel_rate, right_wheel_rate), (start, prev_v, prev_o)) ->
   let () = observe(gaussian(velocity + (wb * omega), sensor_err_r), right_wheel_rate) in
   
   let () = resample() in
-  (false, velocity, omega)
+  (false, cons(velocity, vs), cons(omega, os))
 in
 
 let data = List.map(preprocess_data, File.read("data/processed_data.csv")) in
 
-let (_, velocity, omega) = fold(step, data, (true, 0., 0.)) in
+let (_, vs, os) = fold(step, data, (true, [0.], [0.])) in
+let velocity = List.hd(vs) in
+let omega = List.hd(os) in
 (velocity, omega)
+

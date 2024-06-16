@@ -31,24 +31,16 @@ val move = fun (max_pos, prev_x, cmd) ->
   x
 in
 
-val find = fun (curr, (n, i, res)) -> 
-  let new_res = 
-    if res = (-1) then
-      if i = n then curr else res
-    else
-      res
-  in
-  (n, i+1, new_res)
+val find = fun (curr, (n, i, found, res)) -> 
+  let found2 = if n = i then true else found in
+  let res2 = if n = i then curr else res in
+  (n, i+1, found2, res2)
 in
 
 val get = fun (map, n) ->
   (* Assumes n is within range *)
-  let c0 = List.hd(map) in
-  let c1 = List.hd(List.tl(map)) in
-  if n = 0 then 
-    c0
-  else 
-    c1
+  let (_, _, _, res) = fold(find, map, (n, 0, false, -1)) in
+  res
 in
 
 val step = fun ((obs, cmd), (max_pos, map, xs)) ->
@@ -67,9 +59,9 @@ in
 
 let data = List.map(preprocess_data, File.read("data/processed_data.csv")) in
 
-let max_pos = 1 in
+let max_pos = 10 in
 let map = List.map(bernoulli_priors, List.range(0, max_pos + 1)) in
 
 let (_, map, xs) = fold(step, data, (max_pos, map, [])) in
-let xs = List.rev(xs) in
-(map, xs)
+let x = List.hd(xs) in
+(map, x)
