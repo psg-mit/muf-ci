@@ -93,15 +93,6 @@ N = 100
 
 GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
 
-PLT_SETTINGS = {
-  'font.size': 14, 
-  # 'font.family': 'Linux Libertine', 
-  # "text.usetex": True,                # use LaTeX to write all text
-  # "text.latex.preamble": "\n".join([         # plots will use this preamble
-  #   '\\usepackage{libertine}'
-  # ])
-}
-
 # https://stackoverflow.com/questions/20470892/how-to-place-minor-ticks-on-symlog-scale
 class MinorSymLogLocator(Locator):
   """
@@ -208,8 +199,23 @@ def close_to_target_runtime(target_runtime, runtime):
   return False
   
 def plot_particles(data, output, methods, plan_ids, all_plans, 
-                   particles, n_y, n_x, base_x, base_y, legend_width, is_example, error_bar):
-  plt.rcParams.update(PLT_SETTINGS)
+                   particles, n_y, n_x, base_x, base_y, legend_width, is_example, error_bar,
+                   **kwargs):
+  if kwargs.get('pdf', True):
+    plt_settings = {
+      'font.size': 14, 
+      'font.family': 'Linux Libertine', 
+      "text.usetex": True,                # use LaTeX to write all text
+      "text.latex.preamble": "\n".join([         # plots will use this preamble
+        '\\usepackage{libertine}'
+      ])
+    }
+  else:
+    plt_settings = {
+      'font.size': 14, 
+    }
+    
+  plt.rcParams.update(plt_settings)
 
   # first 4 columns are metadata
   variables = data.columns[4:]
@@ -223,6 +229,9 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
 
   if is_example:
     methods = ['ssi']
+
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] != -1]
 
   for method_i, method in enumerate(methods):
 
@@ -243,8 +252,8 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
     else:
       plans = original_plan_ids
       
-    if len(plans) <= 1:
-      continue
+    # if len(plans) <= 1:
+    #   continue
 
     use_label = True
     for var_i, var in enumerate(variables):
@@ -373,9 +382,27 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
         labelbottom=True)
 
       ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
+
+      if benchmark == 'slam' and var == 'x' and not error_bar:
+        ax.set_yticks([1, 10])
+        ax.set_yticklabels([1, 10])  
+        use_log = False
+
+      if benchmark == 'slam' and var == 'x' and error_bar:
+        ax.set_yscale('symlog', linthresh=thresh)
+        ax.set_yticks([0, 10])
+        ax.set_yticklabels([0, 10])
+        use_log = False
+      
+      if benchmark == 'slam' and method == 'ssi' and error_bar:
+        ax.set_xlim(18.641205409470178, 534.4669454885518)
+
+      if benchmark == 'slam' and method == 'ds' and error_bar:
+        ax.set_xlim(20.003947801259134, 520.9289414624243)
+
       # check if there are any major ticks
+      # label minor ticks
       if use_log and not error_bar:
-        # label minor ticks
         ax.yaxis.set_minor_formatter(ScalarFormatter())
 
     print('Saving particles plots')
@@ -409,12 +436,17 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
       filename = f'{method}_particles'
     if error_bar:
       filename += '_errorbar'
-    # fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
+    
+    if kwargs.get('pdf', True):
+      fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
     fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
 
     plt.close(fig)
 
 def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] != -1]
+
   def get_error_runtime(data, method, plan_id):
     # default 90th percentile error over n runs
     upper = data.loc[data['method'] == method]\
@@ -536,6 +568,9 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
   print()
 
 def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans):
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] != -1]
+
   def get_error_runtime(data, method, plan_id):
     # default 90th percentile error over n runs
     upper = data.loc[data['method'] == method]\
@@ -578,6 +613,9 @@ def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans
   
 
 def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, default_plans):
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] != -1]
+
   def get_error_runtime(data, method, plan_id, median=False):
     # default 90th percentile error over n runs
     if median:
@@ -629,6 +667,8 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
     'slds': 10,
     'runner': 7,
     'example': 5,
+    'wheels': 3,
+    'slam': 3,
   }
 
   print("\\midrule")
@@ -643,14 +683,18 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
     if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
 
-    if len(list(plan_ids)) <= 1:
-      continue
+    # if len(list(plan_ids)) <= 1:
+      # continue
 
     default_plan = int(default_plans[method])
     plan_ids = map(int, plan_ids)
 
+    if benchmark == 'slam' and method == 'ssi':
+      # default timeouts so just use the timeout as the default
+      continue
+
     target_errors = get_error_runtime(data, method, default_plan)
-    target = target_errors[target_errors['particles'] == 1024]
+    target = target_errors[target_errors['particles'] == target_errors['particles'].max()]
 
     default = get_error_runtime(data, method, default_plan)
 
@@ -722,16 +766,20 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
   }
   for var in variables:
     for method in methods:
-      row = all_times.loc[(all_times['variable'] == var) & (all_times['method'] == method)]
-      if len(row) == 0:
+      if method == 'ssi' and benchmark == 'slam':
         table_values[var].append(["--", "--"])
         table_plans[var].append("")
-      elif row['median'].isnull().all():
-        table_values[var].append(["\\xmark", round(row['default'].values[0], 2)])
-        table_plans[var].append("")
       else:
-        table_values[var].append([round(row['median'].values[0], 2), round(row['default'].values[0], 2)])
-        table_plans[var].append(int(row['plan'].values[0]))
+        row = all_times.loc[(all_times['variable'] == var) & (all_times['method'] == method)]
+        if len(row) == 0:
+          table_values[var].append(["--", "--"])
+          table_plans[var].append("")
+        elif row['median'].isnull().all():
+          table_values[var].append(["\\xmark", round(row['default'].values[0], 2)])
+          table_plans[var].append("")
+        else:
+          table_values[var].append([round(row['median'].values[0], 2), round(row['default'].values[0], 2)])
+          table_plans[var].append(int(row['plan'].values[0]))
 
   for var in variables:
     var_str = var.replace("_", "\\_")
@@ -763,6 +811,9 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
   return all_times, non_default_times
 
 def compare_to_default_accuracy_example(data, all_plans):
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] != -1]
+  
   def get_error_runtime(data, method, plan_id, median=False):
     # default 90th percentile error over n runs
     if median:
@@ -813,8 +864,8 @@ def compare_to_default_accuracy_example(data, all_plans):
     if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
 
-    if len(list(plan_ids)) <= 1:
-      continue
+    # if len(list(plan_ids)) <= 1:
+    #   continue
 
     plan_ids = map(int, plan_ids)
 
@@ -849,6 +900,7 @@ if __name__ == '__main__':
   p.add_argument('--particles', '-p', type=int, required=False, nargs='+')
   p.add_argument('--example', action='store_true')
   p.add_argument('--error-bar', action='store_true')
+  p.add_argument('--pdf', action='store_true')
 
   args = p.parse_args()
 
@@ -901,7 +953,8 @@ if __name__ == '__main__':
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
-            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, base_y, legend_width, args.example, args.error_bar)
+            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, 
+                           base_y, legend_width, args.example, args.error_bar, pdf=args.pdf)
 
         if args.task == 'compare':
           if args.example:
