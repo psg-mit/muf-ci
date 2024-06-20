@@ -871,12 +871,9 @@ class AbsContext(object):
     return iter(self.context)
 
   def __or__(self, other: 'AbsContext') -> 'AbsContext':
-    new = AbsContext({})
-    for k, v in self.context.items():
-      new.context[k] = copy(v)
     for k, v in other.context.items():
-      new.context[k] = copy(v)
-    return new
+      self.context[k] = copy(v)
+    return self
 
   def __str__(self) -> str:
     return f"AbsContext({', '.join(map(str, self.context.items()))})"
