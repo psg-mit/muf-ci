@@ -61,6 +61,9 @@ class GenericOp(Op[S]):
   op: Operator
   args: List['Expr[S]']
 
+  def __copy__(self):
+    return GenericOp(self.op, self.args[:])
+
   def __str__(self):
     return f"{self.op.name}({self.args})"
   
@@ -77,6 +80,9 @@ class Fold(Expr[S]):
 class Apply(Expr[S]):
   func: Identifier
   args: List['Expr[S]']
+
+  def __copy__(self):
+    return Apply(self.func, self.args[:])
 
   def __str__(self):
     return f"{self.func}({self.args})"
@@ -95,6 +101,9 @@ class Let(Expr[S]):
   var: List[Identifier]
   value: 'Expr[S]'
   body: 'Expr[S]'
+
+  def __copy__(self):
+    return Let(self.var[:], self.value, self.body)
 
   def __str__(self):
     if len(self.var) == 0:
@@ -133,6 +142,9 @@ class Function(Expr[S]):
   args: List[Identifier]
   body: Expr[S]
 
+  def __copy__(self):
+    return Function(self.name, self.args[:], self.body)
+
   def __str__(self):
     return f"val {self.name} = fun ({', '.join(map(str, self.args))}) = {self.body}"
 
@@ -140,6 +152,9 @@ class Function(Expr[S]):
 class Program:
   functions: List[Function]
   main: Expr
+
+  def __copy__(self):
+    return Program([self.functions[:], self.main])
 
   def __str__(self):
     funcs = '\n'.join(map(str, self.functions))
@@ -178,6 +193,11 @@ class Const(SymExpr[T]):
     elif isinstance(self.v, tuple):
       return f"({', '.join(map(str, self.v))})"
     return f"{self.v}"
+  
+  def __copy__(self):
+    if isinstance(self.v, list):
+      return Const(self.v[:])
+    return Const(self.v)
   
   def rvs(self) -> List['RandomVar']:
     return []
@@ -366,6 +386,9 @@ class Pair(SymExpr[T]):
 @dataclass(frozen=True)
 class Lst(SymExpr[T]):
   exprs: List['SymExpr[T]']
+
+  def __copy__(self):
+    return Lst(self.exprs[:])
 
   def __str__(self):
     return f"[{', '.join(map(str, self.exprs))}]"
@@ -851,6 +874,9 @@ class TopE(AbsSymExpr[T]):
 class UnkE(AbsSymExpr[T]):
   parents: List['AbsRandomVar']
 
+  def __copy__(self):
+    return UnkE(self.parents[:])
+
   def __str__(self):
     return f"UnkE({self.rvs()})"
   
@@ -922,6 +948,11 @@ class AbsConst(AbsSymExpr[T]):
     elif isinstance(self.v, tuple):
       return f"({', '.join(map(str, self.v))})"
     return f"{self.v}"
+  
+  def __copy__(self):
+    if isinstance(self.v, list):
+      return AbsConst(self.v[:])
+    return AbsConst(self.v)
   
   def rvs(self) -> List['AbsRandomVar']:
     return []
@@ -1076,6 +1107,9 @@ class AbsPair(AbsSymExpr[T]):
 class AbsLst(AbsSymExpr[T]):
   exprs: List['AbsSymExpr[T]']
 
+  def __copy__(self):
+    return AbsLst(self.exprs[:])
+
   def __str__(self):
     return f"[{'; '.join(map(str, self.exprs))}]"
   
@@ -1118,6 +1152,9 @@ class TopD(AbsSymDistr[T]):
 @dataclass(frozen=True)
 class UnkD(AbsSymDistr[T]):
   parents: List[AbsRandomVar]
+
+  def __copy__(self):
+    return UnkD(self.parents[:])
 
   def __str__(self):
     return f"UnkD({self.parents})"
