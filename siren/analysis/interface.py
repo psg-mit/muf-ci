@@ -29,7 +29,7 @@ class AbsSymState(object):
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
     self.max_rvs = max_rvs
-    self.max_depth = 4
+    self.max_depth = 1000
 
   def __copy__(self):
     new_state = type(self)(self.max_rvs)
@@ -871,9 +871,10 @@ class AbsContext(object):
     return iter(self.context)
 
   def __or__(self, other: 'AbsContext') -> 'AbsContext':
+    new = AbsContext({**self.context})
     for k, v in other.context.items():
-      self.context[k] = copy(v)
-    return self
+      new.context[k] = v
+    return new
 
   def __str__(self) -> str:
     return f"AbsContext({', '.join(map(str, self.context.items()))})"

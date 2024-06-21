@@ -414,9 +414,10 @@ class Context(object):
     return iter(self.context)
 
   def __or__(self, other: 'Context') -> 'Context':
+    new = Context({**self.context})
     for k, v in other.context.items():
-      self.context[k] = copy(v)
-    return self
+      new.context[k] = v
+    return new
 
   def __str__(self) -> str:
     return f"Context({', '.join(map(str, self.context.items()))})"
