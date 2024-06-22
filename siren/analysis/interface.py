@@ -29,7 +29,7 @@ class AbsSymState(object):
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
     self.max_rvs = max_rvs
-    self.max_depth = 1000
+    self.max_depth = 5
 
   def __copy__(self):
     new_state = type(self)(self.max_rvs)
