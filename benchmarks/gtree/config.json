@@ -128,7 +128,17 @@
       "satisfiable": {
         "ssi": true,
         "ds": false,
-        "bp": true
+        "bp": true,
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        }
       }
     },
     "1": {
@@ -139,7 +149,17 @@
       "satisfiable": {
         "ssi": true,
         "ds": true,
-        "bp": true
+        "bp": true,
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        }
       }
     },
     "2": {
@@ -150,7 +170,17 @@
       "satisfiable": {
         "ssi": true,
         "ds": true,
-        "bp": true
+        "bp": true,
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        }
       }
     },
     "3": {
@@ -161,7 +191,17 @@
       "satisfiable": {
         "ssi": true,
         "ds": true,
-        "bp": true
+        "bp": true,
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        }
       }
     }
   },

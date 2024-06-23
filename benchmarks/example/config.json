@@ -139,7 +139,9 @@
         "invr": "sample"
       },
       "satisfiable": {
-        "ssi": true
+        "smc": {
+          "ssi": true
+        }
       }
     },
     "2": {
@@ -151,7 +153,9 @@
         "invr": "symbolic"
       },
       "satisfiable": {
-        "ssi": true
+        "smc": {
+          "ssi": true
+        }
       }
     },
     "3": {
@@ -163,7 +167,9 @@
         "invr": "dynamic"
       },
       "satisfiable": {
-        "ssi": true
+        "smc": {
+          "ssi": true
+        }
       }
     },
     "4": {
@@ -175,7 +181,9 @@
         "invr": "sample"
       },
       "satisfiable": {
-        "ssi": true
+        "smc": {
+          "ssi": true
+        }
       }
     },
     "5": {
@@ -187,7 +195,9 @@
         "invr": "sample"
       },
       "satisfiable": {
-        "ssi": true
+        "smc": {
+          "ssi": true
+        }
       }
     }
   },

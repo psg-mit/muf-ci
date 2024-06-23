@@ -34,6 +34,11 @@ DEFAULT_METHODS = [
   'bp',
 ]
 
+DEFAULT_HANDLERS = [
+  'smc',
+  'mh',
+]
+
 N_INTERVALS = 30
 
 BENCHMARK_LATEX_NAMES = {
@@ -155,35 +160,38 @@ class MinorSymLogLocator(Locator):
                       '%s type.' % type(self))
 
 def table(statistics):
-  content = []
 
-  for method in DEFAULT_METHODS:
+  for handler in DEFAULT_HANDLERS:
+    print(f"Handler: {handler}")
+    content = []
 
-    method_str = '\\' + method
+    for method in DEFAULT_METHODS:
 
-    method_content = []
+      method_str = '\\' + method
+
+      method_content = []
+      for benchmark in DEFAULT_BENCHMARKS:
+        
+        n_true_satisfied = statistics[benchmark][handler][method]['n_true_satisfied']
+        n_inferred_satisfied = statistics[benchmark][handler][method]['n_inferred_satisfied']
+
+        method_content.append(f"{n_inferred_satisfied}/{n_true_satisfied}")
+
+      content.append(f"{method_str} & {' & '.join(method_content)} \\\\")
+
+    total_content = []
     for benchmark in DEFAULT_BENCHMARKS:
-      
-      n_true_satisfied = statistics[benchmark][method]['n_true_satisfied']
-      n_inferred_satisfied = statistics[benchmark][method]['n_inferred_satisfied']
+      n_plans = statistics[benchmark]['n_plans']
+      total_content.append(f"{n_plans}")
 
-      method_content.append(f"{n_inferred_satisfied}/{n_true_satisfied}")
+    content.append(f"\\midrule")
+    content.append(f"Total Possible Plans & {' & '.join(total_content)} \\\\")
 
-    content.append(f"{method_str} & {' & '.join(method_content)} \\\\")
+    print(f"Algorithm & {' & '.join([BENCHMARK_LATEX_NAMES[benchmark] for benchmark in DEFAULT_BENCHMARKS])} \\\\")
+    print('\\midrule')
 
-  total_content = []
-  for benchmark in DEFAULT_BENCHMARKS:
-    n_plans = statistics[benchmark]['n_plans']
-    total_content.append(f"{n_plans}")
-
-  content.append(f"\\midrule")
-  content.append(f"Total Possible Plans & {' & '.join(total_content)} \\\\")
-
-  print(f"Algorithm & {' & '.join([BENCHMARK_LATEX_NAMES[benchmark] for benchmark in DEFAULT_BENCHMARKS])} \\\\")
-  print('\\midrule')
-
-  for line in content:
-    print(line)
+    for line in content:
+      print(line)
 
 def close_to_target_error(target, value):
   if value == 0:
@@ -198,7 +206,7 @@ def close_to_target_runtime(target_runtime, runtime):
 
   return False
   
-def plot_particles(data, output, methods, plan_ids, all_plans, 
+def plot_particles(data, output, handlers, methods, plan_ids, all_plans, 
                    particles, n_y, n_x, base_x, base_y, legend_width, is_example, error_bar,
                    **kwargs):
   if kwargs.get('pdf', True):
@@ -218,7 +226,7 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
   plt.rcParams.update(plt_settings)
 
   # first 4 columns are metadata
-  variables = data.columns[4:]
+  variables = data.columns[5:]
 
   # drop rows with particles not in particles
   if particles is not None:
@@ -233,215 +241,220 @@ def plot_particles(data, output, methods, plan_ids, all_plans,
   # filter out -1 time, which means timeout
   data = data.loc[data['time'] != -1]
 
-  for method_i, method in enumerate(methods):
+  original_data = data
 
-    figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
+  for handler in handlers:
+    data = original_data.loc[original_data['handler'] == handler]
 
-    fig, axes = plt.subplots(
-                  n_y, n_x,
-                  figsize=figsize,  
-                  sharex=True, 
-                  # sharey=True
-    )
+    for method_i, method in enumerate(methods):
 
-    for ax in axes.flatten():
-      ax.set_visible(False)
+      figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
 
-    if original_plan_ids is None:
-      plans = sorted(data[data['method'] == method]['plan_id'].unique())
-    else:
-      plans = original_plan_ids
-      
-    # if len(plans) <= 1:
-    #   continue
+      fig, axes = plt.subplots(
+                    n_y, n_x,
+                    figsize=figsize,  
+                    sharex=True, 
+                    # sharey=True
+      )
 
-    use_label = True
-    for var_i, var in enumerate(variables):
-      plot_i = var_i % n_x
-      plot_j = var_i // n_x
+      for ax in axes.flatten():
+        ax.set_visible(False)
+
+      if original_plan_ids is None:
+        plans = sorted(data[data['method'] == method]['plan_id'].unique())
+      else:
+        plans = original_plan_ids
+        
+      # if len(plans) <= 1:
+      #   continue
+
+      use_label = True
+      for var_i, var in enumerate(variables):
+        plot_i = var_i % n_x
+        plot_j = var_i // n_x
+
+        if n_y == 1:
+          ax = axes[plot_i]
+        else:
+          ax = axes[plot_j, plot_i]
+
+        ax.set_visible(True)
+
+        use_log = True
+
+        plan_i = 0
+        for plan_id in plans:
+          plan_id = int(plan_id)
+
+          if use_label:
+            label = f'Plan {plan_id}'
+            if is_example:
+              labels = {
+                1: 'No Annotations',
+                2: 'Symbolic r Plan',
+                3: 'Dynamic r Plan',
+                4: 'Symbolic x Plan',
+                5: 'Sample All Plan',
+              }
+              label = labels[plan_id]
+          else:
+            label = None
+
+          # 90th percentile error over n runs
+          upper = data.loc[data['method'] == method]\
+                      .loc[data['plan_id'] == plan_id]\
+                      .groupby(['particles'])[var]\
+                      .quantile(0.9)
+          
+          # median error over n runs
+          median = data.loc[data['method'] == method]\
+                      .loc[data['plan_id'] == plan_id]\
+                      .groupby(['particles'])[var]\
+                        .median()
+          
+          # 10th percentile error over n runs
+          lower = data.loc[data['method'] == method]\
+                      .loc[data['plan_id'] == plan_id]\
+                      .groupby(['particles'])[var]\
+                      .quantile(0.1)
+          
+          # min non-zero value
+          
+          nonzero = [x for x in lower if x > 0]
+          thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
+          
+          # median time over n runs
+          runtimes = data.loc[data['method'] == method]\
+                          .loc[data['plan_id'] == plan_id]\
+                          .groupby(['particles'])['time']\
+                          .median()
+          
+          yerr = np.array([median - lower, upper - median])
+
+          if runtimes.shape[0] == 0:
+            continue
+
+          if is_example:
+            mfc = {
+              1: '#f4827b',
+              2: '#7cc7d2',
+              3: '#feb140',
+              4: '#9baa20',
+              5: '#fac52f',
+            }[plan_id]
+            mec = {
+              1: '#b7575c',
+              2: '#4d9aa4',
+              3: '#c78200',
+              4: '#708200',
+              5: '#c0ab5f',
+            }[plan_id]
+            marker = {
+              1: 's',
+              2: 'v',
+              3: 'o',
+              4: 'd',
+              5: 'X',
+            }[plan_id]
+          else:
+            mfc = COLORS[plan_i]
+            mec = EDGECOLORS[plan_i]
+            marker = MARKERS[plan_i]
+
+          if error_bar:
+            ax.errorbar(runtimes, median, yerr=yerr, marker=MARKERS[plan_i], mfc=mfc, mec=mec, ecolor=mec, label=label,
+                      capsize=5, markersize=5, xerr=None, ls='none')
+            
+          else:
+            ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
+                                      edgecolor=mec, s=MARKERSSIZE)
+          
+          # if y range doesn't cross any power of 10, use log scale
+          ax.set_yscale('symlog', linthresh=thresh)
+          max_y = max(upper)
+          min_y = min(upper)
+          powers = [10**i for i in range(-10, 10)]
+          for power in powers:
+            if min_y < power and max_y > power:
+              use_log = False
+              break
+          
+          plan_i += 1
+
+        use_label = False
+        ax.set_title(f'{var}')
+        ax.grid(**GRIDPARAMS)
+        ax.set_axisbelow(True)
+
+        ax.set_xscale('log')
+        ax.tick_params(
+          axis='x',           # changes apply to the x-axis
+          which='major',       # both major and minor ticks are affected
+          bottom=True,
+          top=False,
+          labelbottom=True)
+
+        ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
+
+        if benchmark == 'slam' and var == 'x' and not error_bar:
+          ax.set_yticks([1, 10])
+          ax.set_yticklabels([1, 10])  
+          use_log = False
+
+        if benchmark == 'slam' and var == 'x' and error_bar:
+          ax.set_yscale('symlog', linthresh=thresh)
+          ax.set_yticks([0, 10])
+          ax.set_yticklabels([0, 10])
+          use_log = False
+        
+        if benchmark == 'slam' and method == 'ssi' and error_bar:
+          ax.set_xlim(18.641205409470178, 534.4669454885518)
+
+        if benchmark == 'slam' and method == 'ds' and error_bar:
+          ax.set_xlim(20.003947801259134, 520.9289414624243)
+
+        # check if there are any major ticks
+        # label minor ticks
+        if use_log and not error_bar:
+          ax.yaxis.set_minor_formatter(ScalarFormatter())
+
+      print('Saving particles plots')
+
+      if benchmark == 'slds':
+        y = 1
+        bbox = (0.5, 0)
+      else:
+        y = 1.08
+        bbox = (0.5, -0.1)
+
+      # fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
+      lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
 
       if n_y == 1:
-        ax = axes[plot_i]
+        for i in range(n_x):
+          plt.setp(axes[i], xlabel='Execution Time in s (log scale)')
+        plt.setp(axes[0], ylabel='Error (log scale)')
       else:
-        ax = axes[plot_j, plot_i]
-
-      ax.set_visible(True)
-
-      use_log = True
-
-      plan_i = 0
-      for plan_id in plans:
-        plan_id = int(plan_id)
-
-        if use_label:
-          label = f'Plan {plan_id}'
-          if is_example:
-            labels = {
-              1: 'No Annotations',
-              2: 'Symbolic r Plan',
-              3: 'Dynamic r Plan',
-              4: 'Symbolic x Plan',
-              5: 'Sample All Plan',
-            }
-            label = labels[plan_id]
-        else:
-          label = None
-
-        # 90th percentile error over n runs
-        upper = data.loc[data['method'] == method]\
-                     .loc[data['plan_id'] == plan_id]\
-                     .groupby(['particles'])[var]\
-                     .quantile(0.9)
+        for i in range(n_x):
+          plt.setp(axes[-1, i], xlabel='Execution Time in s (log scale)')
+        plt.setp(axes[:, 0], ylabel='Error (log scale)')
         
-        # median error over n runs
-        median = data.loc[data['method'] == method]\
-                     .loc[data['plan_id'] == plan_id]\
-                     .groupby(['particles'])[var]\
-                      .median()
-        
-        # 10th percentile error over n runs
-        lower = data.loc[data['method'] == method]\
-                     .loc[data['plan_id'] == plan_id]\
-                     .groupby(['particles'])[var]\
-                     .quantile(0.1)
-        
-        # min non-zero value
-        
-        nonzero = [x for x in lower if x > 0]
-        thresh = min(nonzero) if len(nonzero) > 0 else 1e-10
-        
-        # median time over n runs
-        runtimes = data.loc[data['method'] == method]\
-                        .loc[data['plan_id'] == plan_id]\
-                        .groupby(['particles'])['time']\
-                        .median()
-        
-        yerr = np.array([median - lower, upper - median])
+      if benchmark == 'slds':
+        plt.subplots_adjust(hspace=0.3)
 
-        if runtimes.shape[0] == 0:
-          continue
-
-        if is_example:
-          mfc = {
-            1: '#f4827b',
-            2: '#7cc7d2',
-            3: '#feb140',
-            4: '#9baa20',
-            5: '#fac52f',
-          }[plan_id]
-          mec = {
-            1: '#b7575c',
-            2: '#4d9aa4',
-            3: '#c78200',
-            4: '#708200',
-            5: '#c0ab5f',
-          }[plan_id]
-          marker = {
-            1: 's',
-            2: 'v',
-            3: 'o',
-            4: 'd',
-            5: 'X',
-          }[plan_id]
-        else:
-          mfc = COLORS[plan_i]
-          mec = EDGECOLORS[plan_i]
-          marker = MARKERS[plan_i]
-
-        if error_bar:
-          ax.errorbar(runtimes, median, yerr=yerr, marker=MARKERS[plan_i], mfc=mfc, mec=mec, ecolor=mec, label=label,
-                    capsize=5, markersize=5, xerr=None, ls='none')
-          
-        else:
-          ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
-                                    edgecolor=mec, s=MARKERSSIZE)
-        
-        # if y range doesn't cross any power of 10, use log scale
-        ax.set_yscale('symlog', linthresh=thresh)
-        max_y = max(upper)
-        min_y = min(upper)
-        powers = [10**i for i in range(-10, 10)]
-        for power in powers:
-          if min_y < power and max_y > power:
-            use_log = False
-            break
-        
-        plan_i += 1
-
-      use_label = False
-      ax.set_title(f'{var}')
-      ax.grid(**GRIDPARAMS)
-      ax.set_axisbelow(True)
-
-      ax.set_xscale('log')
-      ax.tick_params(
-        axis='x',           # changes apply to the x-axis
-        which='major',       # both major and minor ticks are affected
-        bottom=True,
-        top=False,
-        labelbottom=True)
-
-      ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
-
-      if benchmark == 'slam' and var == 'x' and not error_bar:
-        ax.set_yticks([1, 10])
-        ax.set_yticklabels([1, 10])  
-        use_log = False
-
-      if benchmark == 'slam' and var == 'x' and error_bar:
-        ax.set_yscale('symlog', linthresh=thresh)
-        ax.set_yticks([0, 10])
-        ax.set_yticklabels([0, 10])
-        use_log = False
+      if is_example:
+        plan_id_str = ''.join(plan_ids)
+        filename = f'{handler}_{method}_example_{plan_id_str}'
+      else:
+        filename = f'{handler}_{method}_particles'
+      if error_bar:
+        filename += '_errorbar'
       
-      if benchmark == 'slam' and method == 'ssi' and error_bar:
-        ax.set_xlim(18.641205409470178, 534.4669454885518)
+      if kwargs.get('pdf', True):
+        fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
+      fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
 
-      if benchmark == 'slam' and method == 'ds' and error_bar:
-        ax.set_xlim(20.003947801259134, 520.9289414624243)
-
-      # check if there are any major ticks
-      # label minor ticks
-      if use_log and not error_bar:
-        ax.yaxis.set_minor_formatter(ScalarFormatter())
-
-    print('Saving particles plots')
-
-    if benchmark == 'slds':
-      y = 1
-      bbox = (0.5, 0)
-    else:
-      y = 1.08
-      bbox = (0.5, -0.1)
-
-    # fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
-    lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
-
-    if n_y == 1:
-      for i in range(n_x):
-        plt.setp(axes[i], xlabel='Execution Time in s (log scale)')
-      plt.setp(axes[0], ylabel='Error (log scale)')
-    else:
-      for i in range(n_x):
-        plt.setp(axes[-1, i], xlabel='Execution Time in s (log scale)')
-      plt.setp(axes[:, 0], ylabel='Error (log scale)')
-      
-    if benchmark == 'slds':
-      plt.subplots_adjust(hspace=0.3)
-
-    if is_example:
-      plan_id_str = ''.join(plan_ids)
-      filename = f'{method}_example_{plan_id_str}'
-    else:
-      filename = f'{method}_particles'
-    if error_bar:
-      filename += '_errorbar'
-    
-    if kwargs.get('pdf', True):
-      fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
-    fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
-
-    plt.close(fig)
+      plt.close(fig)
 
 def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
   # filter out -1 time, which means timeout
@@ -469,7 +482,7 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
   
   original_plan_ids = plan_ids
   
-  variables = data.columns[4:]
+  variables = data.columns[5:]
 
   for method in methods:
     if method not in default_plans:
@@ -593,7 +606,7 @@ def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans
   
   original_plan_ids = plan_ids
   
-  variables = data.columns[4:]
+  variables = data.columns[5:]
 
   plan5 = get_error_runtime(data, 'ssi', 5)
   plan2 = get_error_runtime(data, 'ssi', 2)
@@ -654,7 +667,7 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
     
     return errors
   
-  variables = data.columns[4:]
+  variables = data.columns[5:]
 
   original_plan_ids = plan_ids
 
@@ -852,7 +865,7 @@ def compare_to_default_accuracy_example(data, all_plans):
     
     return errors
   
-  variables = data.columns[4:]
+  variables = data.columns[5:]
   methods = ['ssi']
   plan_ids = [2, 5]
 
@@ -896,6 +909,7 @@ if __name__ == '__main__':
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
+  p.add_argument('--handlers', '-l', type=str, required=False, nargs="+", default=DEFAULT_HANDLERS)
   p.add_argument('--methods', '-m', type=str, required=False, nargs="+", default=DEFAULT_METHODS)
   p.add_argument('--particles', '-p', type=int, required=False, nargs='+')
   p.add_argument('--example', action='store_true')
@@ -905,6 +919,7 @@ if __name__ == '__main__':
   args = p.parse_args()
 
   methods = [method for method in args.methods if method in DEFAULT_METHODS]
+  handlers = [handler for handler in args.handlers if handler in DEFAULT_HANDLERS]
   particles = [int(particle) for particle in args.particles] if args.particles is not None else None
 
   if args.task == 'table':
@@ -953,7 +968,7 @@ if __name__ == '__main__':
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
-            plot_particles(data, output, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, 
+            plot_particles(data, output, handlers, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, 
                            base_y, legend_width, args.example, args.error_bar, pdf=args.pdf)
 
         if args.task == 'compare':
