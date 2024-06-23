@@ -7,7 +7,7 @@ from siren.inference.ssi import SSIState
 from siren.inference.interface import Particle
 
 def test_beta_bernoulli():
-  state = SSIState()
+  state = SSIState(lambda state: state.value_impl)
 
   rv1 = state.new_var()
   rv1 = state.assume(rv1, Identifier(None, "beta_prior"), None, Beta(Const(1), Const(1)))
@@ -33,7 +33,7 @@ def test_beta_bernoulli():
       assert False
 
 def affine_init():
-  state = SSIState()
+  state = SSIState(lambda state: state.value_impl)
 
   rv = state.new_var()
   rv = state.assume(rv, Identifier(None, "var"), None, Normal(Const(0), Const(1)))
@@ -78,7 +78,7 @@ def test_affine3():
       assert False
 
 def test_gaussian_conjugate():
-  state = SSIState()
+  state = SSIState(lambda state: state.value_impl)
 
   rv1 = state.new_var()
   rv1 = state.assume(rv1, Identifier(None, "gaussian_rv1"), None, Normal(Const(1), Const(100)))
