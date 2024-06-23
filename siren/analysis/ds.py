@@ -367,7 +367,7 @@ class AbsDSState(AbsSymState):
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
-  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def inner_value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     # Turn rv into terminal node
     self.graft(rv)
     return self.do_sample(rv)
@@ -656,7 +656,7 @@ class AbsDSState(AbsSymState):
             case AbsDSUnk():
               self.set_node(rv_par, AbsDSUnk())
             case _:
-              raise ValueError(f'{rv_par} is {self.node(rv_par)}')            
+              raise ValueError(f'{rv_par} is {self.node(rv_par)}')
           
           # prune M child
           rv_children = self.marginal_child(rv)

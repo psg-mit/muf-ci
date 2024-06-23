@@ -20,7 +20,7 @@ def run(program_path, handler, inference_method):
 
     return res
 
-@pytest.mark.parametrize("handler", [AbsSMC])
+@pytest.mark.parametrize("handler", [AbsSMC, AbsMH])
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState, AbsBPState])
 def test_coin(handler, method):
   program_path = os.path.join('tests', 'programs', 'coin.si')
@@ -64,7 +64,7 @@ def test_envnoise(handler, method):
   })
   assert inferred_plan == plan1 or inferred_plan == plan2
 
-@pytest.mark.parametrize("handler", [AbsSMC])
+@pytest.mark.parametrize("handler", [AbsSMC, AbsMH])
 @pytest.mark.parametrize("method", [AbsSSIState, AbsDSState, AbsBPState])
 def test_tree(handler, method):
   program_path = os.path.join('tests', 'programs', 'tree.si')

@@ -52,7 +52,7 @@ class SSIState(SymState):
     self.intervene(rv, Delta(value, sampled=False))
     return s
 
-  def value(self, rv: RandomVar[T]) -> Const[T]:
+  def value_impl(self, rv: RandomVar[T]) -> Const[T]:
     # Try to draw the random variable until it works
     def _value() -> T:
       try:

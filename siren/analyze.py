@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict, Tuple, ParamSpec
+from typing import Any, Optional, List, Dict, Tuple, ParamSpec, Callable
 import numpy as np
 from copy import copy, deepcopy
 
@@ -427,6 +427,10 @@ class AbsHandler(object):
     
   def assume(self, particle: AbsParticle, name: Identifier, annotation: Optional[Annotation], distribution: AbsSymExpr) -> AbsConst | AbsRandomVar:
     raise NotImplementedError
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]]:
+    raise NotImplementedError
 
   def observe(self, particle: AbsParticle, distribution: AbsSymExpr, v: AbsSymExpr) -> None:
     raise NotImplementedError
@@ -446,7 +450,7 @@ class AbsHandler(object):
     functions = {f.name: f for f in functions}
 
     # Initialize particles
-    probstate = AbsProbState(expression, method, max_rvs)
+    probstate = AbsProbState(expression, method, self.value(), max_rvs)
     probstate.particles = self.evaluate_particle(probstate.particles, functions)
 
     probstate.result()
@@ -465,6 +469,10 @@ class AbsSMC(AbsHandler):
     if annotation is Annotation.sample:
       return particle.state.value(rv)
     return rv
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]]:
+    return lambda state: state.value_impl
 
   def observe(self, particle: AbsParticle, distribution: AbsSymExpr, v: AbsSymExpr) -> None:
     assert isinstance(distribution, AbsSymDistr)
@@ -492,22 +500,29 @@ class AbsMH(AbsHandler):
     assert isinstance(distribution, AbsSymDistr)
     rv = particle.state.new_var()
     rv = particle.state.assume(rv, name, annotation, distribution)
-    if annotation is None:
-      raise ValueError(f"{name} -- Annotation must be provided for MH")
+    # if annotation is None:
+    #   raise ValueError(f"{name} -- Annotation must be provided for MH")
     particle.state.plan[name] = DistrEnc.symbolic
     # If the annotation is sample, sample the value
     if annotation is Annotation.sample:
-      if rv not in self.sample_sites:
-        temp_particle = copy(particle)
-        self.sample_sites[rv] = temp_particle.state.value(rv)
-      v = self.sample_sites[rv]
-      # Use observe to score and update the sample
-      particle.state.observe(rv, v)
-      # this hack is mainly for the runtime inference plan printout
-      particle.state.set_distr(rv, AbsDelta(v, sampled=True))
-      # _ = particle.state.value(rv) # making sure the value is noted as sampled
-      return v
+      return particle.state.value(rv)
     return rv
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]]:
+    def _value(state: AbsSymState):
+      def __value(rv: AbsRandomVar):
+        if rv not in self.sample_sites:
+          temp_state = copy(state)
+          self.sample_sites[rv] = temp_state.value_impl(rv)
+        v = self.sample_sites[rv]
+        # Use observe to score and update the sample
+        state.observe(rv, v)
+        # this hack is mainly for the runtime inference plan printout
+        state.set_distr(rv, AbsDelta(v, sampled=True))
+        return v
+      return __value
+    return _value
 
   def observe(
     self, 

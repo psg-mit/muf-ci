@@ -68,7 +68,7 @@ class AbsSSIState(AbsSymState):
     self.intervene(rv, AbsDelta(value, sampled=False))
     return
 
-  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def inner_value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     def _value() -> None:
       try:
         self.hoist_and_eval(rv)

@@ -170,7 +170,7 @@ class DSState(SymState):
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
-  def value(self, rv: RandomVar[T]) -> Const[T]:
+  def value_impl(self, rv: RandomVar[T]) -> Const[T]:
     # Turn rv into terminal node
     self.graft(rv)
     return self.do_sample(rv)

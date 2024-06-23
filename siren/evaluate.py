@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict, Tuple, ParamSpec
+from typing import Any, Optional, List, Dict, Tuple, ParamSpec, Callable
 import numpy as np
 import os
 from multiprocessing import Pool, cpu_count, Queue, Process
@@ -430,6 +430,10 @@ class Handler(object):
     
   def assume(self, particle: Particle, name: Identifier, annotation: Optional[Annotation], distribution: SymExpr) -> Const | RandomVar:
     raise NotImplementedError
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[SymState], Callable[[RandomVar], Const]]:
+    raise NotImplementedError
 
   def observe(self, particle: Particle, score: float, distribution: SymExpr, v: SymExpr) -> float:
     raise NotImplementedError
@@ -457,6 +461,10 @@ class SMC(Handler):
     if annotation is Annotation.sample:
       return particle.state.value(rv)
     return rv
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[SymState], Callable[[RandomVar], Const]]:
+    return lambda state: state.value_impl
 
   def observe(self, particle: Particle, score: float, distribution: SymExpr, v: SymExpr) -> float:
     assert isinstance(distribution, SymDistr)
@@ -486,7 +494,7 @@ class SMC(Handler):
     n_particles = kwargs.get("n_particles", 1)
 
     # Initialize particles
-    particles = ProbState(n_particles, expression, method, seed)
+    particles = ProbState(n_particles, expression, method, self.value(), seed)
     # Evaluate particles until all are finished
     while True:
       for i, particle in enumerate(particles):
@@ -518,21 +526,28 @@ class MH(Handler):
     assert isinstance(distribution, SymDistr)
     rv = particle.state.new_var()
     rv = particle.state.assume(rv, name, annotation, distribution)
-    if annotation is None:
-      raise ValueError(f"{name} -- Annotation must be provided for MH")
+    # if annotation is None:
+    #   raise ValueError(f"{name} -- Annotation must be provided for MH")
     # If the annotation is sample, sample the value
     if annotation is Annotation.sample:
-      if rv not in self.sample_sites:
-        temp_particle = copy(particle)
-        self.sample_sites[rv] = temp_particle.state.value(rv)
-      v = self.sample_sites[rv]
-      # Use observe to score and update the sample
-      self.sample_scores[rv] = particle.state.observe(rv, v)
-      # this hack is mainly for the runtime inference plan printout
-      particle.state.set_distr(rv, Delta(v, sampled=True))
-      # _ = particle.state.value(rv) # making sure the value is noted as sampled
-      return v
+      return particle.state.value(rv)
     return rv
+  
+  # creates wrapper for doing value
+  def value(self) -> Callable[[SymState], Callable[[RandomVar], Const]]:
+    def _value(state: SymState):
+      def __value(rv: RandomVar):
+        if rv not in self.sample_sites:
+          temp_state = copy(state)
+          self.sample_sites[rv] = temp_state.value_impl(rv)
+        v = self.sample_sites[rv]
+        # Use observe to score and update the sample
+        self.sample_scores[rv] = state.observe(rv, v)
+        # this hack is mainly for the runtime inference plan printout
+        state.set_distr(rv, Delta(v, sampled=True))
+        return v
+      return __value
+    return _value
 
   def observe(
     self, 
@@ -588,7 +603,7 @@ class MH(Handler):
 
     particles = []
 
-    particle = Particle(expression, method(seed=seed))
+    particle = Particle(expression, method(self.value(), seed=seed))
     particle = self.evaluate_particle(particle, functions, file_dir)
     # print(self.sample_sites)
 
@@ -606,7 +621,7 @@ class MH(Handler):
       # reset scores so we know which ones were used
       self.sample_scores = {}
 
-      particle = Particle(expression, method(seed=seed))
+      particle = Particle(expression, method(self.value(), seed=seed))
       particle = self.evaluate_particle(particle, functions, file_dir)
 
       # delete samples sites that were not used

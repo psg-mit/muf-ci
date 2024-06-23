@@ -249,7 +249,7 @@ class AbsBPState(AbsSymState):
       case AbsBPUnk():
         self.intervene(rv, AbsDelta(value, sampled=False))
           
-  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def inner_value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     self.marginalize(rv)
     match self.node(rv):
       case AbsBPInitialized(_):

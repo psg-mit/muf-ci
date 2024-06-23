@@ -148,7 +148,7 @@ class BPState(SymState):
       case _:
         raise ValueError(f'{rv} is {self.node(rv)}')
 
-  def value(self, rv: RandomVar[T]) -> Const[T]:
+  def value_impl(self, rv: RandomVar[T]) -> Const[T]:
     # Marginalize the RV first
     self.marginalize(rv)
     match self.node(rv):

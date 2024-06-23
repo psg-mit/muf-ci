@@ -26,7 +26,7 @@ def run(program_path, handler, inference_method):
 
     return res, runtime_plan
 
-@pytest.mark.parametrize("handler", [SMC])
+@pytest.mark.parametrize("handler", [SMC, MH])
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
 def test_coin(handler, method):
   program_path = os.path.join('tests', 'programs', 'coin.si')
@@ -83,7 +83,7 @@ def test_envnoise(handler, method):
   })
   assert runtime_plan == plan1 or runtime_plan == plan2
 
-@pytest.mark.parametrize("handler", [SMC])
+@pytest.mark.parametrize("handler", [SMC, MH])
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
 def test_tree(handler, method):
   program_path = os.path.join('tests', 'programs', 'tree.si')

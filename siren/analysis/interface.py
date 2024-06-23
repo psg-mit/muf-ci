@@ -1,4 +1,4 @@
-from typing import Dict, Set, Tuple, Optional, Any
+from typing import Dict, Set, Tuple, Optional, Any, Callable, List
 from copy import copy, deepcopy
 
 from siren.inference_plan import InferencePlan, DistrEnc
@@ -22,7 +22,7 @@ class AbsSymState(object):
 
   ### Shared functions ###
   # These should not need to be overridden
-  def __init__(self, max_rvs: int) -> None:
+  def __init__(self, value_f, max_rvs: int) -> None:
     super().__init__()
     self.state: Dict[AbsRandomVar, Dict[str, Any]] = {}
     self.plan: InferencePlan = InferencePlan()
@@ -30,9 +30,12 @@ class AbsSymState(object):
     self.counter: int = 0
     self.max_rvs = max_rvs
     self.max_depth = 5
+    # wrapper for the value function implemented by handler
+    self.value_f: Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]] = value_f
+    self.value: Callable[[AbsRandomVar], AbsConst] = value_f(self)
 
   def __copy__(self):
-    new_state = type(self)(self.max_rvs)
+    new_state = type(self)(self.value_f, self.max_rvs)
     new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
@@ -768,11 +771,11 @@ class AbsSymState(object):
         raise ValueError(expr)
       
   # Depends on value_impl, which needs to be implemented by subclasses
-  def value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     for pv in self.pv(rv):
       self.plan[pv] = DistrEnc.sample
 
-    return self.value_impl(rv)
+    return self.inner_value(rv)
         
   ### Abstract functions ###
   # These may need be overridden by subclasses, if the subclass has additional
@@ -848,7 +851,7 @@ class AbsSymState(object):
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> float:
     raise NotImplementedError()
   
-  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def inner_value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     raise NotImplementedError()
     
 # Abstract prob states 
@@ -957,9 +960,15 @@ class AbsMixture(object):
 
 # Set of particles for abstract interpretation
 class AbsProbState(object):
-  def __init__(self, cont: Expr, method: type[AbsSymState], max_rvs: int) -> None:
+  def __init__(
+    self, 
+    cont: Expr, 
+    method: type[AbsSymState], 
+    value_f: Callable[[AbsRandomVar], AbsConst],
+    max_rvs: int,
+  ) -> None:
     super().__init__()
-    self.particles : AbsParticle = AbsParticle(cont, method(max_rvs))
+    self.particles : AbsParticle = AbsParticle(cont, method(value_f, max_rvs))
 
   def __str__(self) -> str:
     return f"{self.particles}"

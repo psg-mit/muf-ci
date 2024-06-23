@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Optional, Set, Any
+from typing import Dict, Tuple, Optional, Set, Any, Callable, List
 from copy import copy, deepcopy
 import warnings
 
@@ -14,7 +14,7 @@ class RuntimeViolatedAnnotationError(Exception):
 
 # Symbolic state used for the hybrid inference interface
 class SymState(object):
-  def __init__(self, seed=None) -> None:
+  def __init__(self, value_f, seed=None) -> None:
     super().__init__()
     # State has to have distribution and pv
     # State entries are maintained as a dictionary
@@ -22,10 +22,13 @@ class SymState(object):
     self.ctx: Context = Context()
     self.counter: int = 0
     self.rng = np.random.default_rng(seed=seed)
+    # wrapper for the value function implemented by handler
+    self.value_f: Callable[[SymState], Callable[[RandomVar], Const]] = value_f
+    self.value: Callable[[RandomVar], Const] = value_f(self)
 
   # Needs to be overridden if the state contains mutable objects
   def __copy__(self):
-    new_state = type(self)()
+    new_state = type(self)(self.value_f)
     new_state.state = fast_copy(self.state)
     new_state.ctx = copy(self.ctx)
     new_state.counter = self.counter
@@ -392,7 +395,7 @@ class SymState(object):
   def observe(self, rv: RandomVar[T], value: Const[T]) -> float:
     raise NotImplementedError()
 
-  def value(self, rv: RandomVar[T]) -> Const[T]:
+  def value_impl(self, rv: RandomVar[T]) -> Const[T]:
     raise NotImplementedError()
       
 # Context class for tracking program variable assignments
@@ -434,7 +437,7 @@ class Context(object):
 class Particle(object):
   def __init__(
     self, cont: Expr[SymExpr], 
-    state: SymState = SymState(),
+    state: SymState,
     score: float = 0.,
     finished: bool = False,
   ) -> None:
@@ -574,17 +577,24 @@ class Mixture(object):
 
 # A set of particles, returns a Mixture distribution
 class ProbState(object):
-  def __init__(self, n_particles: int, cont: Expr, method: type[SymState], seed: Optional[int] = None) -> None:
+  def __init__(
+    self, 
+    n_particles: int, 
+    cont: Expr, 
+    method: type[SymState], 
+    value_f: Callable[[RandomVar], Const],
+    seed: Optional[int] = None,
+  ) -> None:
     super().__init__()
     self.seed = seed
     self.rng = np.random.default_rng(seed=seed)
     self.particles: List[Particle] = [
-      Particle(cont, method(seed=seed)) for i in range(n_particles)
+      Particle(cont, method(value_f, seed=seed)) for i in range(n_particles)
     ]
 
   @staticmethod
   def from_particles(particles: List[Particle], seed: Optional[int] = None) -> 'ProbState':
-    new_state = ProbState(1, particles[0].cont, type(particles[0].state), seed=seed)
+    new_state = ProbState(1, particles[0].cont, type(particles[0].state), value_f=particles[0].state.value_f, seed=seed)
     new_state.particles = particles
     return new_state
 
