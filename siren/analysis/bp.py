@@ -143,7 +143,7 @@ class AbsBPState(AbsSymState):
         _make_unk(parents1, parents2)
 
   ### Symbolic Interface ###
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
+  def assume(self, rv:AbsRandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     def _check_conjugacy(prior : AbsSymDistr, likelihood : AbsSymDistr, rv_par : AbsRandomVar, rv_child : AbsRandomVar) -> bool:
       match prior, likelihood:
         case AbsNormal(_), AbsNormal(_):
@@ -151,7 +151,6 @@ class AbsBPState(AbsSymState):
         case _:
           return False
 
-    rv = self.new_var()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')

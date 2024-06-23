@@ -842,7 +842,7 @@ class AbsSymState(object):
 
   ### Symbolic Interface ###
   # These need to be implemented by subclasses
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
+  def assume(self, rv: AbsRandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     raise NotImplementedError()
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> float:
@@ -857,6 +857,7 @@ class AbsContext(object):
   def __init__(self, init={}) -> None:
     super().__init__()
     self.context: Dict[Identifier, AbsSymExpr] = init
+    self.temp_counter = 0
 
   def __getitem__(self, identifier: Identifier) -> AbsSymExpr:
     return self.context[identifier]
@@ -874,18 +875,15 @@ class AbsContext(object):
     new = AbsContext({**self.context})
     for k, v in other.context.items():
       new.context[k] = v
+    new.temp_counter = max(self.temp_counter, other.temp_counter)
     return new
 
   def __str__(self) -> str:
-    return f"AbsContext({', '.join(map(str, self.context.items()))})"
+    return f"AbsContext(counter:{self.temp_counter}; {', '.join(map(str, self.context.items()))})"
   
-  def temp_var(self, name: str="x") -> Identifier:
-    i = 0
-    while True:
-      identifier = Identifier(None, f"{name}_{i}")
-      if identifier not in self:
-        return identifier
-      i += 1
+  def temp_var(self, name: str="temp") -> Identifier:
+    self.temp_counter += 1
+    return Identifier(None, f"{name}_{self.temp_counter}")
 
   def rename(self, old: AbsRandomVar, new: AbsRandomVar) -> None:
     for k, v in self.context.items():

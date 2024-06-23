@@ -386,7 +386,7 @@ class SymState(object):
   
   # Hybrid inference interface
   # Needs to be overridden by the implementation
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
+  def assume(self, rv: RandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     raise NotImplementedError()
 
   def observe(self, rv: RandomVar[T], value: Const[T]) -> float:
@@ -400,6 +400,7 @@ class Context(object):
   def __init__(self, init={}) -> None:
     super().__init__()
     self.context: Dict[Identifier, SymExpr] = init
+    self.temp_counter = 0
 
   def __getitem__(self, identifier: Identifier) -> Expr:
     return self.context[identifier]
@@ -417,18 +418,15 @@ class Context(object):
     new = Context({**self.context})
     for k, v in other.context.items():
       new.context[k] = v
+    new.temp_counter = max(self.temp_counter, other.temp_counter)
     return new
 
   def __str__(self) -> str:
-    return f"Context({', '.join(map(str, self.context.items()))})"
+    return f"Context(counter:{self.temp_counter}; {', '.join(map(str, self.context.items()))})"
   
-  def temp_var(self, name: str="x") -> Identifier:
-    i = 0
-    while True:
-      identifier = Identifier(None, f"{name}_{i}")
-      if identifier not in self:
-        return identifier
-      i += 1
+  def temp_var(self, name: str="temp") -> Identifier:
+    self.temp_counter += 1
+    return Identifier(None, f"{name}_{self.temp_counter}")
 
 # Particle object used for the hybrid inference
 # Maintains a symbolic state and an expression to simplfy
@@ -583,6 +581,12 @@ class ProbState(object):
     self.particles: List[Particle] = [
       Particle(cont, method(seed=seed)) for i in range(n_particles)
     ]
+
+  @staticmethod
+  def from_particles(particles: List[Particle], seed: Optional[int] = None) -> 'ProbState':
+    new_state = ProbState(1, particles[0].cont, type(particles[0].state), seed=seed)
+    new_state.particles = particles
+    return new_state
 
   def __copy__(self) -> 'ProbState':
     # doesn't really matter what goes in constructor, since it will be overwritten

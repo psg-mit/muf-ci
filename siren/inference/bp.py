@@ -51,7 +51,7 @@ class BPState(SymState):
   def set_node(self, rv: RandomVar, node: BPNode) -> None:
     self.set_entry(rv, node=node)
 
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
+  def assume(self, rv: RandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     def _check_conjugacy(prior : SymDistr, likelihood : SymDistr, rv_par : RandomVar, rv_child : RandomVar) -> bool:
       match prior, likelihood:
         case Normal(_), Normal(_):
@@ -60,7 +60,6 @@ class BPState(SymState):
           return False
 
     # create a new random variable and assign annotation
-    rv = self.new_var()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')

@@ -44,8 +44,7 @@ class AbsSSIState(AbsSymState):
     return referenced_rvs
 
   ### Symbolic Interface ###
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
-    rv = self.new_var()
+  def assume(self, rv: AbsRandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     pv = {name} if name is not None else set()
     if annotation is not None:
       if name is None:

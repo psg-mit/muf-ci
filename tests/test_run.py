@@ -3,33 +3,36 @@ import os
 
 from siren.inference import SSIState, DSState, BPState
 import siren.parser as parser
-import siren.evaluate as evaluate
+from siren.evaluate import SMC, MH
 from siren.inference_plan import runtime_inference_plan, InferencePlan, DistrEnc
 from siren.grammar import Const, Identifier
 from siren.utils import get_lst, get_pair
 
-def run(program_path, inference_method):
+def run(program_path, handler, inference_method):
   with open(program_path) as f:
     program = parser.parse_program(f.read())
 
     file_dir = os.path.dirname(os.path.realpath(program_path))
-    res, particles = evaluate.evaluate(
-      program, 
-      10, 
-      inference_method, 
-      file_dir, 
+    handler = handler()
+    res, probstate = handler.infer(
+      program,
+      inference_method,
+      file_dir,
       seed=0,
-    )
-    runtime_plan = runtime_inference_plan(particles)
+      n_particles=10,
+      n_samples=10,
+    ) 
+    runtime_plan = runtime_inference_plan(probstate)
 
     return res, runtime_plan
 
+@pytest.mark.parametrize("handler", [SMC])
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
-def test_coin(method):
+def test_coin(handler, method):
   program_path = os.path.join('tests', 'programs', 'coin.si')
   var = Identifier(module=None, name='xt')
 
-  res, runtime_plan = run(program_path, method)
+  res, runtime_plan = run(program_path, handler, method)
   if method == BPState:
     assert isinstance(res, Const) and round(res, 2) == 0.70
     assert runtime_plan[var] == DistrEnc.sample
@@ -37,22 +40,24 @@ def test_coin(method):
     assert isinstance(res, Const) and round(res, 2) == 0.9
     assert runtime_plan[var] == DistrEnc.symbolic
 
+@pytest.mark.parametrize("handler", [SMC])
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
-def test_kalman(method):
+def test_kalman(handler, method):
   program_path = os.path.join('tests', 'programs', 'kalman.si')
   var = Identifier(module=None, name='x')
 
-  res, runtime_plan = run(program_path, method)
+  res, runtime_plan = run(program_path, handler, method)
   l = get_lst(res)
   assert isinstance(l[-1], Const)
   assert round(l[-1]) == 99
   assert runtime_plan[var] == DistrEnc.sample
 
+@pytest.mark.parametrize("handler", [SMC])
 @pytest.mark.parametrize("method", [SSIState, DSState])
-def test_envnoise(method):
+def test_envnoise(handler, method):
   program_path = os.path.join('tests', 'programs', 'envnoise.si')
 
-  res, runtime_plan = run(program_path, method)
+  res, runtime_plan = run(program_path, handler, method)
   x, res = get_pair(res)
   q, r = get_pair(res)
   assert isinstance(x, Const)
@@ -78,12 +83,13 @@ def test_envnoise(method):
   })
   assert runtime_plan == plan1 or runtime_plan == plan2
 
+@pytest.mark.parametrize("handler", [SMC])
 @pytest.mark.parametrize("method", [SSIState, DSState, BPState])
-def test_tree(method):
+def test_tree(handler, method):
   program_path = os.path.join('tests', 'programs', 'tree.si')
   true_bs = [2, 4, 6]
 
-  res, runtime_plan = run(program_path, method)
+  res, runtime_plan = run(program_path, handler, method)
   a, bs = get_pair(res)
   bs = get_lst(bs)
   assert isinstance(a, Const)

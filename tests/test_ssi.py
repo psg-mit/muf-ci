@@ -1,18 +1,24 @@
 import pytest
 
 from siren.grammar import *
-from siren.evaluate import assume, observe
+from siren.evaluate import SMC
 import siren.inference.conjugate as conj
 from siren.inference.ssi import SSIState
+from siren.inference.interface import Particle
 
 def test_beta_bernoulli():
   state = SSIState()
 
-  rv1 = assume(Identifier(None, "beta_prior"), None, Beta(Const(1), Const(1)), state)
+  rv1 = state.new_var()
+  rv1 = state.assume(rv1, Identifier(None, "beta_prior"), None, Beta(Const(1), Const(1)))
   assert isinstance(rv1, RandomVar)
   
-  observe(0, Bernoulli(rv1), Const(True), state)
-  observe(0, Bernoulli(rv1), Const(True), state)
+  rv2 = state.assume(state.new_var(), Identifier(None, "bernoulli"), None, Bernoulli(rv1))
+  assert isinstance(rv2, RandomVar)
+  state.observe(rv2, Const(True))
+  rv3 = state.assume(state.new_var(), Identifier(None, "bernoulli"), None, Bernoulli(rv1))
+  assert isinstance(rv3, RandomVar)
+  state.observe(rv3, Const(True))
 
   match state.distr(rv1):
     case Beta(a, b):
@@ -29,11 +35,11 @@ def test_beta_bernoulli():
 def affine_init():
   state = SSIState()
 
-  rv = assume(Identifier(None, "var"), None, Normal(Const(0), Const(1)), state)
+  rv = state.new_var()
+  rv = state.assume(rv, Identifier(None, "var"), None, Normal(Const(0), Const(1)))
   assert isinstance(rv, RandomVar)
   
   return state, rv
-
 
 def test_affine1():
   state, rv = affine_init()
@@ -74,10 +80,12 @@ def test_affine3():
 def test_gaussian_conjugate():
   state = SSIState()
 
-  rv1 = assume(Identifier(None, "gaussian_rv1"), None, Normal(Const(1), Const(100)), state)
+  rv1 = state.new_var()
+  rv1 = state.assume(rv1, Identifier(None, "gaussian_rv1"), None, Normal(Const(1), Const(100)))
   assert isinstance(rv1, RandomVar)
 
-  rv2 = assume(Identifier(None, "gaussian_rv2"), None, Normal(Mul(Const(3), rv1), Const(1)), state)
+  rv2 = state.new_var()
+  rv2 = state.assume(rv2, Identifier(None, "gaussian_rv2"), None, Normal(Mul(Const(3), rv1), Const(1)))
   assert isinstance(rv2, RandomVar)
 
   match conj.gaussian_conjugate(state, rv1, rv2):

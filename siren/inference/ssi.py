@@ -26,8 +26,7 @@ class SSIState(SymState):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"SSIState(\n\t{s}\n)" if s else "SSIState()"
 
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
-    rv = self.new_var()
+  def assume(self, rv: RandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: SymDistr[T]) -> RandomVar[T]:
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
