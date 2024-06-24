@@ -1,19 +1,39 @@
 {
   "benchmark": "wheels",
-  "true_vars": [
-    [
-      "velocity",
+  "data_file": {
+    "smc": "data/processed_data.csv",
+    "mh": "data/processed_data2.csv"
+  },
+  "true_vars": {
+    "smc": [
       [
-        86.8096578547
+        "velocity",
+        [
+          86.8096578547
+        ]
+      ],
+      [
+        "omega",
+        [
+          -66.4197088549
+        ]
       ]
     ],
-    [
-      "omega",
+    "mh": [
       [
-        -66.4197088549
+        "velocity",
+        [
+          87.7291407022
+        ]
+      ],
+      [
+        "omega",
+        [
+          -61.6925049263
+        ]
       ]
     ]
-  ],
+  },
   "base_y": 3,
   "base_x": 4,
   "n_y": 1,
@@ -26,9 +46,6 @@
         "velocity": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false,
         "smc": {
           "ssi": true,
           "ds": false,
@@ -47,9 +64,6 @@
         "velocity": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": true,
         "smc": {
           "ssi": true,
           "ds": true,
@@ -68,9 +82,6 @@
         "velocity": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": true,
         "smc": {
           "ssi": true,
           "ds": true,
@@ -89,9 +100,6 @@
         "velocity": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": true,
         "smc": {
           "ssi": true,
           "ds": true,

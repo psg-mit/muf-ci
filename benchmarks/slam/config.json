@@ -1,29 +1,59 @@
 {
   "benchmark": "slam",
-  "true_vars": [
-    [
-      "map",
+  "data_file": {
+    "smc": "data/processed_data.csv",
+    "mh": "data/processed_data2.csv"
+  },
+  "true_vars": {
+    "smc": [
       [
-        false,
-        false,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        false,
-        true,
-        true
+        "map",
+        [
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true
+        ]
+      ],
+      [
+        "x",
+        [
+          5
+        ]
       ]
     ],
-    [
-      "x",
+    "mh": [
       [
-        5
+        "map",
+        [
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true
+        ]
+      ],
+      [
+        "x",
+        [
+          10
+        ]
       ]
     ]
-  ],
+  },
   "base_y": 3,
   "base_x": 4,
   "n_y": 1,
@@ -36,9 +66,6 @@
         "wheel_slip": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false,
         "smc": {
           "ssi": true,
           "ds": false,
@@ -57,9 +84,6 @@
         "wheel_slip": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false,
         "smc": {
           "ssi": true,
           "ds": true,
@@ -78,9 +102,6 @@
         "wheel_slip": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false,
         "smc": {
           "ssi": true,
           "ds": false,
@@ -99,9 +120,6 @@
         "wheel_slip": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": true,
         "smc": {
           "ssi": true,
           "ds": true,
