@@ -13,6 +13,7 @@ import pandas as pd
 import ast
 import tqdm
 import wandb
+import re
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -24,7 +25,7 @@ DEFAULT_BENCHMARKS = [
   'outlierheavy',
   'slds',
   'runner',
-  # 'radar',
+  'radar',
   'wheels',
   'slam',
 ]
@@ -110,13 +111,24 @@ def flatten_nested(structure):
   return flattened_list
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_siren(benchmark, file, handler, method, true_vars, error_func, kwargs):
+def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file, kwargs):
+  # replace the file read with the correct datafile
+  # File.read("data/processed_data.csv"))
+  # string could be anything
+  pattern = re.compile(r'File\.read\("(.*?)"\)')
+  with open(os.path.join(CWD, file), 'r') as f:
+    data = f.read()
+    original_datafile = pattern.search(data).group(1)
+    data = data.replace(f'File.read("{original_datafile}")', f'File.read("{data_file}")')
+  with open(os.path.join(CWD, file), 'w') as f:
+    f.write(data)
+  
   # run siren file
   cmd = f'siren {file} -m {method} -l {handler}'
   for k, v in kwargs.items():
     cmd += f' --{k} {v}'
   
-  # print('>', cmd)
+  print('>', cmd)
 
   try:
     out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
@@ -128,6 +140,10 @@ def run_siren(benchmark, file, handler, method, true_vars, error_func, kwargs):
     tqdm.tqdm.write(output)
     return None
   
+  # restore original datafile
+  with open(os.path.join(CWD, file), 'w') as f:
+    f.write(data.replace(f'File.read("{data_file}")', f'File.read("{original_datafile}")'))
+
   program_output = {}
 
   # parse output
@@ -189,7 +205,7 @@ def run_siren(benchmark, file, handler, method, true_vars, error_func, kwargs):
   return eval_time, program_output
 
 # Run experiments for each given number of particles
-def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, results_file, error_func, kwargs):
+def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, results_file, error_func, data_file, kwargs):
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -238,7 +254,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               'warmup': kwargs.get('warmup', 0),
             }
 
-            run_outputs = run_siren(benchmark, file, handler, method, true_vars, error_func, siren_kwargs)
+            run_outputs = run_siren(benchmark, file, handler, method, true_vars[handler], error_func, data_file[handler], siren_kwargs)
             if run_outputs is None:
               # timeout
               tqdm.tqdm.write(f'Timed out: {plan_id} {handler} {method} - {p} particles')
@@ -512,6 +528,7 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
     config = json.load(f)  
   
   true_vars = config['true_vars']
+  data_file = config['data_file']
 
   results_file = os.path.join(benchmark, output, 'results.csv')
   if not os.path.exists(results_file):
@@ -522,7 +539,7 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
       fieldnames += [var[0] for var in true_vars]
       writer.writerow(fieldnames)
 
-  run_particles(benchmark, files, n, handlers, methods, config['plans'], true_vars, results_file, error_func, kwargs)
+  run_particles(benchmark, files, n, handlers, methods, config['plans'], true_vars, results_file, error_func, data_file, kwargs)
 
   if LOGGING:
     artifact = wandb.Artifact(f'{benchmark}_results.csv', type='results')
