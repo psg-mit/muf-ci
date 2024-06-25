@@ -4,7 +4,7 @@ import time
 import cProfile
 
 from . import parser
-from .analyze import AbsSMC, AbsMH
+from .analyze import AbsSMC, AbsMH, AnalysisExit
 from .evaluate import SMC, MH
 from .inference import SSIState, DSState, BPState
 from .analysis import AbsSSIState, AbsDSState, AbsBPState
@@ -81,9 +81,12 @@ def main():
     if args.analyze or args.analyze_only:
         print("===== Inferred Inference Plan =====")
         t1 = time.time()
-        inferred_plan = analysis_handler().infer(
-            program, analysis_method, args.max_rvs
-        )
+        try:
+            inferred_plan = analysis_handler().infer(
+                program, analysis_method, args.max_rvs
+            )
+        except AnalysisExit as e:
+            inferred_plan = e.plan
         t2 = time.time()
         print(inferred_plan)
         print("===== Analysis Time =====")

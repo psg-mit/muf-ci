@@ -17,6 +17,10 @@ OTHERSTATE = TypeVar('OTHERSTATE', bound='AbsSymState')
 class AnalysisViolatedAnnotationError(Exception):
   pass
 
+class AnalysisExit(Exception):
+  def __init__(self, plan: Optional[InferencePlan]):
+    self.plan = plan
+
 # Abstract Symbolic state used for the abstract inference interface
 class AbsSymState(object):
 
@@ -29,6 +33,7 @@ class AbsSymState(object):
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
     self.max_rvs = max_rvs
+    self.max_size = 100
     self.max_depth = 5
     # wrapper for the value function implemented by handler
     self.value_f: Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]] = value_f
@@ -81,14 +86,21 @@ class AbsSymState(object):
   def vars(self) -> Set[AbsRandomVar]:
     return set(self.state.keys())
     
-  def get_entry(self, rv: AbsRandomVar, key: str) -> Any:
-    if rv not in self.state:
-      raise ValueError(f"{rv} not in state")
-    if key not in self.state[rv]:
-      raise ValueError(f"{key} not in {rv}")
-    return self.state[rv][key]
+  def get_entry(self, variable: AbsRandomVar, key: str) -> Any:    
+    if variable not in self.state:
+      raise ValueError(f"{variable} not in state")
+    if key not in self.state[variable]:
+      raise ValueError(f"{key} not in {variable}")
+    return self.state[variable][key]
   
   def set_entry(self, variable: AbsRandomVar, **kwargs) -> None:
+    if len(self.state) > self.max_size:
+      # All dynamic
+      if all(self.state[rv]['annotation'] is None for rv in self.state):
+        raise AnalysisExit(self.plan)
+      else:
+        raise AnalysisViolatedAnnotationError("State too large")
+
     if variable not in self.state:
       self.state[variable] = {}
 
@@ -175,10 +187,18 @@ class AbsSymState(object):
       if (canon_var in other.vars() and canon_var not in vars2) \
         or canon_var in other.entry_referenced_rvs({e2_var}):
         # capture avoiding substitution
-        new_var = self.new_var(other.counter)
+        counter = max(self.counter, other.counter)
+        new_var = self.new_var(counter)
+        other.counter = counter + 1
+        if new_var == AbsRandomVar('rv16'):
+          pass
         capture_avoiding_mapping[canon_var] = new_var
 
-      temp_var = self.new_var(other.counter)
+      counter = max(self.counter, other.counter)
+      temp_var = self.new_var(counter)
+      other.counter = counter + 1
+      if temp_var == AbsRandomVar('rv16'):
+        pass
       map2temp[e2_var] = temp_var
       map2canonical[temp_var] = canon_var
 
@@ -221,6 +241,7 @@ class AbsSymState(object):
         # copy entry
         # copy pv first
         self.set_pv(rv, copy(other.pv(rv)))
+        self.set_annotation(rv, copy(other.annotation(rv)))
         for key, value in other.state[rv].items():
           self.set_entry(rv, **{key: copy(value)})
       else:
@@ -427,6 +448,11 @@ class AbsSymState(object):
           # If no parents, then it's a constant
           if len(parents) == 0:
             return AbsConst(UnkC())
+          if len(parents) > self.max_rvs:
+            for rv_par in parents:
+              if rv_par in self.vars():
+                self.set_dynamic(rv_par)
+            return TopE()
           return UnkE(parents)
         case TopE():
           return TopE()
@@ -468,6 +494,11 @@ class AbsSymState(object):
             case _:
               if var not in parents:
                 parents.append(var)
+        if len(parents) > self.max_rvs:
+          for rv_par in parents:
+            if rv_par in self.vars():
+              self.set_dynamic(rv_par)
+          return TopD()
         return UnkD(parents)
       case TopD():
         return TopD()
@@ -609,8 +640,8 @@ class AbsSymState(object):
               continue
             parents.append(p)
           if len(parents) > self.max_rvs:
-            print(parents)
-            print(self.max_rvs)
+            # print(parents)
+            # print(self.max_rvs)
             # print(e1, e2)
             for rv_par in parents:
               if rv_par in self.vars():

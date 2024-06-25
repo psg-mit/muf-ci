@@ -110,7 +110,7 @@ class AbsBPState(AbsSymState):
           self.set_pv(rv, self.pv(rv) | other.pv(rv))
           self.set_node(rv, AbsBPInitialized(parents[0]))
         else:
-          _make_unk(set(parents), set())
+          _make_unk(self.distr(rv).rvs(), other.distr(rv).rvs())
       case _, _:
         super().entry_join(rv, other)
 
@@ -154,7 +154,6 @@ class AbsBPState(AbsSymState):
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-    self.set_annotation(rv, annotation)
     distribution = self.eval_distr(distribution)
 
     if len(distribution.rvs()) == 0:
@@ -173,6 +172,7 @@ class AbsBPState(AbsSymState):
         self.set_pv(rv, pv)
         # UnkD because we don't know which is the canonical parent
         self.set_distr(rv, UnkD(parents))
+        self.set_annotation(rv, annotation)
 
         for rv_par in parents:
           if not isinstance(self.node(rv_par), AbsBPRealized):
@@ -213,6 +213,7 @@ class AbsBPState(AbsSymState):
               self.set_dynamic(rv_par)
 
           self.set_node(rv, AbsBPUnk())
+          self.set_annotation(rv, annotation)
           return rv
 
       # all parents were sampled
@@ -226,6 +227,7 @@ class AbsBPState(AbsSymState):
     self.set_pv(rv, pv)
     self.set_distr(rv, distribution)
     self.set_node(rv, node)
+    self.set_annotation(rv, annotation)
 
     return rv
 
@@ -314,36 +316,30 @@ class AbsBPState(AbsSymState):
   # Makes rv BPUnk and deal with side effects 
   def set_dynamic(self, rv: AbsRandomVar) -> None:
     super_set_dynamic = super().set_dynamic
+
     nodes = set()
+
     def _set_unk_node(rv: AbsRandomVar) -> None:
       if rv in nodes:
         return
-      nodes.add(rv)
+
       match self.node(rv):
         case AbsBPRealized():
           pass
         case AbsBPMarginalized():
           pass
         case AbsBPInitialized(rv_par):
-          # Calling marginalize/value on I recurses on rv_par
           _set_unk_node(rv_par)
         case AbsBPUnk():
           pass
         case _:
           raise ValueError(f'{rv} is {self.node(rv)}')
 
-      super_set_dynamic(rv)
-      match self.node(rv):
-        case AbsBPInitialized(rv_par):
-          _set_unk_node(rv_par)
-          self.set_node(rv, AbsBPUnk())
-        case AbsBPUnk():
-          self.set_node(rv, AbsBPUnk())
-        case _:
-          self.set_node(rv, AbsBPUnk())
-
-      for rv_par in self.distr(rv).rvs():
-        _set_unk_node(rv_par)
-      self.set_distr(rv, TopD())
+      nodes.add(rv)
 
     _set_unk_node(rv)
+
+    for rv in nodes:
+      super_set_dynamic(rv)
+      self.set_node(rv, AbsBPUnk())
+      self.set_distr(rv, TopD())

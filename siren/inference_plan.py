@@ -70,6 +70,9 @@ class InferencePlan(object):
   def __contains__(self, __key: Any) -> bool:
     return __key in self.plan
   
+  def keys(self):
+    return self.plan.keys()
+  
   def __getitem__(self, __key: Any) -> Any:
     return self.plan[__key]
    

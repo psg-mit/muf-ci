@@ -512,9 +512,10 @@ class AbsMH(AbsHandler):
   def value(self) -> Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]]:
     def _value(state: AbsSymState):
       def __value(rv: AbsRandomVar):
+        temp_state = copy(state)
+        v = temp_state.value_impl(rv)
         if rv not in self.sample_sites:
-          temp_state = copy(state)
-          self.sample_sites[rv] = temp_state.value_impl(rv)
+          self.sample_sites[rv] = v
         v = self.sample_sites[rv]
         # Use observe to score and update the sample
         state.observe(rv, v)

@@ -859,14 +859,21 @@ class UnkE(AbsSymExpr[T]):
     return self.parents
   
   def rename(self, old: 'AbsRandomVar', new: 'AbsRandomVar') -> 'UnkE':
-    if old in self.parents:
-      self.parents.remove(old)
-      self.parents.append(new)
-    return self
+    parents = []
+    for p in self.parents:
+      if p not in parents:
+        parents.append(p)
+    if old in parents:
+      parents.remove(old)
+      parents.append(new)
+    return UnkE(parents)
     
   def subst_rv(self, rv: 'AbsRandomVar', value: 'AbsSymExpr') -> 'AbsSymExpr':
     new_parents = value.rvs()
-    parents = self.parents.copy()
+    parents = []
+    for p in self.parents:
+      if p not in parents:
+        parents.append(p)
     if rv in parents:
       parents.remove(rv)
     for p in new_parents:
@@ -1127,14 +1134,21 @@ class UnkD(AbsSymDistr[T]):
     return self.parents
   
   def rename(self, old: 'AbsRandomVar', new: 'AbsRandomVar') -> 'UnkD':
-    if old in self.parents:
-      self.parents.remove(old)
-      self.parents.append(new)
-    return self
+    parents = []
+    for p in self.parents:
+      if p not in parents:
+        parents.append(p)
+    if old in parents:
+      parents.remove(old)
+      parents.append(new)
+    return UnkD(parents)
   
   def subst_rv(self, rv: AbsRandomVar, value: AbsSymExpr) -> AbsSymDistr:
     new_parents = value.rvs()
-    parents = self.parents.copy()
+    parents = []
+    for p in self.parents:
+      if p not in parents:
+        parents.append(p)
     if rv in parents:
       parents.remove(rv)
     parents.extend(new_parents)

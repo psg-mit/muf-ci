@@ -70,7 +70,7 @@ class Handler(object):
     self,
     particle: Particle, 
     functions: Dict[Identifier, Function[SymExpr]], 
-    file_dir: str
+    file_dir: str,
   ) -> Particle:
     # Evaluates arguments, from left to right. Returning the particle, the remaining arguments, and the evaluated arguments
     # If an argument is not finished, the particle is returned with the remaining arguments
@@ -537,9 +537,10 @@ class MH(Handler):
   def value(self) -> Callable[[SymState], Callable[[RandomVar], Const]]:
     def _value(state: SymState):
       def __value(rv: RandomVar):
+        temp_state = copy(state)
+        v = temp_state.value_impl(rv)
         if rv not in self.sample_sites:
-          temp_state = copy(state)
-          self.sample_sites[rv] = temp_state.value_impl(rv)
+          self.sample_sites[rv] = v
         v = self.sample_sites[rv]
         # Use observe to score and update the sample
         self.sample_scores[rv] = state.observe(rv, v)

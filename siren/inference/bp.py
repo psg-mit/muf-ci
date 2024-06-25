@@ -63,7 +63,6 @@ class BPState(SymState):
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-    self.set_annotation(rv, annotation)
 
     # simplify the given distribution
     distribution = self.eval_distr(distribution)
@@ -117,6 +116,7 @@ class BPState(SymState):
     self.set_pv(rv, name)
     self.set_distr(rv, distribution)
     self.set_node(rv, node)
+    self.set_annotation(rv, annotation)
 
     return rv
 

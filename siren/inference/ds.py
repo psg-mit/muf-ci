@@ -82,7 +82,6 @@ class DSState(SymState):
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-    self.set_annotation(rv, annotation)
     
     # simplify distribution
     distribution = self.eval_distr(distribution)
@@ -151,6 +150,7 @@ class DSState(SymState):
         assert canonical_parent is not None
         node = DSInitialized((canonical_parent, distribution))
 
+    self.set_annotation(rv, annotation)
     self.set_pv(rv, name)
     self.set_distr(rv, distribution)
     self.set_children(rv, children)
@@ -357,7 +357,11 @@ class DSState(SymState):
     self.set_node(rv, DSRealized())
 
     # new roots from children being orphaned
+    dedup = []
     for rv_child in self.children(rv):
+      if rv_child not in dedup:
+        dedup.append(rv_child)
+    for rv_child in dedup:
       self.do_marginalize(rv_child)
 
     self.set_children(rv, [])
