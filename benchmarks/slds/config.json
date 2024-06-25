@@ -2361,7 +2361,7 @@
       "satisfiable": {
         "smc": {
           "ssi": true,
-          "ds": true,
+          "ds": false,
           "bp": false
         },
         "mh": {
@@ -2752,7 +2752,7 @@
       "satisfiable": {
         "smc": {
           "ssi": true,
-          "ds": true,
+          "ds": false,
           "bp": false
         },
         "mh": {
@@ -3256,8 +3256,15 @@
     "inv_obs_noise1"
   ],
   "default": {
-    "ssi": "115",
-    "ds": "115",
-    "bp": "79"
+    "smc": {
+      "ssi": "115",
+      "ds": "115",
+      "bp": "79"
+    },
+    "mh": {
+      "ssi": "115",
+      "ds": "115",
+      "bp": "79"
+    }
   }
 }
