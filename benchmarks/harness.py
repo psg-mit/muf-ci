@@ -527,7 +527,7 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
   with open(os.path.join(benchmark, 'config.json')) as f:
     config = json.load(f)  
   
-  true_vars = config['true_vars']
+  true_vars = config['true_vars'][]
   data_file = config['data_file']
 
   results_file = os.path.join(benchmark, output, 'results.csv')
@@ -536,7 +536,7 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
     with open(results_file, 'w') as f:
       writer = csv.writer(f)
       fieldnames = ['plan_id', 'handler', 'method', 'particles', 'time']
-      fieldnames += [var[0] for var in true_vars]
+      fieldnames += [var[0] for var in true_vars['smc']]
       writer.writerow(fieldnames)
 
   run_particles(benchmark, files, n, handlers, methods, config['plans'], true_vars, results_file, error_func, data_file, kwargs)
