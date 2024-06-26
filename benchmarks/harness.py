@@ -527,7 +527,7 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
   with open(os.path.join(benchmark, 'config.json')) as f:
     config = json.load(f)  
   
-  true_vars = config['true_vars'][]
+  true_vars = config['true_vars']
   data_file = config['data_file']
 
   results_file = os.path.join(benchmark, output, 'results.csv')
