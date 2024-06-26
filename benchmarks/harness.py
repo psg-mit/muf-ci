@@ -49,7 +49,7 @@ CWD = '..'
 
 LOGGING = False
 
-TIMEOUT = 500
+TIMEOUT = 300
 
 def squared_error(true_x, x):
   return (true_x - x) ** 2

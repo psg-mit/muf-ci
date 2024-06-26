@@ -17,7 +17,7 @@ BENCHMARK_DIR = 'benchmarks'
 
 DEFAULT_BENCHMARKS = [
   'noise',
-  # 'radar',
+  'radar',
   'envnoise',
   'outlier',
   'outlierheavy',
@@ -41,8 +41,10 @@ DEFAULT_HANDLERS = [
 
 N_INTERVALS = 30
 
+TIMEOUT = 300
+
 BENCHMARK_LATEX_NAMES = {
-  # 'radar': r'\bRadar{}',
+  'radar': r'\bRadar{}',
   'envnoise': r"\bEnvnoise{}",
   'noise': r"\bNoise{}",
   'outlier': r"\bOutlier{}",
@@ -54,8 +56,6 @@ BENCHMARK_LATEX_NAMES = {
   'wheels': r"\bWheels{}",
   'slam': r"\bSlam{}",
 }
-
-N_INTERVALS = 30
 
 COLORS = [
   "#f4827b", # red
@@ -171,7 +171,8 @@ def table(statistics):
 
       method_content = []
       for benchmark in DEFAULT_BENCHMARKS:
-        
+        # print(benchmark)
+        # print(statistics[benchmark])
         n_true_satisfied = statistics[benchmark][handler][method]['n_true_satisfied']
         n_inferred_satisfied = statistics[benchmark][handler][method]['n_inferred_satisfied']
 
@@ -239,6 +240,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
     methods = ['ssi']
 
   # filter out -1 time, which means timeout
+  data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
 
   original_data = data
@@ -380,6 +382,32 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
               break
           
           plan_i += 1
+  
+          ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
+
+          if benchmark == 'slam' and var == 'x' and not error_bar:
+            ax.set_yticks([1, 10])
+            ax.set_yticklabels([1, 10])  
+            use_log = False
+
+          if benchmark == 'slam' and var == 'x' and error_bar:
+            ax.set_yscale('symlog', linthresh=thresh)
+            ax.set_yticks([0, 10])
+            ax.set_yticklabels([0, 10])
+            use_log = False
+          
+          if benchmark == 'slam' and method == 'ssi' and error_bar:
+            ax.set_xlim(18.641205409470178, 534.4669454885518)
+
+          if benchmark == 'slam' and method == 'ds' and error_bar:
+            ax.set_xlim(20.003947801259134, 520.9289414624243)
+
+          # check if there are any major ticks
+          # label minor ticks
+          if use_log and not error_bar:
+            ax.yaxis.set_minor_formatter(ScalarFormatter())
+
+
 
         use_label = False
         ax.set_title(f'{var}')
@@ -393,30 +421,6 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
           bottom=True,
           top=False,
           labelbottom=True)
-
-        ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
-
-        if benchmark == 'slam' and var == 'x' and not error_bar:
-          ax.set_yticks([1, 10])
-          ax.set_yticklabels([1, 10])  
-          use_log = False
-
-        if benchmark == 'slam' and var == 'x' and error_bar:
-          ax.set_yscale('symlog', linthresh=thresh)
-          ax.set_yticks([0, 10])
-          ax.set_yticklabels([0, 10])
-          use_log = False
-        
-        if benchmark == 'slam' and method == 'ssi' and error_bar:
-          ax.set_xlim(18.641205409470178, 534.4669454885518)
-
-        if benchmark == 'slam' and method == 'ds' and error_bar:
-          ax.set_xlim(20.003947801259134, 520.9289414624243)
-
-        # check if there are any major ticks
-        # label minor ticks
-        if use_log and not error_bar:
-          ax.yaxis.set_minor_formatter(ScalarFormatter())
 
       print('Saving particles plots')
 
@@ -458,6 +462,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
 
 def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
   # filter out -1 time, which means timeout
+  data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
 
   def get_error_runtime(data, method, plan_id):
@@ -582,6 +587,7 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
 
 def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans):
   # filter out -1 time, which means timeout
+  data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
 
   def get_error_runtime(data, method, plan_id):
@@ -627,6 +633,7 @@ def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans
 
 def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, default_plans):
   # filter out -1 time, which means timeout
+  data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
 
   def get_error_runtime(data, method, plan_id, median=False):
@@ -825,6 +832,8 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
 
 def compare_to_default_accuracy_example(data, all_plans):
   # filter out -1 time, which means timeout
+  # filter out entries over time limit
+  data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
   
   def get_error_runtime(data, method, plan_id, median=False):
