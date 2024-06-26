@@ -8,8 +8,8 @@ val step = fun (obs, (xs,invq,invr)) ->
   
   let PLACEHOLDER x <- gaussian(f * x_i,1/invq) in
   let PLACEHOLDER env <- bernoulli(0.0001) in
+  let PLACEHOLDER other <- beta(1,1) in
   let () = if env then
-      let PLACEHOLDER other <- beta(1,1) in
       observe(gaussian(h * x, (1/invr) + 1000*other),obs) 
     else
       observe(gaussian(h * x,1/invr),obs)
