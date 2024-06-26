@@ -658,6 +658,10 @@ class MH(Handler):
 
     # print(len(range(n_warmups + n_samples * n_thinning)))
     # print(len(particles))
+
+    # reset all scores to do unweighted average
+    for p in particles:
+      p.score = 0.
     particles = ProbState.from_particles(particles, seed=seed)
 
     return particles.result(), particles
