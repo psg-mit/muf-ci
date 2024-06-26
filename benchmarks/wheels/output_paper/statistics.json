@@ -1,0 +1,89 @@
+{
+  "n_plans": 4,
+  "n_vars": 2,
+  "ssi": {
+    "plan": {
+      "0": {
+        "true_satisfied": true,
+        "infer_satisfied": false
+      },
+      "1": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0025849342346191406
+      },
+      "2": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0022971630096435547
+      },
+      "3": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0011641979217529297
+      }
+    },
+    "n_true_satisfied": 4,
+    "n_inferred_satisfied": 3,
+    "n_satisfied_tp": 3,
+    "n_satisfied_fp": 0,
+    "n_satisfied_fn": 1,
+    "n_satisfied_tn": 0
+  },
+  "ds": {
+    "plan": {
+      "0": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "1": {
+        "true_satisfied": true,
+        "infer_satisfied": false
+      },
+      "2": {
+        "true_satisfied": true,
+        "infer_satisfied": false
+      },
+      "3": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0009398460388183594
+      }
+    },
+    "n_true_satisfied": 3,
+    "n_inferred_satisfied": 1,
+    "n_satisfied_tp": 1,
+    "n_satisfied_fp": 0,
+    "n_satisfied_fn": 2,
+    "n_satisfied_tn": 1
+  },
+  "bp": {
+    "plan": {
+      "0": {
+        "true_satisfied": false,
+        "infer_satisfied": false
+      },
+      "1": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.002353191375732422
+      },
+      "2": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0022001266479492188
+      },
+      "3": {
+        "true_satisfied": true,
+        "infer_satisfied": true,
+        "analysis_time": 0.0008728504180908203
+      }
+    },
+    "n_true_satisfied": 3,
+    "n_inferred_satisfied": 3,
+    "n_satisfied_tp": 3,
+    "n_satisfied_fp": 0,
+    "n_satisfied_fn": 0,
+    "n_satisfied_tn": 1
+  }
+}
