@@ -1,5 +1,9 @@
 {
   "benchmark": "slds",
+  "data_file": {
+    "smc": "data/processed_data.json",
+    "mh": "data/processed_data2.json"
+  },
   "true_vars": {
     "smc": [
       [
