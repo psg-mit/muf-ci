@@ -2,7 +2,7 @@
   "benchmark": "envnoise",
   "data_file": {
     "smc": "data/data.csv",
-    "mh": "data/data.csv"
+    "mh": "data/data2.csv"
   },
   "true_vars": {
     "smc": [
