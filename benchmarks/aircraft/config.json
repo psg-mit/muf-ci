@@ -1,0 +1,747 @@
+{
+  "benchmark": "aircraft",
+  "data_file": {
+    "smc": "data/data.csv",
+    "mh": "data/data2.csv"
+  },
+  "true_vars": {
+    "smc": [
+      [
+        "x",
+        [
+          0.0,
+          1.0411666573680323,
+          0.9397176106344658,
+          1.9247630026305311,
+          1.383847602983967,
+          2.399318049225353,
+          2.2940969440367436,
+          3.363627310731397,
+          3.461897436369085,
+          4.121678978389007
+        ]
+      ],
+      [
+        "alt",
+        [
+          0.0,
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.9
+        ]
+      ],
+      [
+        "q",
+        [
+          0.1
+        ]
+      ],
+      [
+        "r",
+        [
+          0.1
+        ]
+      ]
+    ]
+  },
+  "base_y": 3,
+  "base_x": 4,
+  "n_y": 1,
+  "n_x": 4,
+  "legend_width": 4,
+  "error_func": "se",
+  "known_enc": {
+    "other": "sample",
+    "invr": "sample"
+  },
+  "variables": [
+    "x",
+    "alt",
+    "other",
+    "invq",
+    "invr"
+  ],
+  "default": {
+    "ssi": "1"
+  },
+  "plans": {
+    "0": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "1": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "2": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "3": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "4": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "5": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "6": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "7": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "8": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "9": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "10": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "11": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "12": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "13": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "14": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "15": {
+      "plan": {
+        "x": "symbolic",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        }
+      }
+    },
+    "16": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "17": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "18": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "19": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "20": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "21": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "22": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "23": {
+      "plan": {
+        "x": "sample",
+        "alt": "symbolic",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "24": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "25": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "26": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "27": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "symbolic",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "28": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "29": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "symbolic",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
+      }
+    },
+    "30": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "symbolic"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
+      }
+    },
+    "31": {
+      "plan": {
+        "x": "sample",
+        "alt": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        }
+      }
+    }
+  }
+}
