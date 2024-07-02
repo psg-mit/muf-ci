@@ -9,9 +9,12 @@ import numpy as np
 from math import log10
 from matplotlib.ticker import Locator
 from scipy.stats import gmean
+import seaborn as sns
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
+
+sns.set(style="whitegrid")
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -228,6 +231,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
 
   # first 4 columns are metadata
   variables = data.columns[5:]
+  variables = [v for v in variables if '_raw' not in v]
 
   # drop rows with particles not in particles
   if particles is not None:
@@ -340,14 +344,14 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
             mfc = {
               1: '#f4827b',
               2: '#7cc7d2',
-              3: '#feb140',
+              3: '#C88AD9',
               4: '#9baa20',
               5: '#fac52f',
             }[plan_id]
             mec = {
               1: '#b7575c',
               2: '#4d9aa4',
-              3: '#c78200',
+              3: '#75528D',
               4: '#708200',
               5: '#c0ab5f',
             }[plan_id]
@@ -370,6 +374,28 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
           else:
             ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
                                       edgecolor=mec, s=MARKERSSIZE)
+            
+            if is_example and plan_id in [2] and var == 'x':
+              # draw arrow to a particle count
+              arrow_particle = 32
+              arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle] + 5)
+              ax.annotate(f'{arrow_particle}', xy=arrow_xy, xytext=(0,50), 
+                textcoords='offset points', ha='center', va='bottom',
+                arrowprops=dict(arrowstyle='->', color=mec))
+              # print(arrow_xy)
+            # if is_example and plan_id in [3] and var == 'x':
+            #   # draw arrow to a particle count
+            #   arrow_particle = 32
+            #   arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]) + 10
+            #   ax.annotate(f'{arrow_particle}', xy=arrow_xy, xytext=(0,50), 
+            #     textcoords='offset points', ha='center', va='bottom',
+            #     arrowprops=dict(arrowstyle='->', color=mec))
+              # length = 49
+              # arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]+length)
+              # ax.arrow(arrow_xy[0], arrow_xy[1], 0, -length, ec=mec, fc=mec, head_width=0.3, head_length=0.3, overhang=0.01)
+              # ax.annotate('', xy=arrow_xy, xytext=(0,10), 
+              #   textcoords='offset points', ha='center', va='bottom',
+              #   arrowprops=dict(arrowstyle='->', color=mec))
           
           # if y range doesn't cross any power of 10, use log scale
           ax.set_yscale('symlog', linthresh=thresh)
@@ -396,10 +422,10 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
             ax.set_yticklabels([0, 10])
             use_log = False
           
-          if benchmark == 'slam' and method == 'ssi' and error_bar:
+          if benchmark == 'slam' and method == 'ssi' and handler == 'smc' and error_bar:
             ax.set_xlim(18.641205409470178, 534.4669454885518)
 
-          if benchmark == 'slam' and method == 'ds' and error_bar:
+          if benchmark == 'slam' and method == 'ds' and handler == 'smc' and error_bar:
             ax.set_xlim(20.003947801259134, 520.9289414624243)
 
           # check if there are any major ticks
@@ -453,6 +479,188 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
         filename = f'{handler}_{method}_particles'
       if error_bar:
         filename += '_errorbar'
+      
+      if kwargs.get('pdf', True):
+        fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
+      fig.savefig(os.path.join(output, f'{filename}.png'), bbox_inches='tight')
+
+      plt.close(fig)
+
+def plot_time(data, output, handlers, methods, plan_ids, true_vars, 
+                   particle, legend_width, is_example,
+                   **kwargs):
+  if kwargs.get('pdf', True):
+    plt_settings = {
+      'font.size': 14, 
+      'font.family': 'Linux Libertine', 
+      "text.usetex": True,                # use LaTeX to write all text
+      "text.latex.preamble": "\n".join([         # plots will use this preamble
+        '\\usepackage{libertine}'
+      ])
+    }
+  else:
+    plt_settings = {
+      'font.size': 14, 
+    }
+    
+  plt.rcParams.update(plt_settings)
+
+  # first 4 columns are metadata
+  variables = data.columns[5:]
+  variables = [v for v in variables if '_raw' not in v]
+  
+  # drop non_raw columns
+  data = data.drop(columns=variables)
+
+  original_plan_ids = plan_ids
+
+  if is_example:
+    methods = ['ssi']
+
+  # filter out -1 time, which means timeout
+  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] != -1]
+
+  original_data = data
+
+  for handler in handlers:
+    data = original_data.loc[original_data['handler'] == handler]
+
+    for method_i, method in enumerate(methods):
+
+      if data.loc[data['method'] == method].shape[0] == 0:
+        continue
+
+      figsize = (base_x * n_x, base_y * n_y) if benchmark != 'slds' else (base_x * n_x, base_y * n_y + 1)
+
+      fig, axes = plt.subplots(
+                    n_y, n_x,
+                    figsize=figsize,  
+                    sharex=True, 
+                    # sharey=True
+      )
+
+      for ax in axes.flatten():
+        ax.set_visible(False)
+
+      if original_plan_ids is None:
+        plans = sorted(data[data['method'] == method]['plan_id'].unique())
+      else:
+        plans = original_plan_ids
+
+      plans = [int(plan) for plan in plans]
+
+      all_plot_data = pd.DataFrame(columns=['plan_id', 'timestep', 'variable', 'value'])
+
+      for v in variables:
+        var = v + '_raw'
+        plot_data = data.loc[(data['particles'] == particle) & (data['method'] == method) & (data['plan_id'].isin(plans))]
+        plot_data = plot_data.drop(columns=['particles', 'method', 'handler', 'time']+[va+'_raw' for va in variables if va != v])
+        plot_data[var] = plot_data[var].apply(lambda x: x[1:-1].split(','))
+        # expand x_raw into columns
+        plot_data = pd.concat([plot_data.drop(columns=[var]), plot_data[var].apply(pd.Series)], axis=1)
+        plot_data = plot_data.melt(id_vars=['plan_id'], var_name='timestep', value_name=v)
+
+        # true_x = [vals for var, vals in true_vars[handler] if var == v][0]
+        # true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
+
+        # # subtract true_x from x # matching by timestep
+        # plot_data[v] = plot_data[v].astype(float)
+        # plot_data[v] = plot_data.apply(lambda row: abs(row[v] - true_x.loc[true_x['timestep'] == int(row['timestep'])][v].values[0]), axis=1)
+        
+        true_x = [vals for var, vals in true_vars[handler] if var == v][0]
+        true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
+        true_x['plan_id'] = 0
+        true_x[v] = true_x[v].astype(float)
+
+        # plot_data = pd.concat([plot_data, true_x])
+
+        plot_data[v] = plot_data[v].astype(float)
+
+        plot_data['variable'] = v
+        plot_data.rename(columns={v: 'value'}, inplace=True)
+
+        if all_plot_data.shape[0] == 0:
+          all_plot_data = plot_data
+        else:
+          all_plot_data = pd.concat([all_plot_data, plot_data])
+
+      all_plot_data['timestep'] = all_plot_data['timestep'].astype(int)
+
+      # print(all_plot_data)
+
+      all_plot_data = pd.concat([all_plot_data])
+
+      labels = {
+        0: 'Ground Truth',
+        1: 'No Annotations',
+        2: 'Symbolic r Plan',
+        3: 'Dynamic r Plan',
+        4: 'Symbolic x Plan',
+        5: 'Sample All Plan',
+      }
+
+      # rename plan_id to label
+      all_plot_data['plan_id'] = all_plot_data['plan_id'].apply(lambda x: labels[x])
+
+      # palette = ['#f4827b','#7cc7d2','#C88AD9','#9baa20','#fac52f']
+      color_dict = {
+        'No Annotations': '#b7575c',
+        'Symbolic r Plan':'#4d9aa4', 
+        'Dynamic r Plan': "#c78200",
+        'Symbolic x Plan':'#708200', 
+        'Sample All Plan': '#75528D',
+        'Ground Truth': '#7B7B7B',
+      }
+
+      timesteps = 100
+
+      time_plot = sns.relplot(
+        data=all_plot_data[all_plot_data['timestep'].isin(list(range(timesteps)))], 
+        kind="line",
+        x="timestep", 
+        y="value",
+        hue="plan_id",
+        style="plan_id",
+        palette=color_dict,
+        markers=True,
+        markersize=5,
+        # linestyle='--',
+        row='variable',
+        facet_kws={'sharey': False, 'sharex': False},
+        aspect=2,
+      )
+
+      # plot true_x
+      for v, ax in zip(variables, time_plot.axes.flatten()):
+        true_x = [vals for var, vals in true_vars[handler] if var == v][0]
+        true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
+        ax.plot(true_x['timestep'], true_x[v], color=color_dict['Ground Truth'], label='Ground Truth', linestyle='solid', zorder=1)
+
+
+      # for i, (ax, yrange, xrange) in enumerate(zip(time_plot.axes.flatten(), [(-15, 15), (0, 50), (0, 15)], [(0, 100), (0, 100), (0, 100)])):
+      #   ax.set_ylim(*yrange)
+      #   ax.set_xlim(*xrange)
+        
+      # if len(plans) <= 1:
+      #   continue
+
+      # ax.tick_params(
+      #   axis='x',           # changes apply to the x-axis
+      #   which='major',       # both major and minor ticks are affected
+      #   bottom=True,
+      #   top=False,
+      #   labelbottom=True)
+
+      print('Saving time plots')
+
+      if is_example:
+        plan_id_str = ''.join(plan_ids)
+        filename = f'{handler}_{method}_example_time_{plan_id_str}'
+      else:
+        filename = f'{handler}_{method}_time'
+
+      fig = time_plot.figure
       
       if kwargs.get('pdf', True):
         fig.savefig(os.path.join(output, f'{filename}.pdf'), bbox_inches='tight')
@@ -914,7 +1122,7 @@ def compare_to_default_accuracy_example(data, all_plans):
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
-  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table, accuracy')
+  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table, accuracy, time')
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
@@ -942,8 +1150,8 @@ if __name__ == '__main__':
       all_statistics[benchmark] = statistics
     table(all_statistics)
   else:
-    if args.example:
-      args.benchmark = ['example']
+    # if args.example:
+    #   args.benchmark = ['example']
 
     print(args.benchmark)
 
@@ -973,12 +1181,24 @@ if __name__ == '__main__':
 
         if args.task == 'plot':
           if args.example:
-            plan_ids_sets = [['1', '2'], ['1', '2', '5'], ['1', '2', '4'], ['1', '2', '4', '5']]
+            plan_ids_sets = [['1', '2'], ['1', '2', '5'], ['1', '2', '4'], ['1', '2', '4', '5'], ['1', '2', '3', '4', '5']]
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
             plot_particles(data, output, handlers, methods, plan_ids, config['plans'], particles, n_y, n_x, base_x, 
                            base_y, legend_width, args.example, args.error_bar, pdf=args.pdf)
+            
+        if args.task == 'time':
+          if args.example:
+            plan_ids_sets = [['2', '3'], ['2', '3', '4'], ['1', '2', '3', '4'], ['1', '2', '3', '4', '5']]
+          else:
+            plan_ids_sets = [args.plan_ids]
+          for plan_ids in plan_ids_sets:
+            if particles is None:
+              particle = 32
+            else:
+              particle = particles[0]
+            plot_time(data, output, handlers, methods, plan_ids, config['true_vars'], particle, legend_width, args.example, pdf=args.pdf)
 
         if args.task == 'compare':
           if args.example:

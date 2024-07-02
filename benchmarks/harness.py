@@ -111,7 +111,7 @@ def flatten_nested(structure):
   return flattened_list
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file, kwargs):
+def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file, raw, kwargs):
   # replace the file read with the correct datafile
   # File.read("data/processed_data.csv"))
   # string could be anything
@@ -126,9 +126,10 @@ def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file
   # run siren file
   cmd = f'siren {file} -m {method} -l {handler}'
   for k, v in kwargs.items():
-    cmd += f' --{k} {v}'
+    if v is not None:
+      cmd += f' --{k} {v}'
   
-  print('>', cmd)
+  tqdm.tqdm.write('>' + cmd)
 
   try:
     out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
@@ -202,10 +203,13 @@ def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file
 
     program_output[var] = error
 
+    if raw:
+      program_output[var + '_raw'] = out
+
   return eval_time, program_output
 
 # Run experiments for each given number of particles
-def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, results_file, error_func, data_file, kwargs):
+def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, results_file, error_func, data_file, raw, kwargs):
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -240,6 +244,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
           continue
 
         particles = kwargs.get('particles', kwargs.get('samples', None))
+        seed = kwargs.get('seed', None)
         if particles is None:
           raise ValueError('Must specify particles or samples')
         
@@ -252,9 +257,10 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               'particles': p,
               'samples': p,
               'warmup': kwargs.get('warmup', 0),
+              'seed': seed,
             }
 
-            run_outputs = run_siren(benchmark, file, handler, method, true_vars[handler], error_func, data_file[handler], siren_kwargs)
+            run_outputs = run_siren(benchmark, file, handler, method, true_vars[handler], error_func, data_file[handler], raw, siren_kwargs)
             if run_outputs is None:
               # timeout
               tqdm.tqdm.write(f'Timed out: {plan_id} {handler} {method} - {p} particles')
@@ -270,17 +276,22 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
 
               wandb.log(logging_output)
 
+            true_vars_list = [var[0] for var in true_vars[handler]]
+
+            row = [
+              plan_id,
+              handler,
+              method,
+              p,
+              t,
+            ]
+            row += [program_output[var] for var in true_vars_list]
+            row += [program_output[var + '_raw'] for var in true_vars_list]
+            
             # write results to csv
             with open(results_file, 'a') as f:
               writer = csv.writer(f)
-              writer.writerow([
-                plan_id,
-                handler,
-                method, 
-                p, 
-                t,
-                *(program_output.values())
-              ])
+              writer.writerow(row)
             if t == -1:
               break
 
@@ -520,7 +531,7 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
     results[handler] = handler_results
   return results
 
-def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kwargs):
+def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, raw, kwargs):
   outdir = os.path.join(benchmark)
   os.makedirs(outdir, exist_ok=True)
 
@@ -537,9 +548,11 @@ def run_benchmark(benchmark, output, n, handlers, methods, files, error_func, kw
       writer = csv.writer(f)
       fieldnames = ['plan_id', 'handler', 'method', 'particles', 'time']
       fieldnames += [var[0] for var in true_vars['smc']]
+      if raw:
+        fieldnames += [var[0]+'_raw' for var in true_vars['smc']]
       writer.writerow(fieldnames)
 
-  run_particles(benchmark, files, n, handlers, methods, config['plans'], true_vars, results_file, error_func, data_file, kwargs)
+  run_particles(benchmark, files, n, handlers, methods, config['plans'], true_vars, results_file, error_func, data_file, raw, kwargs)
 
   if LOGGING:
     artifact = wandb.Artifact(f'{benchmark}_results.csv', type='results')
@@ -576,6 +589,7 @@ if __name__ == '__main__':
   p.add_argument('--handlers', type=str, required=False)
   p.add_argument('--methods', '-m', type=str, required=False)
   p.add_argument('--logging', '-l', action='store_true')
+  p.add_argument('--seed', type=int, required=False)
 
   sp = p.add_subparsers(dest='subparser_name')
 
@@ -585,6 +599,7 @@ if __name__ == '__main__':
   rp.add_argument('--warmup', type=int, default=0)
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
+  rp.add_argument('--raw', '-r', action='store_true')
   
   ap = sp.add_parser('analyze')
 
@@ -612,8 +627,9 @@ if __name__ == '__main__':
     benchmark = 'example'
     kwargs = {
       'particles': particles,
+      'seed': args.seed,
     }
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', kwargs)
+    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
 
     print("Running the analysis for Section 5 Table 1")
     for benchmark in DEFAULT_BENCHMARKS:
@@ -623,7 +639,7 @@ if __name__ == '__main__':
     print("Running the benchmarks for Section 5 with n=1 Figure 15")
     for benchmark in ['outlier', 'noise']:
       print('Benchmark: {}'.format(benchmark))
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', kwargs)
+      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
 
     print("Running rest of the benchmarks with n=1 for Appendix E")
     for benchmark in DEFAULT_BENCHMARKS:
@@ -636,7 +652,7 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
         files = [
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan113.si', 
@@ -645,8 +661,8 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan120.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
       else:
         if benchmark in ['outlier', 'noise']:
           methods = ['ds', 'bp']
@@ -657,7 +673,7 @@ if __name__ == '__main__':
         else:
           methods = DEFAULT_METHODS
 
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
   elif args.subparser_name == 'artifact-eval':
     n = 10
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
@@ -665,11 +681,12 @@ if __name__ == '__main__':
     TIMEOUT = 300
     kwargs = {
       'particles': particles,
+      'seed': args.seed,
     }
     
     print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
     benchmark = 'example'
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', kwargs)
+    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
 
     print("Running the analysis for Section 5 Table 1")
     for benchmark in DEFAULT_BENCHMARKS:
@@ -680,7 +697,7 @@ if __name__ == '__main__':
     print(f"Running the benchmarks for Section 5 with n={n} Figure 15")
     for benchmark in ['outlier', 'noise']:
       print('Benchmark: {}'.format(benchmark))
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', kwargs)
+      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
 
     n = 1
     print(f"Running rest of the benchmarks with n={n} for Appendix E")
@@ -694,7 +711,7 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
         files = [
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan113.si', 
@@ -703,8 +720,8 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan120.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
       else:
         if benchmark in ['outlier', 'noise']:
           methods = ['ds', 'bp']
@@ -715,7 +732,7 @@ if __name__ == '__main__':
         else:
           methods = DEFAULT_METHODS
 
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
 
   elif args.subparser_name == 'full-replication':
     n = 100
@@ -723,6 +740,7 @@ if __name__ == '__main__':
     handlers = ['smc']
     kwargs = {
       'particles': particles,
+      'seed': args.seed,
     }
     TIMEOUT = 500
     
@@ -733,7 +751,7 @@ if __name__ == '__main__':
 
     print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
     benchmark = 'example'
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', kwargs)
+    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
     
     print(f"Running all benchmarks with n={n} for full replication")
     for benchmark in DEFAULT_BENCHMARKS:
@@ -746,7 +764,7 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
         files = [
           'benchmarks/slds/programs/plan112.si', 
           'benchmarks/slds/programs/plan113.si', 
@@ -755,8 +773,8 @@ if __name__ == '__main__':
           'benchmarks/slds/programs/plan120.si', 
           'benchmarks/slds/programs/plan127.si',
         ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
       else:
         if benchmark == 'outlierheavy':
           methods = ['ssi', 'ds']
@@ -765,7 +783,7 @@ if __name__ == '__main__':
         else:
           methods = DEFAULT_METHODS
 
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
 
   else:
     benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
@@ -805,9 +823,10 @@ if __name__ == '__main__':
           'particles': particles,
           'warmup': args.warmup,
           'samples': args.samples,
+          'seed': args.seed,
         }
 
-        run_benchmark(benchmark, args.output, args.n, handlers, methods, files, args.error_func, kwargs)
+        run_benchmark(benchmark, args.output, args.n, handlers, methods, files, args.error_func, args.raw, kwargs)
       elif args.subparser_name == 'analyze':
         analyze_benchmark(benchmark, files, args.output, handlers, methods)
 
