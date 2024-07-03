@@ -22,7 +22,7 @@ let invr <- gamma(1.,1.) in
 let q = 1/invq in
 let r = 1/invr in
 let (xs,alts,q,r) = 
-  fold(step,data,([0.],[0.], q,r)) in
+  fold(step,data,([0.],[10.], q,r)) in
 let xs = List.tl(List.rev(xs)) in
 let alts = List.tl(List.rev(alts)) in
 (xs, alts, q, r)
