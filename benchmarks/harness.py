@@ -286,7 +286,8 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               t,
             ]
             row += [program_output[var] for var in true_vars_list]
-            row += [program_output[var + '_raw'] for var in true_vars_list]
+            if raw:
+              row += [program_output[var + '_raw'] for var in true_vars_list]
             
             # write results to csv
             with open(results_file, 'a') as f:
