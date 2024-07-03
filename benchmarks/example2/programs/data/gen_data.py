@@ -8,14 +8,14 @@ turn_length = 10
 
 x_true = np.zeros(num_points)
 alt_true = np.zeros(num_points)
-alt_true[0] = 0.
+alt_true[0] = 10.
 
 q = 0.1
 
 for i in range(1, num_points):
   # x_true[i] = x_true[i - 1] + np.random.normal(0.5, np.sqrt(q))
   x_true[i] = np.sin(i / 10) * 5 + np.random.normal(0, np.sqrt(q))
-  alt_true[i] = i/10
+  alt_true[i] = 10. - i/10 + np.random.normal(0, np.sqrt(q))
 
 noise_std = 0.1
 x_noisy = x_true.copy()
@@ -24,7 +24,7 @@ alt_noisy = alt_true.copy()
 large_noise_indices = np.where(alt_true < 5, True, False)
 large_noise_indices = np.argwhere(large_noise_indices).flatten()
 
-large_noise = 1.
+large_noise = 1.5
 
 noise = np.full(num_points, noise_std)
 
