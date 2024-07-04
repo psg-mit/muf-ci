@@ -309,6 +309,20 @@
           "ssi": true
         }
       }
+    },
+    "6": {
+      "plan": {
+        "x": "sample",
+        "env": "sample",
+        "other": "sample",
+        "invq": "sample",
+        "invr": "sample"
+      },
+      "satisfiable": {
+        "smc": {
+          "ssi": true
+        }
+      }
     }
   },
   "variables": [
