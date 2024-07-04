@@ -266,6 +266,8 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               tqdm.tqdm.write(f'Timed out: {plan_id} {handler} {method} - {p} particles')
               t = -1
               program_output = {var[0]: -1 for var in true_vars}
+              if raw:
+                program_output = {var[0] + '_raw': -1 for var in true_vars}
             else:
               t, program_output = run_outputs
 
@@ -743,7 +745,7 @@ if __name__ == '__main__':
       'particles': particles,
       'seed': args.seed,
     }
-    TIMEOUT = 500
+    TIMEOUT = 300
     
     print("Running the analysis for Section 5 Table 1")
     for benchmark in DEFAULT_BENCHMARKS:
