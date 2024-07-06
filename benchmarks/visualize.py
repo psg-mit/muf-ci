@@ -2,7 +2,8 @@ import argparse
 import os
 import json
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import FormatStrFormatter, ScalarFormatter
+import matplotlib.patheffects as pe
 import pandas as pd
 from typing import List, Tuple, Dict
 import numpy as np
@@ -13,8 +14,6 @@ import seaborn as sns
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
-
-sns.set(style="whitegrid")
 
 BENCHMARK_DIR = 'benchmarks'
 
@@ -29,6 +28,7 @@ DEFAULT_BENCHMARKS = [
   'runner',
   'wheels',
   'slam',
+  'aircraft',
 ]
 
 DEFAULT_METHODS = [
@@ -99,7 +99,7 @@ BARLABELSIZE = 8
 
 N = 100
 
-GRIDPARAMS = {'which': 'major', 'color': 'gray', 'linestyle': '--', 'alpha': 0.5}
+GRIDPARAMS = {'which': 'major', 'color': 'lightgray', 'linestyle': '--'}
 
 # https://stackoverflow.com/questions/20470892/how-to-place-minor-ticks-on-symlog-scale
 class MinorSymLogLocator(Locator):
@@ -251,6 +251,8 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
 
   for handler in handlers:
     data = original_data.loc[original_data['handler'] == handler]
+    if data.shape[0] == 0:
+      continue
 
     for method_i, method in enumerate(methods):
 
@@ -275,6 +277,9 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
       #   continue
 
       use_label = True
+      if is_example:
+        variables = ['x', 'alt']
+
       for var_i, var in enumerate(variables):
         plot_i = var_i % n_x
         plot_j = var_i // n_x
@@ -298,9 +303,10 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
               labels = {
                 1: 'No Annotations',
                 2: 'Symbolic r Plan',
-                3: 'Dynamic r Plan',
+                3: 'Symbolic r Plan',
                 4: 'Symbolic x Plan',
                 5: 'Sample All Plan',
+                6: 'Symbolic a Plan*',
               }
               label = labels[plan_id]
           else:
@@ -347,6 +353,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
               3: '#C88AD9',
               4: '#9baa20',
               5: '#fac52f',
+              6: '#7cc7d2',
             }[plan_id]
             mec = {
               1: '#b7575c',
@@ -354,6 +361,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
               3: '#75528D',
               4: '#708200',
               5: '#c0ab5f',
+              6: '#4d9aa4',
             }[plan_id]
             marker = {
               1: 's',
@@ -361,6 +369,7 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
               3: 'o',
               4: 'd',
               5: 'X',
+              6: 'v',
             }[plan_id]
           else:
             mfc = COLORS[plan_i]
@@ -375,13 +384,22 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
             ax.scatter(runtimes, upper, marker=marker, color=mfc, label=label, 
                                       edgecolor=mec, s=MARKERSSIZE)
             
-            if is_example and plan_id in [2] and var == 'x':
+            if is_example and plan_id in [3] and var == 'alt':
               # draw arrow to a particle count
-              arrow_particle = 32
-              arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle] + 5)
-              ax.annotate(f'{arrow_particle}', xy=arrow_xy, xytext=(0,50), 
+              arrow_particle = 16
+              arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]+0.02)
+              ax.annotate(f'Configuration\nOptimizied\nFor alt\n(p = {arrow_particle})', xy=arrow_xy, xytext=(35,45), 
                 textcoords='offset points', ha='center', va='bottom',
-                arrowprops=dict(arrowstyle='->', color=mec))
+                path_effects=[pe.withStroke(linewidth=4, foreground="white")],
+                arrowprops=dict(arrowstyle='->, head_width=0.4', color="#2e2e2e", lw=1.5), fontsize=12)
+            if is_example and plan_id in [4] and var == 'x':
+              # draw arrow to a particle count
+              arrow_particle = 8
+              arrow_xy = (runtimes.loc[arrow_particle]+0.02, upper.loc[arrow_particle]+0.02)
+              ax.annotate(f'Configuration\nOptimizied\nFor x\n(p = {arrow_particle})', xy=arrow_xy, xytext=(40,60), 
+                textcoords='offset points', ha='center', va='bottom',
+                path_effects=[pe.withStroke(linewidth=4, foreground="white")],
+                arrowprops=dict(arrowstyle='->, head_width=0.4', color="#2e2e2e", lw=1.5), fontsize=12)
               # print(arrow_xy)
             # if is_example and plan_id in [3] and var == 'x':
             #   # draw arrow to a particle count
@@ -436,17 +454,35 @@ def plot_particles(data, output, handlers, methods, plan_ids, all_plans,
 
 
         use_label = False
-        ax.set_title(f'{var}')
+        # var_name = var if var != 'alt' else 'a'
+        var_name = var
+        ax.set_title(f'{var_name}')
         ax.grid(**GRIDPARAMS)
         ax.set_axisbelow(True)
 
         ax.set_xscale('log')
         ax.tick_params(
           axis='x',           # changes apply to the x-axis
-          which='major',       # both major and minor ticks are affected
+          which='both',       # both major and minor ticks are affected
           bottom=True,
           top=False,
-          labelbottom=True)
+          labelbottom=True,
+        )
+        ax.tick_params(
+          axis='y',           # changes apply to the x-axis
+          which='both',       # both major and minor ticks are affected
+          left=True,
+          bottom=False,
+          top=False,
+        )
+        ax.spines['bottom'].set_color('#000000')
+        ax.spines['top'].set_color('#000000') 
+        ax.spines['right'].set_color('#000000')
+        ax.spines['left'].set_color('#000000')
+        ax.spines['bottom'].set_linewidth(0.5)
+        ax.spines['top'].set_linewidth(0.5)
+        ax.spines['right'].set_linewidth(0.5)
+        ax.spines['left'].set_linewidth(0.5)
 
       print('Saving particles plots')
 
@@ -548,31 +584,79 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
       else:
         plans = original_plan_ids
 
+      sns_grid_params = {'grid.' + key: val for key, val in GRIDPARAMS.items()}
+      sns.set_theme(font_scale=2)
+      sns.set_style("whitegrid",{
+        'legend.facecolor':'white', 
+        'legend.edgecolor':'black', 
+        'legend.shadow':True, 
+        'legend.fancybox':True,
+        'legend.frameon':True,
+        'legend.framealpha':1,
+        'spines.left': True,
+        'spines.bottom': True,
+        'axes.edgecolor': 'black',
+        'axes.linewidth': 0.5,
+        **sns_grid_params,
+      })
+
       plans = [int(plan) for plan in plans]
 
       all_plot_data = pd.DataFrame(columns=['plan_id', 'timestep', 'variable', 'value'])
 
+      labels = {
+        0: 'Ground Truth',
+        1: 'No Annotations',
+        2: 'Symbolic r Plan',
+        3: 'Symbolic r Plan',
+        4: 'Symbolic x Plan',
+        5: 'Sample All Plan', 
+      }
+    
+      color_dict = {
+        1: '#b7575c',
+        2: '#4d9aa4',
+        3: '#75528D',
+        4: '#708200',
+        5: '#c0ab5f',
+        0: '#7B7B7B',
+      }
+      renamed_color_dict = {}
+
       for v in variables:
+        # if not v == 'x':
+        #   continue
         var = v + '_raw'
-        plot_data = data.loc[(data['particles'] == particle) & (data['method'] == method) & (data['plan_id'].isin(plans))]
+        if particle is not None:
+          plot_data = data.loc[(data['particles'] == particle) & (data['method'] == method) & (data['plan_id'].isin(plans))].copy()
+        else:
+          plot_data = data.loc[(data['method'] == method) & (data['plan_id'].isin(plans))].copy()
+
+        # rename plan_id to label
+        plot_data['label'] = plot_data.apply(lambda x: labels[x['plan_id']] + f' (p = ' + str(x['particles']) + ')', axis=1)
+        for _, row in plot_data.iterrows():
+          renamed_color_dict[row['label']] = color_dict[row['plan_id']]
+
+        plot_data = plot_data.drop(columns=['plan_id']).rename(columns={'label': 'plan_id'})
+
         plot_data = plot_data.drop(columns=['particles', 'method', 'handler', 'time']+[va+'_raw' for va in variables if va != v])
         plot_data[var] = plot_data[var].apply(lambda x: x[1:-1].split(','))
         # expand x_raw into columns
         plot_data = pd.concat([plot_data.drop(columns=[var]), plot_data[var].apply(pd.Series)], axis=1)
         plot_data = plot_data.melt(id_vars=['plan_id'], var_name='timestep', value_name=v)
 
-        # true_x = [vals for var, vals in true_vars[handler] if var == v][0]
-        # true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
-
-        # # subtract true_x from x # matching by timestep
-        # plot_data[v] = plot_data[v].astype(float)
-        # plot_data[v] = plot_data.apply(lambda row: abs(row[v] - true_x.loc[true_x['timestep'] == int(row['timestep'])][v].values[0]), axis=1)
-        
+        #plot error
         true_x = [vals for var, vals in true_vars[handler] if var == v][0]
         true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
-        true_x['plan_id'] = 0
-        true_x[v] = true_x[v].astype(float)
-
+        # subtract true_x from x # matching by timestep
+        plot_data[v] = plot_data[v].astype(float)
+        plot_data[v] = plot_data.apply(lambda row: abs(row[v] - true_x.loc[true_x['timestep'] == int(row['timestep'])][v].values[0]) ** 2, axis=1)
+        
+        # plot estimation
+        # true_x = [vals for var, vals in true_vars[handler] if var == v][0]
+        # true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
+        # true_x['plan_id'] = 0
+        # true_x[v] = true_x[v].astype(float)
         # plot_data = pd.concat([plot_data, true_x])
 
         plot_data[v] = plot_data[v].astype(float)
@@ -591,66 +675,98 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
 
       all_plot_data = pd.concat([all_plot_data])
 
-      labels = {
-        0: 'Ground Truth',
-        1: 'No Annotations',
-        2: 'Symbolic r Plan',
-        3: 'Dynamic r Plan',
-        4: 'Symbolic x Plan',
-        5: 'Sample All Plan',
-      }
-
-      # rename plan_id to label
-      all_plot_data['plan_id'] = all_plot_data['plan_id'].apply(lambda x: labels[x])
-
-      # palette = ['#f4827b','#7cc7d2','#C88AD9','#9baa20','#fac52f']
-      color_dict = {
-        'No Annotations': '#b7575c',
-        'Symbolic r Plan':'#4d9aa4', 
-        'Dynamic r Plan': "#c78200",
-        'Symbolic x Plan':'#708200', 
-        'Sample All Plan': '#75528D',
-        'Ground Truth': '#7B7B7B',
-      }
-
       timesteps = 100
 
+      used_plot_data = all_plot_data[all_plot_data['timestep'].isin(list(range(timesteps))) & (all_plot_data['variable'].isin(['x', 'alt']))]
+
+      # for var in variables:
+
       time_plot = sns.relplot(
-        data=all_plot_data[all_plot_data['timestep'].isin(list(range(timesteps)))], 
+        data=used_plot_data,
         kind="line",
         x="timestep", 
         y="value",
         hue="plan_id",
         style="plan_id",
-        palette=color_dict,
+        palette=renamed_color_dict,
         markers=True,
         markersize=5,
         # linestyle='--',
-        row='variable',
+        # row='variable',
+        col='variable',
+        hue_order=['Symbolic x Plan (p = 8)', 'Symbolic r Plan (p = 16)'],
+        style_order=['Symbolic x Plan (p = 8)', 'Symbolic r Plan (p = 16)'],
         facet_kws={'sharey': False, 'sharex': False},
         aspect=2,
+        height=4,
       )
+      # time_plot.set(title=f'{var}', xlabel='Timestep', ylabel='Error')
+      
+      time_plot.legend.remove()
 
-      # plot true_x
-      for v, ax in zip(variables, time_plot.axes.flatten()):
-        true_x = [vals for var, vals in true_vars[handler] if var == v][0]
-        true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
-        ax.plot(true_x['timestep'], true_x[v], color=color_dict['Ground Truth'], label='Ground Truth', linestyle='solid', zorder=1)
+        # plot true_x
+      for i, (v, ax) in enumerate(zip(variables, time_plot.axes.flatten())):
+        # ax = time_plot.axes.flatten()[0]
+        if i == 0:
+          ax.legend(ncols=4, loc='upper center', bbox_to_anchor=(1., -0.4))
+        # save the legend into a separate file
+        # label_params = ax.get_legend_handles_labels() 
 
-
-      # for i, (ax, yrange, xrange) in enumerate(zip(time_plot.axes.flatten(), [(-15, 15), (0, 50), (0, 15)], [(0, 100), (0, 100), (0, 100)])):
-      #   ax.set_ylim(*yrange)
-      #   ax.set_xlim(*xrange)
+        # figl, axl = plt.subplots(figsize=(5, 1))
+        # axl.axis(False)
+        # axl.legend(*label_params, loc="center", bbox_to_anchor=(0.5, 0.5), ncol=4)
+        # figl.savefig(os.path.join(output, f'legend_{handler}_{method}.png'), bbox_inches='tight')
+        # if kwargs.get('pdf', True):
+        #   figl.savefig(os.path.join(output, f'legend_{handler}_{method}.pdf'), bbox_inches='tight')
         
-      # if len(plans) <= 1:
-      #   continue
+        # if benchmark == 'examplegood':
+        #   ax.get_legend().remove()
 
-      # ax.tick_params(
-      #   axis='x',           # changes apply to the x-axis
-      #   which='major',       # both major and minor ticks are affected
-      #   bottom=True,
-      #   top=False,
-      #   labelbottom=True)
+        # if benchmark == 'examplegood':
+        ax.set_title(f'{v}')
+        # else:
+        #   ax.set_title(f'')
+        # if benchmark == 'examplegood':
+        #   ax.set_xlabel('')
+        # else:
+        ax.set_xlabel('Timestep')
+        if i == 0:
+          ax.set_ylabel('Error')
+
+        # set y ticks to have 1 decimal place
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+
+        # true_x = [vals for v, vals in true_vars[handler] if var == v][0]
+        # true_x = pd.DataFrame(true_x, columns=[var]).reset_index(names=['timestep', var])
+        ax.tick_params(
+          axis='x',           # changes apply to the x-axis
+          which='both',       # both major and minor ticks are affected
+          bottom=True,
+          top=False,
+          labelbottom=True,
+        )
+        ax.tick_params(
+          axis='y',           # changes apply to the x-axis
+          which='both',       # both major and minor ticks are affected
+          left=True,
+          bottom=False,
+          top=False,
+        )
+        # ax.plot(true_x['timestep'], true_x[var], color=color_dict['Ground Truth'], label='Ground Truth', linestyle='solid', zorder=1)
+
+        # for i, (ax, yrange, xrange) in enumerate(zip(time_plot.axes.flatten(), [(-15, 15), (0, 50), (0, 15)], [(0, 100), (0, 100), (0, 100)])):
+        #   ax.set_ylim(*yrange)
+        #   ax.set_xlim(*xrange)
+          
+        # if len(plans) <= 1:
+        #   continue
+
+        # ax.tick_params(
+        #   axis='x',           # changes apply to the x-axis
+        #   which='major',       # both major and minor ticks are affected
+        #   bottom=True,
+        #   top=False,
+        #   labelbottom=True)
 
       print('Saving time plots')
 
@@ -658,7 +774,7 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
         plan_id_str = ''.join(plan_ids)
         filename = f'{handler}_{method}_example_time_{plan_id_str}'
       else:
-        filename = f'{handler}_{method}_time'
+        filename = f'{handler}_{method}_time_{var}'
 
       fig = time_plot.figure
       
@@ -1035,6 +1151,7 @@ def compare_to_default_accuracy(benchmark, data, methods, plan_ids, all_plans, d
         print("\\\\")
 
   non_default = all_times.apply(lambda x: x['plan'] != int(default_plans[x['method']]), axis=1)
+  print(non_default)
   non_default_times = all_times.loc[non_default].copy()
   return all_times, non_default_times
 
@@ -1181,7 +1298,7 @@ if __name__ == '__main__':
 
         if args.task == 'plot':
           if args.example:
-            plan_ids_sets = [['1', '2'], ['1', '2', '5'], ['1', '2', '4'], ['1', '2', '4', '5'], ['1', '2', '3', '4', '5']]
+            plan_ids_sets = [['1', '4', '3'], ['1', '2', '3', '4'], ['1', '3', '4', '5', '6']]
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
@@ -1190,12 +1307,12 @@ if __name__ == '__main__':
             
         if args.task == 'time':
           if args.example:
-            plan_ids_sets = [['2', '3'], ['2', '3', '4'], ['1', '2', '3', '4'], ['1', '2', '3', '4', '5']]
+            plan_ids_sets = [['4', '3']]
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
             if particles is None:
-              particle = 32
+              particle = None
             else:
               particle = particles[0]
             plot_time(data, output, handlers, methods, plan_ids, config['true_vars'], particle, legend_width, args.example, pdf=args.pdf)

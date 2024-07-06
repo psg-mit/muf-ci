@@ -28,6 +28,7 @@ DEFAULT_BENCHMARKS = [
   'radar',
   'wheels',
   'slam',
+  'aircraft',
 ]
 
 DEFAULT_METHODS = [
