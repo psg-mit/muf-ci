@@ -232,8 +232,8 @@
   "base_y": 3,
   "base_x": 4,
   "n_y": 1,
-  "n_x": 4,
-  "legend_width": 4,
+  "n_x": 2,
+  "legend_width": 3,
   "error_func": "se",
   "known_enc": {
     "other": "sample",
