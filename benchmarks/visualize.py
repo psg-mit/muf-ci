@@ -1481,7 +1481,7 @@ def compare_to_default_accuracy_example(data, all_plans):
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
-  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare, table, accuracy, time')
+  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare_time, table, compare_accuracy, time')
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
@@ -1509,7 +1509,7 @@ if __name__ == '__main__':
       all_statistics[benchmark] = statistics
     table(all_statistics)
 
-  elif args.task == 'accuracy' or args.task == 'compare':
+  elif args.task == 'compare_accuracy' or args.task == 'compare_time':
     print(args.benchmark)
 
     for handler in args.handlers:
@@ -1534,7 +1534,7 @@ if __name__ == '__main__':
           if args.example:
             compare_to_default_accuracy_example(data, config['plans'])
           else:
-            if args.task == 'accuracy':
+            if args.task == 'compare_accuracy':
               benchmark_times, non_default_times = compare_to_default_accuracy(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'])
 
               benchmark_times['benchmark'] = benchmark
@@ -1549,7 +1549,7 @@ if __name__ == '__main__':
               else:
                 all_non_default_times = pd.concat([all_non_default_times, non_default_times])
 
-            if args.task == 'compare':
+            if args.task == 'compare_time':
               benchmark_acc, non_default_acc = compare_to_default_time(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'])
 
               benchmark_acc['benchmark'] = benchmark
@@ -1566,7 +1566,7 @@ if __name__ == '__main__':
 
       if not args.example:
 
-        if args.task == 'accuracy':
+        if args.task == 'compare_accuracy':
           # print(all_times)
           # print(all_non_default_times)
           # compute geometric mean of speedups
@@ -1588,7 +1588,7 @@ if __name__ == '__main__':
           print(f"Min Speedup: {round(min_speedup, 2)}")
           print(f"Max Speedup: {round(max_speedup, 2)}")
 
-        if args.task == 'compare':
+        if args.task == 'compare_time':
           # print(all_acc)
           # print(all_non_default_acc)
 
@@ -1620,7 +1620,7 @@ if __name__ == '__main__':
     print(args.benchmark)
 
     for benchmark in args.benchmark:
-      if not args.task == 'accuracy':
+      if not args.task == 'compare_accuracy':
         print('=============================')
         print('Benchmark: {}'.format(benchmark))
 
@@ -1660,9 +1660,3 @@ if __name__ == '__main__':
             else:
               particle = particles[0]
             plot_time(data, output, handlers, methods, plan_ids, config['true_vars'], particle, legend_width, args.example, pdf=args.pdf)
-
-        # if args.task == 'compare':
-        #   if args.example:
-        #     compare_to_default_example(data, methods, args.plan_ids, config['plans'], config['default'])
-        #   else:
-        #     compare_to_default(data, methods, args.plan_ids, config['plans'], config['default'])
