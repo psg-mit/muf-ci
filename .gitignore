@@ -14,6 +14,8 @@ benchmarks/*/*.ml
 benchmarks/*/output/
 benchmarks/*/output_paper/*.pdf
 benchmarks/*/output_paper/*.png
+benchmarks/*/output_time/*.pdf
+benchmarks/*/output_time/*.png
 benchmarks/*/test*
 benchmarks/*/all_programs/*.ml
 .vscode/
