@@ -1,241 +1,303 @@
 {
   "benchmark": "slds",
-  "true_vars": [
-    [
-      "trans_prob0",
+  "data_file": {
+    "smc": "data/processed_data.csv",
+    "mh": "data/processed_data2.csv"
+  },
+  "true_vars": {
+    "smc": [
       [
-        0.1
+        "trans_prob0",
+        [
+          0.1
+        ]
+      ],
+      [
+        "trans_prob1",
+        [
+          0.75
+        ]
+      ],
+      [
+        "obs_noise0",
+        [
+          2.0
+        ]
+      ],
+      [
+        "obs_noise1",
+        [
+          0.1
+        ]
+      ],
+      [
+        "s",
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      [
+        "x",
+        [
+          -0.3514279773025632,
+          -0.5397332365873918,
+          -0.6791335588681606,
+          -0.8815348536853997,
+          -1.1295022889473185,
+          -1.1872114852759021,
+          -0.9006928216463042,
+          -1.1017981749705048,
+          -1.4099126916023845,
+          -1.4380253074410954,
+          -1.533774993921229,
+          -1.7819433747121753,
+          -1.8707715033381451,
+          -1.9858801902994088,
+          -0.09934108264657437,
+          -0.09520856501242633,
+          0.04079916952649232,
+          0.5125653027698929,
+          0.15637030765517207,
+          0.08901771445448642,
+          0.2634793903865865,
+          -1.022326218520364,
+          -1.739786435382804,
+          -1.7264402452734795,
+          -0.7413450800827464,
+          -1.86343177651403,
+          -3.7767930224724666,
+          -1.3480941614628663,
+          -1.2847794351627493,
+          -1.453902794915468,
+          -0.39768218263673805,
+          0.2817841731256223,
+          0.27693573308642516,
+          -0.5518782166035633,
+          -2.0568256396278994,
+          -1.879477756046735,
+          -1.2358579195137132,
+          0.7542133397361184,
+          0.822743025124685,
+          1.1435341725052368,
+          -0.13088678778152185,
+          0.6110416573372025,
+          0.8449477048451703,
+          0.9799189002855213,
+          0.8162068825855633,
+          0.7937420914352071,
+          0.5619264041403718,
+          0.6866525837853732,
+          0.6063749087735295,
+          0.696583160458967,
+          0.49318450680221826,
+          1.1727857582296766,
+          0.9990264638090808,
+          0.9313631584378832,
+          1.1048239086475002,
+          1.0126689677959673,
+          1.1185261046908557,
+          0.9383778385218459,
+          1.2726598659119417,
+          1.2560183449316864,
+          1.3417853266385007,
+          1.2543266803500888,
+          1.2473185715104447,
+          1.1168462426545058,
+          0.719989407524519,
+          0.5685748806505007,
+          0.4798005319798036,
+          0.23975159979597682,
+          0.08762391231143513,
+          -0.1008362969408397,
+          0.12032523941142986,
+          0.06793783392554006,
+          -0.12675064097562166,
+          -0.0440248784378522,
+          -0.14528232990534518,
+          -0.26308663526782444,
+          -0.07036103390548346,
+          -0.04006078241159895,
+          -0.11684594346393351,
+          -0.2776182743197364,
+          -0.4167141704796047,
+          -0.3768928591033245,
+          -0.5997359575332649,
+          -0.6799197321555778,
+          -0.5385015955043356,
+          -0.44980760302073863,
+          -0.624598059999578,
+          -0.4672926891101806,
+          -0.8020209694027083,
+          -0.30747295848599776,
+          -0.6080580828093731,
+          -0.6295856215303894,
+          0.958640641258125,
+          0.014125963357800364,
+          0.09852069491081064,
+          0.22997259939672154,
+          0.3014132937282333,
+          0.29909601751859294,
+          0.23889726660036711,
+          -0.02988359930255083
+        ]
       ]
     ],
-    [
-      "trans_prob1",
+    "mh": [
       [
-        0.75
-      ]
-    ],
-    [
-      "obs_noise0",
+        "trans_prob0",
+        [
+          0.1
+        ]
+      ],
       [
-        2.0
-      ]
-    ],
-    [
-      "obs_noise1",
+        "trans_prob1",
+        [
+          0.75
+        ]
+      ],
       [
-        0.1
-      ]
-    ],
-    [
-      "s",
+        "obs_noise0",
+        [
+          2.0
+        ]
+      ],
       [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ]
-    ],
-    [
-      "x",
+        "obs_noise1",
+        [
+          0.1
+        ]
+      ],
       [
-        -0.3514279773025632,
-        -0.5397332365873918,
-        -0.6791335588681606,
-        -0.8815348536853997,
-        -1.1295022889473185,
-        -1.1872114852759021,
-        -0.9006928216463042,
-        -1.1017981749705048,
-        -1.4099126916023845,
-        -1.4380253074410954,
-        -1.533774993921229,
-        -1.7819433747121753,
-        -1.8707715033381451,
-        -1.9858801902994088,
-        -0.09934108264657437,
-        -0.09520856501242633,
-        0.04079916952649232,
-        0.5125653027698929,
-        0.15637030765517207,
-        0.08901771445448642,
-        0.2634793903865865,
-        -1.022326218520364,
-        -1.739786435382804,
-        -1.7264402452734795,
-        -0.7413450800827464,
-        -1.86343177651403,
-        -3.7767930224724666,
-        -1.3480941614628663,
-        -1.2847794351627493,
-        -1.453902794915468,
-        -0.39768218263673805,
-        0.2817841731256223,
-        0.27693573308642516,
-        -0.5518782166035633,
-        -2.0568256396278994,
-        -1.879477756046735,
-        -1.2358579195137132,
-        0.7542133397361184,
-        0.822743025124685,
-        1.1435341725052368,
-        -0.13088678778152185,
-        0.6110416573372025,
-        0.8449477048451703,
-        0.9799189002855213,
-        0.8162068825855633,
-        0.7937420914352071,
-        0.5619264041403718,
-        0.6866525837853732,
-        0.6063749087735295,
-        0.696583160458967,
-        0.49318450680221826,
-        1.1727857582296766,
-        0.9990264638090808,
-        0.9313631584378832,
-        1.1048239086475002,
-        1.0126689677959673,
-        1.1185261046908557,
-        0.9383778385218459,
-        1.2726598659119417,
-        1.2560183449316864,
-        1.3417853266385007,
-        1.2543266803500888,
-        1.2473185715104447,
-        1.1168462426545058,
-        0.719989407524519,
-        0.5685748806505007,
-        0.4798005319798036,
-        0.23975159979597682,
-        0.08762391231143513,
-        -0.1008362969408397,
-        0.12032523941142986,
-        0.06793783392554006,
-        -0.12675064097562166,
-        -0.0440248784378522,
-        -0.14528232990534518,
-        -0.26308663526782444,
-        -0.07036103390548346,
-        -0.04006078241159895,
-        -0.11684594346393351,
-        -0.2776182743197364,
-        -0.4167141704796047,
-        -0.3768928591033245,
-        -0.5997359575332649,
-        -0.6799197321555778,
-        -0.5385015955043356,
-        -0.44980760302073863,
-        -0.624598059999578,
-        -0.4672926891101806,
-        -0.8020209694027083,
-        -0.30747295848599776,
-        -0.6080580828093731,
-        -0.6295856215303894,
-        0.958640641258125,
-        0.014125963357800364,
-        0.09852069491081064,
-        0.22997259939672154,
-        0.3014132937282333,
-        0.29909601751859294,
-        0.23889726660036711,
-        -0.02988359930255083
+        "s",
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      [
+        "x",
+        [
+          -0.3514279773025632,
+          -0.5397332365873918,
+          -0.6791335588681606,
+          -0.8815348536853997,
+          -1.1295022889473185,
+          -1.1872114852759021,
+          -0.9006928216463042,
+          -1.1017981749705048,
+          -1.4099126916023845,
+          -1.4380253074410954
+        ]
       ]
     ]
-  ],
+  },
   "base_y": 3,
   "base_x": 4,
   "n_y": 2,
@@ -254,9 +316,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "1": {
@@ -270,9 +339,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "2": {
@@ -286,9 +362,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "3": {
@@ -302,9 +385,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "4": {
@@ -318,9 +408,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "5": {
@@ -334,9 +431,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "6": {
@@ -350,9 +454,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "7": {
@@ -366,9 +477,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "8": {
@@ -382,9 +500,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "9": {
@@ -398,9 +523,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "10": {
@@ -414,9 +546,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "11": {
@@ -430,9 +569,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "12": {
@@ -446,9 +592,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "13": {
@@ -462,9 +615,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "14": {
@@ -478,9 +638,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "15": {
@@ -494,9 +661,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "16": {
@@ -510,9 +684,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "17": {
@@ -526,9 +707,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "18": {
@@ -542,9 +730,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "19": {
@@ -558,9 +753,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "20": {
@@ -574,9 +776,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "21": {
@@ -590,9 +799,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "22": {
@@ -606,9 +822,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "23": {
@@ -622,9 +845,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "24": {
@@ -638,9 +868,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "25": {
@@ -654,9 +891,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "26": {
@@ -670,9 +914,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "27": {
@@ -686,9 +937,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "28": {
@@ -702,9 +960,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "29": {
@@ -718,9 +983,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "30": {
@@ -734,9 +1006,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "31": {
@@ -750,9 +1029,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "32": {
@@ -766,9 +1052,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "33": {
@@ -782,9 +1075,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "34": {
@@ -798,9 +1098,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "35": {
@@ -814,9 +1121,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "36": {
@@ -830,9 +1144,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "37": {
@@ -846,9 +1167,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "38": {
@@ -862,9 +1190,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "39": {
@@ -878,9 +1213,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "40": {
@@ -894,9 +1236,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "41": {
@@ -910,9 +1259,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "42": {
@@ -926,9 +1282,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "43": {
@@ -942,9 +1305,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "44": {
@@ -958,9 +1328,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "45": {
@@ -974,9 +1351,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "46": {
@@ -990,9 +1374,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "47": {
@@ -1006,9 +1397,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "48": {
@@ -1022,9 +1420,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "49": {
@@ -1038,9 +1443,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "50": {
@@ -1054,9 +1466,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "51": {
@@ -1070,9 +1489,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "52": {
@@ -1086,9 +1512,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "53": {
@@ -1102,9 +1535,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "54": {
@@ -1118,9 +1558,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "55": {
@@ -1134,9 +1581,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "56": {
@@ -1150,9 +1604,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "57": {
@@ -1166,9 +1627,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "58": {
@@ -1182,9 +1650,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "59": {
@@ -1198,9 +1673,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "60": {
@@ -1214,9 +1696,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "61": {
@@ -1230,9 +1719,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "62": {
@@ -1246,9 +1742,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "63": {
@@ -1262,9 +1765,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "64": {
@@ -1278,9 +1788,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "65": {
@@ -1294,9 +1811,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "66": {
@@ -1310,9 +1834,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "67": {
@@ -1326,9 +1857,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "68": {
@@ -1342,9 +1880,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "69": {
@@ -1358,9 +1903,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "70": {
@@ -1374,9 +1926,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "71": {
@@ -1390,9 +1949,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "72": {
@@ -1406,9 +1972,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "73": {
@@ -1422,9 +1995,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "74": {
@@ -1438,9 +2018,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "75": {
@@ -1454,9 +2041,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "76": {
@@ -1470,9 +2064,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "77": {
@@ -1486,9 +2087,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "78": {
@@ -1502,9 +2110,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "79": {
@@ -1518,9 +2133,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": true
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        }
       }
     },
     "80": {
@@ -1534,9 +2156,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "81": {
@@ -1550,9 +2179,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "82": {
@@ -1566,9 +2202,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "83": {
@@ -1582,9 +2225,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "84": {
@@ -1598,9 +2248,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "85": {
@@ -1614,9 +2271,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "86": {
@@ -1630,9 +2294,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "87": {
@@ -1646,9 +2317,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "88": {
@@ -1662,9 +2340,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "89": {
@@ -1678,9 +2363,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "90": {
@@ -1694,9 +2386,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "91": {
@@ -1710,9 +2409,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "92": {
@@ -1726,9 +2432,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "93": {
@@ -1742,9 +2455,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "94": {
@@ -1758,9 +2478,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "95": {
@@ -1774,9 +2501,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": true
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        }
       }
     },
     "96": {
@@ -1790,9 +2524,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "97": {
@@ -1806,9 +2547,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "98": {
@@ -1822,9 +2570,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "99": {
@@ -1838,9 +2593,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "100": {
@@ -1854,9 +2616,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "101": {
@@ -1870,9 +2639,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "102": {
@@ -1886,9 +2662,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "103": {
@@ -1902,9 +2685,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "104": {
@@ -1918,9 +2708,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "105": {
@@ -1934,9 +2731,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "106": {
@@ -1950,9 +2754,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "107": {
@@ -1966,9 +2777,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "108": {
@@ -1982,9 +2800,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "109": {
@@ -1998,9 +2823,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": false,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": false,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "110": {
@@ -2014,9 +2846,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": false
+        }
       }
     },
     "111": {
@@ -2030,9 +2869,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": false,
-        "bp": true
+        "smc": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": false,
+          "bp": true
+        }
       }
     },
     "112": {
@@ -2046,9 +2892,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "113": {
@@ -2062,9 +2915,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "114": {
@@ -2078,9 +2938,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "115": {
@@ -2094,9 +2961,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "116": {
@@ -2110,9 +2984,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "117": {
@@ -2126,9 +3007,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "118": {
@@ -2142,9 +3030,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "119": {
@@ -2158,9 +3053,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "120": {
@@ -2174,9 +3076,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "121": {
@@ -2190,9 +3099,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "122": {
@@ -2206,9 +3122,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "123": {
@@ -2222,9 +3145,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "124": {
@@ -2238,9 +3168,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "125": {
@@ -2254,9 +3191,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "126": {
@@ -2270,9 +3214,16 @@
         "inv_obs_noise1": "symbolic"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": false
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": false
+        }
       }
     },
     "127": {
@@ -2286,9 +3237,16 @@
         "inv_obs_noise1": "sample"
       },
       "satisfiable": {
-        "ssi": true,
-        "ds": true,
-        "bp": true
+        "smc": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        },
+        "mh": {
+          "ssi": true,
+          "ds": true,
+          "bp": true
+        }
       }
     }
   },
@@ -2302,8 +3260,15 @@
     "inv_obs_noise1"
   ],
   "default": {
-    "ssi": "115",
-    "ds": "115",
-    "bp": "79"
+    "smc": {
+      "ssi": "115",
+      "ds": "115",
+      "bp": "79"
+    },
+    "mh": {
+      "ssi": "115",
+      "ds": "115",
+      "bp": "79"
+    }
   }
 }

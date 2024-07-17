@@ -10,7 +10,7 @@ inv_obs_noise1 - sample
 
 val preprocess_data = fun entry -> List.hd(List.tl(List.tl(entry))) in
 
-val s_transition = fun (p, prev_st) ->
+val s_transition = fun (p) ->
   let symbolic s <- bernoulli(p) in
   s
 in
@@ -20,21 +20,23 @@ val step = fun (yobs, ((trans_prob0, trans_prob1, obs_noise0, obs_noise1), ss, x
   let prev_xt = List.hd(xs) in
 
   (* p(s_t | s_{t-1}) *)
-  let st = if prev_st then
-    s_transition(trans_prob1, prev_st)
+  let trans_prob = if prev_st then
+    trans_prob1
   else
-    s_transition(trans_prob0, prev_st)
+    trans_prob0
   in
+  let st = s_transition(trans_prob) in
 
   (* p(x_t | x_{t-1}, s_t) *)
+  let symbolic x1 <- gaussian(prev_xt, 1.2429) in
+  let symbolic x0 <- gaussian(prev_xt, 0.02248262) in
   let xt = if st then
-    let symbolic x1 <- gaussian(prev_xt, 1.2429) in
     x1
   else
-    let symbolic x0 <- gaussian(prev_xt, 0.02248262) in
     x0
   in
 
+  (* p(z_t | x_t, s_t) *)
   let var = if st then obs_noise1 else obs_noise0 in
 
   let () = observe(gaussian(xt, var), yobs) in

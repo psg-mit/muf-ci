@@ -18,6 +18,8 @@ class AbsSSIState(AbsSymState):
     s = '\n\t'.join(map(str, self.state.items()))
     return f"AbsSSIState(\n\t{s}\n)" if s else "AbsSSIState()"
   
+  # Returns reachable random variables from the given set of random variables
+  # Used for determining which random variables to consider during fixpoint
   def entry_referenced_rvs(self, rvs: Set[AbsRandomVar]) -> Set[AbsRandomVar]:
     # Don't need to remember the Deltas because always eval before anything
 
@@ -42,17 +44,15 @@ class AbsSSIState(AbsSymState):
     return referenced_rvs
 
   ### Symbolic Interface ###
-  def assume(self, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
-    rv = self.new_var()
+  def assume(self, rv: AbsRandomVar, name: Optional[Identifier], annotation: Optional[Annotation], distribution: AbsSymDistr[T]) -> AbsRandomVar[T]:
     pv = {name} if name is not None else set()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
-      else:
-        self.annotations[name] = annotation
+    self.set_annotation(rv, annotation)
 
-    self.set_distr(rv, distribution)
     self.set_pv(rv, pv)
+    self.set_distr(rv, distribution)
     return rv
 
   def observe(self, rv: AbsRandomVar[T], value: AbsConst[T]) -> None:
@@ -68,7 +68,7 @@ class AbsSSIState(AbsSymState):
     self.intervene(rv, AbsDelta(value, sampled=False))
     return
 
-  def value_impl(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
+  def inner_value(self, rv: AbsRandomVar[T]) -> AbsConst[T]:
     def _value() -> None:
       try:
         self.hoist_and_eval(rv)
@@ -254,7 +254,7 @@ class AbsSSIState(AbsSymState):
         case AbsDelta(v, _):
           return self.depends_on(v, rv_par, False) and (not _has_other_deps_on_par(v))
         case UnkD(parents):
-          return False
+          return not (rv_par in parents)
         case TopD():
           return False
         case _:
@@ -294,7 +294,8 @@ class AbsSSIState(AbsSymState):
           return False
         case _:
           return False
-
+    
+    # Detects if the distribution contains a TopD or TopE
     def _contains_top(rv: AbsRandomVar) -> bool:
       def _contains_top_expr(expr: AbsSymExpr) -> bool:
         match expr:
@@ -356,20 +357,34 @@ class AbsSSIState(AbsSymState):
         
     def _contains_cycle(rv: AbsRandomVar) -> bool:
       visited = set()
-      queue = deque()
-      queue.append(rv)
-      while queue:
-        rv_cur = queue.popleft()
-        if rv_cur in visited:
-          return True
-        visited.add(rv_cur)
-        queue.extend(self.parents(rv_cur))
-      return False
+      stack = []
+
+      def dfs(rv_cur):
+        if rv_cur not in visited:
+          visited.add(rv_cur)
+          stack.append(rv_cur)
+
+          parents = []
+          for par in self.parents(rv_cur):
+            if not par in parents:
+              parents.append(par)
+
+          for par in parents:
+            if par not in visited and dfs(par):
+              return True
+            elif par in stack:
+              return True
+          stack.remove(rv_cur)
+        return False
+      
+      return dfs(rv)
         
     def _hoist_inner(rv_cur: AbsRandomVar, ghost_roots: Set[AbsRandomVar]) -> None:
       # Joins can cause cycles so we need to detect them
       # Before we do topological sort
       if _contains_cycle(rv_cur):
+        # print(rv_cur)
+        # print(self.state)
         self.set_dynamic(rv_cur)
         self.set_distr(rv_cur, TopD())
         return
@@ -385,6 +400,10 @@ class AbsSSIState(AbsSymState):
       # Hoist current node
       for rv_par in parents[::-1]:
         if rv_par not in ghost_roots:
+          # Circular dependencies caused by joins means we don't know
+          # what to do, so just set to Top
+          # which will cause analysis to conservatively raise exception
+          # if variable is annotated
           if not _can_swap(rv_par, rv_cur):
             self.set_dynamic(rv_cur)
             self.set_distr(rv_cur, TopD())

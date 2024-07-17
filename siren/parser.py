@@ -81,10 +81,11 @@ BLOCK_COMMENT: "(*" /((?!\*\)).|\n)+/ "*)"
 %ignore WS
 ''')
 
-
+# Parse Siren program (string) into AST
 def parse_program(program: str) -> Program:
   parse_tree = parser.parse(program + '\n')
 
+  # Makes an identifier, which can have a Module name
   def _make_identifier(x: Any) -> Identifier:
     if x.data == "ident":
       return Identifier(None, str(x.children[0].value))
@@ -94,6 +95,7 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x)
 
+  # Parse Annotation and Identifier
   def _make_annot_ident(x: Any) -> Tuple[Optional[Annotation], Identifier]:
     if x.data == "sample":
       return Annotation.sample, _make_identifier(x.children[0])
@@ -104,6 +106,7 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x)
 
+  # Parse a pattern for variable binding as a list of identifiers
   def _make_pattern(x: Any) -> List[Any]:
     if x.data == "paren":
       return _make_pattern(x.children[0])
@@ -122,6 +125,7 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x)
     
+  # Prase arguments into list of expressions
   def _make_args(x: Any) -> List[Expr]:
     if x.data == "expressionlist":
       return [_make_expression(e) for e in x.children]
@@ -130,6 +134,7 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x)
     
+  # Parse Pair expressions, which is allowed to be flattened
   def _make_pairs(x: List[Any]) -> Expr:
     if len(x) == 0:
       raise ValueError(x)
@@ -157,7 +162,10 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x.data)
 
+  # Parse built in operators
   def _make_ops(x: Any) -> Op:
+    # We represent as GenericOp first. Will be converted to the 
+    # correct operator when we evaluate the program
     if x.data == "add":
       left, right = x.children
       return GenericOp(Operator.add, [_make_expression(left), _make_expression(right)])
@@ -186,6 +194,7 @@ def parse_program(program: str) -> Program:
     else:
       raise ValueError(x.data)
 
+  # Parse expressions
   def _make_expression(x: Any) -> Expr:
     if x.data == "number":
       return Const(float(x.children[0].value))
@@ -209,6 +218,7 @@ def parse_program(program: str) -> Program:
     elif x.data == "apply":
       identifier, args = x.children
       identifier = _make_identifier(identifier)
+      # Check if the identifier is a built-in operator, otherwise it is a function application
       if identifier.module is None and identifier.name in Operator.__members__:
         assert identifier.name is not None
         return GenericOp(Operator[identifier.name], _make_args(args))
@@ -241,6 +251,7 @@ def parse_program(program: str) -> Program:
       )
     elif x.data == "observe":
       distribution, value = x.children
+      # Observe has to take a distribution (a built in operator) as the first argument
       return Observe(_make_ops(distribution), _make_expression(value))
     elif x.data == "resample":
       return Resample()
@@ -260,6 +271,7 @@ def parse_program(program: str) -> Program:
     assert isinstance(func, lark.Tree)
     name, pattern, expression = func.children
 
+    # Functions do not have module names
     functions.append(Function(
         Identifier(None, str(name)),
         _make_pattern(pattern),
