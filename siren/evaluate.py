@@ -526,8 +526,6 @@ class MH(Handler):
     assert isinstance(distribution, SymDistr)
     rv = particle.state.new_var()
     rv = particle.state.assume(rv, name, annotation, distribution)
-    # if annotation is None:
-    #   raise ValueError(f"{name} -- Annotation must be provided for MH")
     # If the annotation is sample, sample the value
     if annotation is Annotation.sample:
       return particle.state.value(rv)

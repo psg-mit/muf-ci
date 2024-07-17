@@ -500,8 +500,6 @@ class AbsMH(AbsHandler):
     assert isinstance(distribution, AbsSymDistr)
     rv = particle.state.new_var()
     rv = particle.state.assume(rv, name, annotation, distribution)
-    # if annotation is None:
-    #   raise ValueError(f"{name} -- Annotation must be provided for MH")
     particle.state.plan[name] = DistrEnc.symbolic
     # If the annotation is sample, sample the value
     if annotation is Annotation.sample:
