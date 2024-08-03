@@ -11,6 +11,7 @@ from math import log10
 from matplotlib.ticker import Locator
 from scipy.stats import gmean
 import seaborn as sns
+from tabulate import tabulate, SEPARATING_LINE
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
@@ -163,17 +164,19 @@ class MinorSymLogLocator(Locator):
     raise NotImplementedError('Cannot get tick locations for a '
                       '%s type.' % type(self))
 
-def table(statistics):
-
+def table(statistics, use_latex):
   for handler in DEFAULT_HANDLERS:
     print(f"Handler: {handler}")
     content = []
 
     for method in DEFAULT_METHODS:
 
-      method_str = '\\' + method
+      if use_latex:
+        method_str = '\\' + method
+      else:
+        method_str = method.upper()
 
-      method_content = []
+      method_content = [method_str]
       for benchmark in DEFAULT_BENCHMARKS:
         # print(benchmark)
         # print(statistics[benchmark])
@@ -182,21 +185,52 @@ def table(statistics):
 
         method_content.append(f"{n_inferred_satisfied}/{n_true_satisfied}")
 
-      content.append(f"{method_str} & {' & '.join(method_content)} \\\\")
+      content.append(method_content)
+      # method_content_str = f' {delimiter} '.join(method_content)
+      # content.append(f"{method_str} {delimiter} {method_content_str}{end}")
 
-    total_content = []
+    content.append(SEPARATING_LINE)
+
+    total_content = ['Total Plans']
     for benchmark in DEFAULT_BENCHMARKS:
       n_plans = statistics[benchmark]['n_plans']
       total_content.append(f"{n_plans}")
 
-    content.append(f"\\midrule")
-    content.append(f"Total Possible Plans & {' & '.join(total_content)} \\\\")
+    # if use_latex:
+    #   content.append(f"\\midrule")
+    # total_content_str = f' {delimiter} '.join(total_content)
+    # content.append(f"Total Possible Plans {delimiter} {total_content_str}{end}")
+    content.append(total_content)
 
-    print(f"Algorithm & {' & '.join([BENCHMARK_LATEX_NAMES[benchmark] for benchmark in DEFAULT_BENCHMARKS])} \\\\")
-    print('\\midrule')
+    # output stored strings
+    benchmark_names = DEFAULT_BENCHMARKS
+    if use_latex:
+      benchmark_names = [BENCHMARK_LATEX_NAMES[benchmark] for benchmark in benchmark_names]
 
-    for line in content:
-      print(line)
+    if use_latex:
+      delimiter = '&'
+      end = ' \\\\'
+      # print headers:
+      header_str = f' {delimiter} '.join(benchmark_names)
+      print(f"Algorithm {delimiter} {header_str}{end}")
+      print('\\midrule')
+      for line_content in content:
+        if line_content == SEPARATING_LINE:
+          print('\\midrule')
+        else:
+          print(f" {delimiter} ".join(line_content) + end)
+
+    else:
+      print(tabulate(content, headers=['Algorithm'] + benchmark_names))
+    print()
+    # header_str = f' {delimiter} '.join(benchmark_names)
+    # print(f"Algorithm {delimiter} {header_str}{end}")
+    # if use_latex:
+    #   print('\\midrule')
+
+    # for line in content:
+    #   print(line)
+    
 
 def close_to_target_error(target, value):
   if round(value, 5) == 0:
@@ -1017,7 +1051,7 @@ def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans
   print(ratios)
   
 
-def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all_plans, default_plans):
+def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex):
   # filter out -1 time, which means timeout
   data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
@@ -1083,9 +1117,6 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
     'slam': 3,
     'aircraft': 5,
   }
-
-  print("\\midrule")
-  print(f"\\multirow{{{row_size[benchmark]}}}{{*}}{{{BENCHMARK_LATEX_NAMES[benchmark]}}}", end='')
 
   all_times = pd.DataFrame(columns=['method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
 
@@ -1201,37 +1232,66 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
           table_plans[var].append(int(row['plan'].values[0]))
           speedup[var].append(row['speedup'].values[0])
 
-  for var in variables:
-    var_str = var.replace("_", "\\_")
-    print(f"& \mkwm{{{var_str}}} ", end='')
+  table = []
+  for i_var, var in enumerate(variables):
+    # main numbers row
+    row = []
+    if use_latex and i_var == 0:
+      row.append(f"\\multirow{{{row_size[benchmark]}}}{{*}}{{{BENCHMARK_LATEX_NAMES[benchmark]}}}")
+    elif not use_latex and i_var == len(variables) // 2:
+      row.append(benchmark)
+    else:
+      row.append('')
+
+    if use_latex:
+      var_str = var.replace("_", "\\_")
+      row.append(f"\mkwm{{{var_str}}}")
+    else:
+      row.append(var)
+
     for i, method in enumerate(methods):
       if isinstance(table_values[var][i][0], str) or table_values[var][i][0] >= table_values[var][i][1]:
-        print(f"& {table_values[var][i][0]} & {table_values[var][i][1]} ", end='')
+        row += [f"{table_values[var][i][0]}", f"{table_values[var][i][1]}"]
       else:
-        print(f"& \\textbf{{{table_values[var][i][0]}}} & {table_values[var][i][1]} ", end='')
+        val = f"{table_values[var][i][0]}"
+        if use_latex:
+          val = f"\\textbf{{{val}}}"
+        row += [val, f"{table_values[var][i][1]}"]
       
-      if i == len(methods) - 1:
-        print("\\\\[-0.4em]")
+    if use_latex:
+      row[-1] += " \\\\[-0.4em]"
 
+    table.append(row)
+
+    # sub plan detail row
+    row = ['', '']
     for i, method in enumerate(methods):
-
       if table_plans[var][i] == "":
-        print("& & ", end='')
+        row.append('')
       else:
         default_plan = int(default_plans[method])
         if table_plans[var][i] == default_plan:
-          print("& & \defaultplan{} ", end='')
+          if use_latex:
+            row.append("\defaultplan{}")
+          else:
+            row.append('(Default)')
         else:
-          print("& & \\plan{" + str(table_plans[var][i]) + "}", end='')
-      if i == len(methods) - 1:
-        print("\\\\")
+          if use_latex:
+            val = f"\\plan{{{str(table_plans[var][i])}}}"
+          else:
+            val = f"(Plan {str(table_plans[var][i])})"
+          row.append(val)
+      row.append('')
+    if use_latex:
+      row[-1] += ' \\\\'
+
+    table.append(row)
 
   non_default = all_times.apply(lambda x: x['plan'] != int(default_plans[x['method']]), axis=1)
-  # print(non_default)
   non_default_times = all_times.loc[non_default].copy()
-  return all_times, non_default_times
+  return all_times, non_default_times, table
 
-def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_plans, default_plans):
+def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex):
   # filter out -1 time, which means timeout
   data = data.loc[data['time'] < TIMEOUT]
   data = data.loc[data['time'] != -1]
@@ -1282,9 +1342,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
   variables = [v for v in variables if '_raw' not in v]
 
   original_plan_ids = plan_ids
-
-  print("\\midrule")
-  print(f"\\multirow{{{len(variables)}}}{{*}}{{{BENCHMARK_LATEX_NAMES[benchmark]}}}", end='')
 
   all_acc = pd.DataFrame(columns=['method', 'variable', 'plan', 'particles', 'median', 'default_particles', 'default', 'speedup'])
 
@@ -1380,22 +1437,37 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
         else:
           table_values[var].append(round(row['ratio'].values[0], 2))
 
-  for var in variables:
-    var_str = var.replace("_", "\\_")
-    print(f"& \mkwm{{{var_str}}} ", end='')
+  table = []
+  for i_var, var in enumerate(variables):
+    row = []
+    if use_latex and i_var == 0:
+      row.append(f"\\multirow{{{len(variables)}}}{{*}}{{{BENCHMARK_LATEX_NAMES[benchmark]}}}")
+    elif not use_latex and i_var == len(variables) // 2:
+      row.append(benchmark)
+    else:
+      row.append('')
+    
+    if use_latex:
+      var_str = var.replace("_", "\\_")
+      row.append(f"\mkwm{{{var_str}}}")
+    else:
+      row.append(var)
+
     for i, method in enumerate(methods):
       if isinstance(table_values[var][i], str):
-        print(f"& {table_values[var][i]} ", end='')
+        row.append(f"{table_values[var][i]}")
       else:
-        print(f"& {table_values[var][i]}x ", end='')
+        row.append(f"{table_values[var][i]}x")
       
-      if i == len(methods) - 1:
-        print("\\\\")
+    if use_latex:
+      row[-1] += " \\\\"
+
+    table.append(row)
 
   non_default = all_acc.apply(lambda x: x['plan'] != int(default_plans[x['method']]), axis=1)
   # print(non_default)
   non_default_times = all_acc.loc[non_default].copy()
-  return all_acc, non_default_times
+  return all_acc, non_default_times, table
 
 def compare_to_default_accuracy_example(data, all_plans):
   # filter out -1 time, which means timeout
@@ -1481,7 +1553,7 @@ def compare_to_default_accuracy_example(data, all_plans):
 
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
-  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare_time, table, compare_accuracy, time')
+  p.add_argument('--task', '-t', type=str, required=False, default='plot', help='plot, compare_accuracy, analysis_table, compare_time, timestep')
   p.add_argument('--benchmark', '-b', type=str, required=False, nargs="+", default=DEFAULT_BENCHMARKS)
   p.add_argument('--output', '-o', type=str, required=False, default='output')
   p.add_argument('--plan-ids', '-pi', type=int, required=False, nargs="+")
@@ -1491,6 +1563,7 @@ if __name__ == '__main__':
   p.add_argument('--example', action='store_true')
   p.add_argument('--error-bar', action='store_true')
   p.add_argument('--pdf', action='store_true')
+  p.add_argument('--latex', action='store_true')
 
   args = p.parse_args()
 
@@ -1498,7 +1571,7 @@ if __name__ == '__main__':
   handlers = [handler for handler in args.handlers if handler in DEFAULT_HANDLERS]
   particles = [int(particle) for particle in args.particles] if args.particles is not None else None
 
-  if args.task == 'table':
+  if args.task == 'analysis_table':
     # Load statistics
     all_statistics = {}
 
@@ -1507,9 +1580,9 @@ if __name__ == '__main__':
       with open(os.path.join(output, 'statistics.json')) as f:
         statistics = json.load(f)
       all_statistics[benchmark] = statistics
-    table(all_statistics)
+    table(all_statistics, args.latex)
 
-  elif args.task == 'compare_accuracy' or args.task == 'compare_time':
+  elif args.task == 'compare_time' or args.task == 'compare_accuracy':
     print(args.benchmark)
 
     for handler in args.handlers:
@@ -1521,6 +1594,38 @@ if __name__ == '__main__':
 
       all_acc = pd.DataFrame(columns=['benchmark', 'method', 'variable', 'plan', 'particles', 'time', 'upper_error', 'default_particles', 'default_error', 'ratio'])
       all_non_default_acc = pd.DataFrame(columns=['benchmark', 'method', 'variable', 'plan', 'particles', 'time', 'upper_error', 'default_particles', 'default_error', 'ratio'])
+
+      all_tables = []
+      
+      top_header = ['', '']
+      header = ['Benchmark', 'Variable']
+      if args.task == 'compare_time':
+        for method in DEFAULT_METHODS:
+          header.append('Best (s)')
+          header.append('Default (s)')
+          if args.latex:
+            top_header.append(f"\\multicolumn{{2}}{{c}}{{\\{method}}}")
+          else:
+            top_header.append(method.upper())
+            top_header.append('')
+      elif args.task == 'compare_accuracy':
+        for method in DEFAULT_METHODS:
+          if args.latex:
+            header.append(f"\\{method}")
+          else:
+            header.append(method.upper())
+        if args.latex:
+          top_header.append(f"\\multicolumn{{3}}{{c}}{{Gmean of Best Accuracy Ratio}}")
+        else:
+          top_header += ["Gmean of", "Best Accuracy", "Ratio"]
+      
+      if args.latex:
+        top_header[-1] += ' \\\\'
+        header[-1] += ' \\\\'
+      all_tables.append(top_header)
+      all_tables.append(header)
+      
+      all_tables.append(SEPARATING_LINE)
 
       for benchmark in args.benchmark:
         with open(os.path.join(benchmark, 'config.json')) as f:
@@ -1534,8 +1639,8 @@ if __name__ == '__main__':
           if args.example:
             compare_to_default_accuracy_example(data, config['plans'])
           else:
-            if args.task == 'compare_accuracy':
-              benchmark_times, non_default_times = compare_to_default_accuracy(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'])
+            if args.task == 'compare_time':
+              benchmark_times, non_default_times, benchmark_table = compare_to_default_accuracy(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex)
 
               benchmark_times['benchmark'] = benchmark
               non_default_times['benchmark'] = benchmark
@@ -1543,14 +1648,17 @@ if __name__ == '__main__':
                 all_times = benchmark_times
               else:
                 all_times = pd.concat([all_times, benchmark_times])
+              
+              all_tables += benchmark_table
+              all_tables.append(SEPARATING_LINE)
 
               if all_non_default_times.empty:
                 all_non_default_times = non_default_times
               else:
                 all_non_default_times = pd.concat([all_non_default_times, non_default_times])
 
-            if args.task == 'compare_time':
-              benchmark_acc, non_default_acc = compare_to_default_time(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'])
+            if args.task == 'compare_accuracy':
+              benchmark_acc, non_default_acc, benchmark_table = compare_to_default_time(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex)
 
               benchmark_acc['benchmark'] = benchmark
               non_default_acc['benchmark'] = benchmark
@@ -1559,14 +1667,31 @@ if __name__ == '__main__':
               else:
                 all_acc = pd.concat([all_acc, benchmark_acc])
 
+              all_tables += benchmark_table
+              all_tables.append(SEPARATING_LINE)
+
               if all_non_default_acc.empty:
                 all_non_default_acc = non_default_acc
               else:
                 all_non_default_acc = pd.concat([all_non_default_acc, non_default_acc])
 
       if not args.example:
+        if args.task in ['compare_time', 'compare_accuracy']:
+          if all_tables[-1] == SEPARATING_LINE:
+            # remove extra midrule
+            all_tables.pop()
 
-        if args.task == 'compare_accuracy':
+          if args.latex:
+            for row in all_tables:
+              if row == SEPARATING_LINE:
+                print('\\midrule')
+              else:
+                delimiter = '&'
+                print(f" {delimiter} ".join(row))
+          else:
+            print(tabulate(all_tables))
+
+        if args.task == 'compare_time':
           # print(all_times)
           # print(all_non_default_times)
           # compute geometric mean of speedups
@@ -1574,44 +1699,45 @@ if __name__ == '__main__':
           min_speedup = all_times['speedup'].min()
           max_speedup = all_times['speedup'].max()
 
+          print("==================")
           print('Across All')
           print(f"Geometric Mean Speedup: {round(gm, 2)}")
           print(f"Min Speedup: {round(min_speedup, 2)}")
           print(f"Max Speedup: {round(max_speedup, 2)}")
+          print("==================")
 
-          print('Non Default')
-          gm = gmean(all_non_default_times['speedup'].values)
-          min_speedup = all_non_default_times['speedup'].min()
-          max_speedup = all_non_default_times['speedup'].max()
+          # print('Non Default')
+          # gm = gmean(all_non_default_times['speedup'].values)
+          # min_speedup = all_non_default_times['speedup'].min()
+          # max_speedup = all_non_default_times['speedup'].max()
 
-          print(f"Geometric Mean Speedup: {round(gm, 2)}")
-          print(f"Min Speedup: {round(min_speedup, 2)}")
-          print(f"Max Speedup: {round(max_speedup, 2)}")
+          # print(f"Geometric Mean Speedup: {round(gm, 2)}")
+          # print(f"Min Speedup: {round(min_speedup, 2)}")
+          # print(f"Max Speedup: {round(max_speedup, 2)}")
 
-        if args.task == 'compare_time':
+        if args.task == 'compare_accuracy':
           # print(all_acc)
           # print(all_non_default_acc)
-
-          # all_acc.to_csv('all_acc.csv', index=False)
-
           # compute geometric mean of ratios
           gm = gmean(list(all_acc['ratio'].values) + [1] * 9)
           min_ratio = all_acc['ratio'].min()
           max_ratio = all_acc['ratio'].max()
           
+          print("==================")
           print('Across All')
           print(f"Geometric Mean Accuracy Ratio: {round(gm, 2)}")
           print(f"Min Ratio: {round(min_ratio, 2)}")
           print(f"Max Ratio: {round(max_ratio, 2)}")
+          print("==================")
 
-          print('Non Default')
-          gm = gmean(all_non_default_acc['ratio'].values)
-          min_ratio = all_non_default_acc['ratio'].min()
-          max_ratio = all_non_default_acc['ratio'].max()
+          # print('Non Default')
+          # gm = gmean(all_non_default_acc['ratio'].values)
+          # min_ratio = all_non_default_acc['ratio'].min()
+          # max_ratio = all_non_default_acc['ratio'].max()
 
-          print(f"Geometric Mean Accuracy Ratio: {round(gm, 2)}")
-          print(f"Min Ratio: {round(min_ratio, 2)}")
-          print(f"Max Ratio: {round(max_ratio, 2)}")
+          # print(f"Geometric Mean Accuracy Ratio: {round(gm, 2)}")
+          # print(f"Min Ratio: {round(min_ratio, 2)}")
+          # print(f"Max Ratio: {round(max_ratio, 2)}")
 
   else:
     # if args.example:
@@ -1620,7 +1746,7 @@ if __name__ == '__main__':
     print(args.benchmark)
 
     for benchmark in args.benchmark:
-      if not args.task == 'compare_accuracy':
+      if not args.task == 'compare_time':
         print('=============================')
         print('Benchmark: {}'.format(benchmark))
 
@@ -1649,7 +1775,7 @@ if __name__ == '__main__':
             plot_particles(benchmark, data, output, handlers, methods, plan_ids, config['default'], particles, n_y, n_x, base_x, 
                            base_y, legend_width, args.example, args.error_bar, pdf=args.pdf)
             
-        if args.task == 'time':
+        if args.task == 'timestep':
           if args.example:
             plan_ids_sets = [['4', '3']]
           else:
