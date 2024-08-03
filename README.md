@@ -1,12 +1,12 @@
 # Siren
 Siren is a first-order functional probabilistic programming language, implemented with the hybrid inference interface, with support for inference plans. Distributions encoding annotations can be added to random variables to select the representation of the variable's distribution to be used during inference. Siren is also equipped with the inference plan satisfiability analysis, which statically infers if the annotated inference plan is satisfiable. 
 
-The Siren interpreter, including the inference plan satisfiability analysis, is implemented with semi-symbolic inference, delayed sampling, and SMC with belief propagation. It can be extended with other hybrid inference algorithms that can implement the hybrid inference interface. 
+The Siren interpreter, including the inference plan satisfiability analysis, is implemented with semi-symbolic inference, delayed sampling, and SMC with belief propagation, with support for particle filtering (Sequential Monte Carlo) and Metropolis-Hastings as the approximate inference backend. It can be extended with other hybrid inference algorithms that can implement the hybrid inference interface. 
 
 ## Install
-Checkout the repository on the Artifact Evaluation branch:
+Clone the repository:
 ```
-git clone https://github.com/psg-mit/siren -b oopsla-artifact
+git clone https://github.com/psg-mit/siren
 cd siren
 ```
 
@@ -80,13 +80,20 @@ This should take ~10 minutes.
 
 To check the visualization script works correctly:
 ```bash
-python visualize.py --task table
+python visualize.py --task analysis_table
 python visualize.py --task plot
 ```
 The plots will be located at `benchmarks/outlier/{BENCHMARK}/{METHOD}_particles.png` for each BENCHMARK and METHOD.
 
+To check the runtime and accuracy statistics aggregation works correctly:
+```bash
+python visualize.py --task compare_time # Compares runtime of inference plans to reach the same accuracy
+python visualize.py --task compare_accuracy # Compare accuracy of inference plans given fixed runtime
+```
+
+
 ## Benchmarking
-The experiments from the paper were conducted on a 60-core Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 23 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
+The experiments from the paper were conducted on a 60-core Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
 
 ### Replicating Trend
 Due to the long amount of time needed to compute the full set of benchmarks from the paper, which uses `n=100` iterations per particle setting for each benchmark and method, to only replicate the trends of the main paper figures:
@@ -110,7 +117,7 @@ The plot will be located at `benchmarks/outlier/output/ssi_particles.png` and `b
 
 Then, to produce Section 5 Table 1:
 ```bash
-python visualize.py --task table
+python visualize.py --task analysis_table
 ```
 
 To visualize the results of Appendix E: 
@@ -125,10 +132,10 @@ To perform the full replication of the figures in the paper:
 cd benchmarks/
 python harness.py full-replication
 python visualize.py --example
-python visualize.py --task table
+python visualize.py --task analysis_table
 python visualize.py --task plot
 ```
-This will take ~23 days.
+This will take ~30 days.
 
 ## Syntax
 The Siren syntax can be found in `siren/parser.py`.
