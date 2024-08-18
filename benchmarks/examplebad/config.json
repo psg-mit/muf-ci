@@ -1,5 +1,5 @@
 {
-  "benchmark": "example2",
+  "benchmark": "examplebad",
   "data_file": {
     "smc": "data/data.csv"
   },
@@ -233,7 +233,7 @@
   "base_x": 4,
   "n_y": 1,
   "n_x": 4,
-  "legend_width": 4,
+  "legend_width": 2,
   "error_func": "se",
   "known_enc": {
     "other": "sample",
@@ -319,6 +319,8 @@
     "invr"
   ],
   "default": {
-    "ssi": "1"
+    "smc": {
+      "ssi": "1"
+    }
   }
 }
