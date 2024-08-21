@@ -266,9 +266,9 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               # timeout
               tqdm.tqdm.write(f'Timed out: {plan_id} {handler} {method} - {p} particles')
               t = -1
-              program_output = {var[0]: -1 for var in true_vars}
+              program_output = {var[0]: -1 for var in true_vars[handler]}
               if raw:
-                program_output = {var[0] + '_raw': -1 for var in true_vars}
+                program_output = {var[0] + '_raw': -1 for var in true_vars[handler]}
             else:
               t, program_output = run_outputs
 
@@ -584,6 +584,127 @@ def analyze_benchmark(benchmark, files, output, handlers, methods):
   # write statistics
   with open(filename, 'w') as f:
     json.dump(results, f, indent=2)
+
+def evaluation(particles, n, args):  
+  handlers = ['smc']
+  if args.subparser_name == 'artifact-eval':
+    n = 10
+  print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
+  benchmark = 'examplegood'
+  kwargs = {
+    'particles': particles,
+    'seed': args.seed,
+  }
+  files = [
+    'benchmarks/examplegood/programs/plan1.si',
+    'benchmarks/examplegood/programs/plan3.si',
+    'benchmarks/examplegood/programs/plan4.si',
+  ]
+  run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', True, kwargs)
+
+  print(f"Running the benchmark for Section 2 example with n={n} for Figure 5")
+  benchmark = 'examplebad'
+  files = [
+    'benchmarks/examplebad/programs/plan3.si',
+  ]
+  run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', True, {
+    'particles': [16],
+    'seed': args.seed,
+  })
+
+  files = [
+    'benchmarks/examplebad/programs/plan4.si',
+  ]
+  run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', True, {
+    'particles': [8],
+    'seed': args.seed,
+  })
+
+  print("Running the analysis for Section 5 Table 1")
+  for benchmark in DEFAULT_BENCHMARKS:
+    print('Benchmark: {}'.format(benchmark))
+    analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
+
+  if args.subparser_name == 'artifact-eval':
+    n = 5
+
+  print(f"Running the benchmarks for Section 5 with n={n} Figure 16")
+  for benchmark in ['outlier', 'noise']:
+    print('Benchmark: {}'.format(benchmark))
+    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
+
+  if args.subparser_name == 'artifact-eval':
+    # skip appendix due to time constraints
+    n = 0
+
+  print(f"Running rest of the benchmarks with n={n} for Appendix F")
+  for benchmark in DEFAULT_BENCHMARKS:
+    print('Benchmark: {}'.format(benchmark))
+    if benchmark == 'slds':
+      files = [
+        'benchmarks/slds/programs/plan67.si',
+        'benchmarks/slds/programs/plan81.si', 
+        'benchmarks/slds/programs/plan98.si', 
+        'benchmarks/slds/programs/plan112.si', 
+        'benchmarks/slds/programs/plan115.si',
+        'benchmarks/slds/programs/plan127.si',
+      ]
+      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
+      files = [
+        'benchmarks/slds/programs/plan112.si', 
+        'benchmarks/slds/programs/plan113.si', 
+        'benchmarks/slds/programs/plan114.si', 
+        'benchmarks/slds/programs/plan115.si', 
+        'benchmarks/slds/programs/plan116.si', 
+        'benchmarks/slds/programs/plan120.si', 
+        'benchmarks/slds/programs/plan127.si',
+      ]
+      run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+      run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
+    else:
+      if benchmark in ['outlier', 'noise']:
+        methods = ['ds', 'bp']
+      else:
+        methods = DEFAULT_METHODS
+
+      run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
+
+  handlers = ['mh']
+  print(f"Running the benchmark with n={n} for Appendix H")
+  for benchmark in DEFAULT_BENCHMARKS:
+    print('Benchmark: {}'.format(benchmark))
+    if benchmark == 'slds':
+      files = [
+        'benchmarks/slds/programs/plan67.si',
+        'benchmarks/slds/programs/plan81.si', 
+        'benchmarks/slds/programs/plan98.si', 
+        'benchmarks/slds/programs/plan112.si', 
+        'benchmarks/slds/programs/plan115.si', 
+        'benchmarks/slds/programs/plan127.si',
+      ]
+      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
+      files = [
+        'benchmarks/slds/programs/plan112.si', 
+        'benchmarks/slds/programs/plan113.si', 
+        'benchmarks/slds/programs/plan114.si', 
+        'benchmarks/slds/programs/plan115.si', 
+        'benchmarks/slds/programs/plan116.si', 
+        'benchmarks/slds/programs/plan120.si', 
+        'benchmarks/slds/programs/plan127.si',
+      ]
+      run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+      run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
+    else:
+      methods = DEFAULT_METHODS
+
+      run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
+
+  if args.subparser_name == 'artifact-eval':
+    return
+  print("Running the analysis for Appendix H")
+  for benchmark in DEFAULT_BENCHMARKS:
+    print('Benchmark: {}'.format(benchmark))
+    analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
   
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
@@ -623,172 +744,22 @@ if __name__ == '__main__':
 
   if args.subparser_name == 'kicktires':
     n = 1
-    particles = [1, 2]
-    handlers = ['smc']
+    particles = [1, 2, 4, 8, 16]
     TIMEOUT = 60
     
-    print("Running the benchmark for Section 2 example with n=1 for Figure 4")
-    benchmark = 'example'
-    kwargs = {
-      'particles': particles,
-      'seed': args.seed,
-    }
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
-
-    print("Running the analysis for Section 5 Table 1")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
-
-    print("Running the benchmarks for Section 5 with n=1 Figure 15")
-    for benchmark in ['outlier', 'noise']:
-      print('Benchmark: {}'.format(benchmark))
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
-
-    print("Running rest of the benchmarks with n=1 for Appendix E")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      if benchmark == 'slds':
-        files = [
-          'benchmarks/slds/programs/plan67.si',
-          'benchmarks/slds/programs/plan81.si', 
-          'benchmarks/slds/programs/plan98.si', 
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
-        files = [
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan113.si', 
-          'benchmarks/slds/programs/plan114.si', 
-          'benchmarks/slds/programs/plan116.si', 
-          'benchmarks/slds/programs/plan120.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
-      else:
-        if benchmark in ['outlier', 'noise']:
-          methods = ['ds', 'bp']
-        elif benchmark == 'outlierheavy':
-          methods = ['ssi', 'ds']
-        elif benchmark == 'runner':
-          methods = ['ssi', 'bp']
-        else:
-          methods = DEFAULT_METHODS
-
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
+    evaluation(particles, n, args)
   elif args.subparser_name == 'artifact-eval':
-    n = 10
-    particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-    handlers = ['smc']
-    TIMEOUT = 300
-    kwargs = {
-      'particles': particles,
-      'seed': args.seed,
-    }
-    
-    print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
-    benchmark = 'example'
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
-
-    print("Running the analysis for Section 5 Table 1")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
-
     n = 5
-    print(f"Running the benchmarks for Section 5 with n={n} Figure 15")
-    for benchmark in ['outlier', 'noise']:
-      print('Benchmark: {}'.format(benchmark))
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
+    particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    TIMEOUT = 300
 
-    n = 1
-    print(f"Running rest of the benchmarks with n={n} for Appendix E")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      if benchmark == 'slds':
-        files = [
-          'benchmarks/slds/programs/plan67.si',
-          'benchmarks/slds/programs/plan81.si', 
-          'benchmarks/slds/programs/plan98.si', 
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
-        files = [
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan113.si', 
-          'benchmarks/slds/programs/plan114.si', 
-          'benchmarks/slds/programs/plan116.si', 
-          'benchmarks/slds/programs/plan120.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
-      else:
-        if benchmark in ['outlier', 'noise']:
-          methods = ['ds', 'bp']
-        elif benchmark == 'outlierheavy':
-          methods = ['ssi', 'ds']
-        elif benchmark == 'runner':
-          methods = ['ssi', 'bp']
-        else:
-          methods = DEFAULT_METHODS
-
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
-
+    evaluation(particles, n, args)
   elif args.subparser_name == 'full-replication':
     n = 100
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-    handlers = ['smc']
-    kwargs = {
-      'particles': particles,
-      'seed': args.seed,
-    }
     TIMEOUT = 300
     
-    print("Running the analysis for Section 5 Table 1")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
-
-    print(f"Running the benchmark for Section 2 example with n={n} for Figure 4")
-    benchmark = 'example'
-    run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', True, kwargs)
-    
-    print(f"Running all benchmarks with n={n} for full replication")
-    for benchmark in DEFAULT_BENCHMARKS:
-      print('Benchmark: {}'.format(benchmark))
-      if benchmark == 'slds':
-        files = [
-          'benchmarks/slds/programs/plan67.si',
-          'benchmarks/slds/programs/plan81.si', 
-          'benchmarks/slds/programs/plan98.si', 
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
-        files = [
-          'benchmarks/slds/programs/plan112.si', 
-          'benchmarks/slds/programs/plan113.si', 
-          'benchmarks/slds/programs/plan114.si', 
-          'benchmarks/slds/programs/plan116.si', 
-          'benchmarks/slds/programs/plan120.si', 
-          'benchmarks/slds/programs/plan127.si',
-        ]
-        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
-        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
-      else:
-        if benchmark == 'outlierheavy':
-          methods = ['ssi', 'ds']
-        elif benchmark == 'runner':
-          methods = ['ssi', 'bp']
-        else:
-          methods = DEFAULT_METHODS
-
-        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
-
+    evaluation(particles, n, args)
   else:
     benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
     methods = [m.strip() for m in args.methods.split(',')] if args.methods is not None else DEFAULT_METHODS

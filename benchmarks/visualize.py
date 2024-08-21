@@ -164,8 +164,10 @@ class MinorSymLogLocator(Locator):
     raise NotImplementedError('Cannot get tick locations for a '
                       '%s type.' % type(self))
 
-def table(statistics, use_latex):
-  for handler in DEFAULT_HANDLERS:
+def table(statistics, use_latex, handlers):
+  if handlers is None:
+    handlers = DEFAULT_HANDLERS
+  for handler in handlers:
     print(f"Handler: {handler}")
     content = []
 
@@ -235,6 +237,10 @@ def table(statistics, use_latex):
 def close_to_target_error(target, value):
   if round(value, 5) == 0:
     return True
+  if round(target, 5) == 0:
+    if value <= 1e-10:
+      return True
+    return False
   if log10(value) - log10(target) <= 0.5:
     return True
   return False
@@ -442,6 +448,8 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
             if is_example and plan_id in [3] and var == 'alt':
               # draw arrow to a particle count
               arrow_particle = 16
+              if arrow_particle not in runtimes:
+                continue
               arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]+0.02)
               ax.annotate(f'Configuration\nOptimizied\nFor alt\n(p = {arrow_particle})', xy=arrow_xy, xytext=(35,42), 
                 textcoords='offset points', ha='center', va='bottom',
@@ -450,6 +458,8 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
             if is_example and plan_id in [4] and var == 'x':
               # draw arrow to a particle count
               arrow_particle = 8
+              if arrow_particle not in runtimes:
+                continue
               arrow_xy = (runtimes.loc[arrow_particle]+0.02, upper.loc[arrow_particle]+0.02)
               ax.annotate(f'Configuration\nOptimizied\nFor x\n(p = {arrow_particle})', xy=arrow_xy, xytext=(40,60), 
                 textcoords='offset points', ha='center', va='bottom',
@@ -476,8 +486,8 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
         ax.set_xscale('log')
 
         # add margin to x limits
-        min_x = min_x * 0.7
-        max_x = max_x * 1.3
+        min_x = max(min_x * 0.7, 1e-10)
+        max_x = max(max_x * 1.3, 1e-10)
         ax.set_xlim(min_x, max_x)
 
         # print(method)
@@ -556,6 +566,9 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
         y = 1.08
         bbox = (0.5, -0.1)
 
+      # if is_example:
+      #   bbox = (0.25, -0.1)
+
       # fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
       lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
 
@@ -585,9 +598,7 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
 
       plt.close(fig)
 
-def plot_time(data, output, handlers, methods, plan_ids, true_vars, 
-                   particle, legend_width, is_example,
-                   **kwargs):
+def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, true_vars, n_y, n_x, base_x, base_y, is_example, **kwargs):
   if kwargs.get('pdf', True):
     plt_settings = {
       'font.size': 14, 
@@ -751,7 +762,7 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
         # 'No Annotations (p = 16)',
       ]
 
-      # print(renamed_color_dict)
+      print(renamed_color_dict)
 
       if '2' in plan_ids:
         order.append('Symbolic r Plan* (p = 16)')
@@ -783,7 +794,7 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
         # plot true_x
       for i, (v, ax) in enumerate(zip(variables, time_plot.axes.flatten())):
         # ax = time_plot.axes.flatten()[0]
-        if i == 0 and benchmark == 'example2':
+        if i == 0 and benchmark == 'examplegood':
           ax.legend(ncols=2, loc='upper center', bbox_to_anchor=(1., -0.7))
         # save the legend into a separate file
           label_params = ax.get_legend_handles_labels() 
@@ -810,7 +821,7 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
           ax.set_ylabel('Error')
 
         # set y ticks to have 1 decimal place
-        if benchmark == 'example2':
+        if benchmark == 'examplebad':
           if v == 'alt':
             box = ax.get_position()
             box.x0 = box.x0 + 0.01
@@ -829,6 +840,10 @@ def plot_time(data, output, handlers, methods, plan_ids, true_vars,
           ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
           # ax.yaxis.set_minor_locator(MultipleLocator(100))
           # ax.yaxis.set_minor_formatter(FormatStrFormatter('%.1f'))
+          max_val = max(max(used_plot_data[used_plot_data['variable'] == v]['value']), 1)
+          ax.set_ylim(0, max_val)
+
+        if benchmark == 'examplegood':
           ax.set_ylim(0, 1)
 
 
@@ -1139,7 +1154,6 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
 
     target_errors = get_error_runtime(data, method, default_plan)
     target = target_errors[target_errors['particles'] == target_errors['particles'].max()]
-    # print(target)
 
     default = get_error_runtime(data, method, default_plan)
 
@@ -1580,7 +1594,7 @@ if __name__ == '__main__':
       with open(os.path.join(output, 'statistics.json')) as f:
         statistics = json.load(f)
       all_statistics[benchmark] = statistics
-    table(all_statistics, args.latex)
+    table(all_statistics, args.latex, args.handlers)
 
   elif args.task == 'compare_time' or args.task == 'compare_accuracy':
     print(args.benchmark)
@@ -1740,8 +1754,10 @@ if __name__ == '__main__':
           # print(f"Max Ratio: {round(max_ratio, 2)}")
 
   else:
-    # if args.example:
-    #   args.benchmark = ['example']
+    if args.example and args.task == 'plot':
+      args.benchmark = ['examplegood']
+    elif args.example and args.task == 'timestep':
+      args.benchmark = ['examplegood', 'examplebad']
 
     print(args.benchmark)
 
@@ -1768,7 +1784,7 @@ if __name__ == '__main__':
 
         if args.task == 'plot':
           if args.example:
-            plan_ids_sets = [['1', '4', '3'], ['1', '2', '3', '4'], ['1', '3', '4', '5', '6']]
+            plan_ids_sets = [['1', '4', '3']]
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
@@ -1778,6 +1794,9 @@ if __name__ == '__main__':
         if args.task == 'timestep':
           if args.example:
             plan_ids_sets = [['4', '3']]
+            x = data[(data['plan_id'] == 4) & (data['particles'] == 8)]
+            r = data[(data['plan_id'] == 3) & (data['particles'] == 16)]
+            data = pd.concat([x, r])
           else:
             plan_ids_sets = [args.plan_ids]
           for plan_ids in plan_ids_sets:
@@ -1785,4 +1804,4 @@ if __name__ == '__main__':
               particle = None
             else:
               particle = particles[0]
-            plot_time(data, output, handlers, methods, plan_ids, config['true_vars'], particle, legend_width, args.example, pdf=args.pdf)
+            plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, config['true_vars'], n_y, n_x, base_x, base_y, args.example, pdf=args.pdf)

@@ -70,61 +70,75 @@ To run the test suite for a quick check everything works:
 python -m pytest tests/
 ```
 
-## Kick the Tires
+## Smoke Test
 To do a smoke test that the benchmarks can run correctly:
 ```bash
 cd benchmarks/
-python harness.py kicktires
+python harness.py --output output_kicktires kicktires
 ```
-This should take ~10 minutes.
+This should take 1 hour.
 
-To check the visualization script works correctly:
+The smoke test is configured to only run n=1 iterations for less particles, so the figures will look very distorted but that is expected. To check the visualization script will generate plots:
 ```bash
-python visualize.py --task analysis_table
-python visualize.py --task plot
+python visualize.py --output output_kicktires --example 
+python visualize.py --output output_kicktires --example --task timestep
 ```
-The plots will be located at `benchmarks/outlier/{BENCHMARK}/{METHOD}_particles.png` for each BENCHMARK and METHOD.
+These files will be generated 
+- `benchmarks/examplegood/output_kicktires/smc_ssi_example_143.png`
+- `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png`
+- `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`
+
+```bash
+python visualize.py --output output_kicktires --task analysis_table
+```
+This will output the analysis results table in Table 1 and Table 19.
+
+```bash
+python visualize.py --output output_kicktires --task plot
+```
+The plots will be located at `benchmarks/{BENCHMARK}/output_kicktires/{HANDLER}_{METHOD}_particles.png` for each BENCHMARK and METHOD and HANDLER.
 
 To check the runtime and accuracy statistics aggregation works correctly:
 ```bash
-python visualize.py --task compare_time # Compares runtime of inference plans to reach the same accuracy
-python visualize.py --task compare_accuracy # Compare accuracy of inference plans given fixed runtime
+ # Compares runtime of inference plans to reach the same accuracy
+python visualize.py --output output_kicktires --task compare_time
+# Compare accuracy of inference plans given fixed runtime
+python visualize.py --output output_kicktires --task compare_accuracy 
 ```
 
-
 ## Benchmarking
-The experiments from the paper were conducted on a 60-core Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
+The experiments from the paper were conducted on a 60-vCPU Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
 
-### Replicating Trend
+### Main Paper Results
 Due to the long amount of time needed to compute the full set of benchmarks from the paper, which uses `n=100` iterations per particle setting for each benchmark and method, to only replicate the trends of the main paper figures:
 ```bash
 cd benchmarks/
 python harness.py artifact-eval
 ```
-This executes the example for Figure 4 for `n=10`, the programs for Figure 15 for `n=5`, and the programs in the appendix for `n=1`. This will take ~4-5 hours.
+This executes the example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~4-5 hours.
 
 Then, to visualize the results for Section 2 Figure 4:
 ```bash
 python visualize.py --example
 ```
-The plot will be located at `benchmarks/example/output/ssi_example_1245.png`.
+The plot will be located at `benchmarks/examplegood/output/ssi_example_143.png`.
 
-Then, to visualize the results for Section 5 Figure 15:
+For Figure 5:
 ```bash
-python visualize.py --task plot -b outlier noise
+python visualize.py --example --task timestep
 ```
-The plot will be located at `benchmarks/outlier/output/ssi_particles.png` and `benchmarks/noise/output/ssi_particles.png`.
+These commands generate the figures for Section 2. The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`.
+
+Then, to visualize the results for Section 5 Figure 16:
+```bash
+python visualize.py --task plot -b outlier noise -m ssi
+```
+The plot will be located at `benchmarks/outlier/output/smc_ssi_particles.png` and `benchmarks/noise/output/smc_ssi_particles.png`.
 
 Then, to produce Section 5 Table 1:
 ```bash
-python visualize.py --task analysis_table
+python visualize.py --task analysis_table --handlers smc
 ```
-
-To visualize the results of Appendix E: 
-```bash
-python visualize.py --task plot
-```
-The plot will be located at `benchmarks/outlier/{BENCHMARK}/{METHOD}_particles.png` for each BENCHMARK and METHOD.
 
 ### Full Replication
 To perform the full replication of the figures in the paper:
@@ -133,8 +147,20 @@ cd benchmarks/
 python harness.py full-replication
 python visualize.py --example
 python visualize.py --task analysis_table
+```
+
+To compute the overall speedup and accuracy comparison from Section 5, and the tables in Appendix F:
+```bash
+python visualize.py --task compare_time
+python visualize.py --task compare_accuracy
+```
+
+To visualize the plots of Appendix F and Appendix G:
+```bash
 python visualize.py --task plot
 ```
+The plot will be located at `benchmarks/{BENCHMARK}/output/{HANDLER}_{METHOD}_particles.png` for each BENCHMARK and METHOD and HANDLER.
+
 This will take ~30 days.
 
 ## Syntax
