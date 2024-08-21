@@ -57,7 +57,7 @@ val step = fun ((obs, cmd), (max_pos, map, xs)) ->
   (max_pos, map, cons(x, xs))
 in
 
-let data = List.map(preprocess_data, File.read("data/processed_data.csv")) in
+let data = List.map(preprocess_data, File.read("data/processed_data2.csv")) in
 
 let max_pos = 10 in
 let map = List.map(bernoulli_priors, List.range(0, max_pos + 1)) in
