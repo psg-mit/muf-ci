@@ -450,30 +450,36 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
         # get analysis output
         cmd = f'siren {file} -l {handler} -m {method} --analyze-only'
         # print('>', cmd)
+        t1 = time.time()
         try:
           out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
         except subprocess.CalledProcessError as e:
+          t2 = time.time()
           output = e.output.decode("utf-8")
           method_results['plan'][plan_id]['infer_satisfied'] = False
+          method_results['plan'][plan_id]['analysis_time'] = t2 - t1
           continue
+
+        t2 = time.time()
+        method_results['plan'][plan_id]['analysis_time'] = t2 - t1
 
         method_results['plan'][plan_id]['infer_satisfied'] = True
         n_inferred_satisfied += 1
 
-        # parse output
+        # # parse output
         lines = out.strip().split('\n')
 
-        analysis_time = -1
-        for i, line in enumerate(lines):
-          line = line.strip()
-          if line == '===== Analysis Time =====':
-            analysis_time = float(lines[i + 1])
-            break
+        # analysis_time = -1
+        # for i, line in enumerate(lines):
+        #   line = line.strip()
+        #   if line == '===== Analysis Time =====':
+        #     analysis_time = float(lines[i + 1])
+        #     break
 
-        if analysis_time == -1:
-          raise RuntimeError('Analysis time not found')
+        # if analysis_time == -1:
+        #   raise RuntimeError('Analysis time not found')
         
-        method_results['plan'][plan_id]['analysis_time'] = analysis_time
+        # method_results['plan'][plan_id]['analysis_time'] = analysis_time
 
         # get outputs after ===== Inferred Inference Plan =====
         inferred_plan = {}
