@@ -169,7 +169,10 @@ def table(statistics, use_latex, handlers):
     handlers = DEFAULT_HANDLERS
   for handler in handlers:
     print(f"Handler: {handler}")
+    total_inferred = 0
+    total_true = 0
     content = []
+    time_content = []
 
     for method in DEFAULT_METHODS:
 
@@ -179,19 +182,40 @@ def table(statistics, use_latex, handlers):
         method_str = method.upper()
 
       method_content = [method_str]
+      time_content_row = [method_str]
       for benchmark in DEFAULT_BENCHMARKS:
         # print(benchmark)
         # print(statistics[benchmark])
         n_true_satisfied = statistics[benchmark][handler][method]['n_true_satisfied']
         n_inferred_satisfied = statistics[benchmark][handler][method]['n_inferred_satisfied']
 
+        total_inferred += n_inferred_satisfied
+        total_true += n_true_satisfied
+
         method_content.append(f"{n_inferred_satisfied}/{n_true_satisfied}")
 
+        # output the handler, method, benchmark and plan that has more than 1 s analysis time
+        for plan_id, plan in statistics[benchmark][handler][method]['plan'].items():
+          if plan['analysis_time'] > 1:
+            print(f"{handler} {method} {benchmark} {plan_id} {plan['analysis_time']}")
+
+        # compute mean and std of analysis time
+        analysis_times = [x['analysis_time'] for x in statistics[benchmark][handler][method]['plan'].values()]
+
+        mean_analysis_time = np.mean(analysis_times)
+        std_analysis_time = np.std(analysis_times)
+
+
+        time_content_row.append(f"{mean_analysis_time:.2f}")
+        # time_content_row.append(f"{mean_analysis_time:.2f} ± {std_analysis_time:.2f} (s)")
+
       content.append(method_content)
+      time_content.append(time_content_row)
       # method_content_str = f' {delimiter} '.join(method_content)
       # content.append(f"{method_str} {delimiter} {method_content_str}{end}")
 
     content.append(SEPARATING_LINE)
+    time_content.append(SEPARATING_LINE)
 
     total_content = ['Total Plans']
     for benchmark in DEFAULT_BENCHMARKS:
@@ -209,22 +233,23 @@ def table(statistics, use_latex, handlers):
     if use_latex:
       benchmark_names = [BENCHMARK_LATEX_NAMES[benchmark] for benchmark in benchmark_names]
 
-    if use_latex:
-      delimiter = '&'
-      end = ' \\\\'
-      # print headers:
-      header_str = f' {delimiter} '.join(benchmark_names)
-      print(f"Algorithm {delimiter} {header_str}{end}")
-      print('\\midrule')
-      for line_content in content:
-        if line_content == SEPARATING_LINE:
-          print('\\midrule')
-        else:
-          print(f" {delimiter} ".join(line_content) + end)
+    for table_content in [content, time_content]:
+      if use_latex:
+        delimiter = '&'
+        end = ' \\\\'
+        # print headers:
+        header_str = f' {delimiter} '.join(benchmark_names)
+        print(f"Algorithm {delimiter} {header_str}{end}")
+        print('\\midrule')
+        for line_content in table_content:
+          if line_content == SEPARATING_LINE:
+            print('\\midrule')
+          else:
+            print(f" {delimiter} ".join(line_content) + end)
 
-    else:
-      print(tabulate(content, headers=['Algorithm'] + benchmark_names))
-    print()
+      else:
+        print(tabulate(table_content, headers=['Algorithm'] + benchmark_names, tablefmt='github'))
+      print()
     # header_str = f' {delimiter} '.join(benchmark_names)
     # print(f"Algorithm {delimiter} {header_str}{end}")
     # if use_latex:
@@ -233,6 +258,8 @@ def table(statistics, use_latex, handlers):
     # for line in content:
     #   print(line)
     
+    print(f"Total Inferred Satisfied: {total_inferred}")
+    print(f"Total True Satisfied: {total_true}")
 
 def close_to_target_error(target, value):
   if round(value, 5) == 0:

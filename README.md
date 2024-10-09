@@ -91,7 +91,7 @@ These files will be generated
 ```bash
 python visualize.py --output output_kicktires --task analysis_table
 ```
-This will output the analysis results table in Table 1 and Table 19.
+This will output the analysis results table in Table 1 and Table 19, as well as the runtime of the analysis.
 
 ```bash
 python visualize.py --output output_kicktires --task plot
