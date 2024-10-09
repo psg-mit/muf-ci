@@ -33,7 +33,7 @@ class AbsSymState(object):
     self.ctx: AbsContext = AbsContext()
     self.counter: int = 0
     self.max_rvs = max_rvs
-    self.max_size = 100
+    self.max_size = 200
     self.max_depth = 15
     # wrapper for the value function implemented by handler
     self.value_f: Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]] = value_f
