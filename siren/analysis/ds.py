@@ -291,8 +291,6 @@ class AbsDSState(AbsSymState):
           raise ValueError(f'{rv_par} is {self.node(rv_par)}')
         case _:
           return False
-    if rv == AbsRandomVar('rv16'):
-      print()
     if annotation is not None:
       if name is None:
         raise ValueError('Cannot annotate anonymous variable')
