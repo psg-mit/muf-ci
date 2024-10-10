@@ -50,8 +50,6 @@ CWD = '..'
 
 LOGGING = False
 
-TIMEOUT = 300
-
 def squared_error(true_x, x):
   return (true_x - x) ** 2
 
@@ -112,7 +110,7 @@ def flatten_nested(structure):
   return flattened_list
 
 # Runs benchmark executable and computes the absolute error of each variable
-def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file, raw, kwargs):
+def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file, raw, timeout, kwargs):
   # replace the file read with the correct datafile
   # File.read("data/processed_data.csv"))
   # string could be anything
@@ -133,7 +131,7 @@ def run_siren(benchmark, file, handler, method, true_vars, error_func, data_file
   tqdm.tqdm.write('>' + cmd)
 
   try:
-    out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
+    out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=timeout).decode("utf-8")
   except subprocess.TimeoutExpired as e:
     tqdm.tqdm.write(f'Timeout: {file}')
     return None
@@ -261,7 +259,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               'seed': seed,
             }
 
-            run_outputs = run_siren(benchmark, file, handler, method, true_vars[handler], error_func, data_file[handler], raw, siren_kwargs)
+            run_outputs = run_siren(benchmark, file, handler, method, true_vars[handler], error_func, data_file[handler], raw, kwargs.get('timeout', 300), siren_kwargs)
             if run_outputs is None:
               # timeout
               tqdm.tqdm.write(f'Timed out: {plan_id} {handler} {method} - {p} particles')
@@ -299,7 +297,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
             if t == -1:
               break
 
-def find_satisfiable_plans(benchmark, files, handlers, methods, plans, knowns):
+def find_satisfiable_plans(benchmark, files, handlers, methods, plans, knowns, timeout):
   # print(plans)
   if len(files) == 0:
     # If no files specified, get all files in programs directory
@@ -354,7 +352,7 @@ def find_satisfiable_plans(benchmark, files, handlers, methods, plans, knowns):
         cmd = f'siren {file} -p 10 --samples 10 -l {handler} -m {method}'
         print('>', cmd)
         try:
-          out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT).decode("utf-8")
+          out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=timeout).decode("utf-8")
         except subprocess.CalledProcessError as e:
           output = e.output.decode("utf-8")
           if 'RuntimeViolatedAnnotationError' in output:
@@ -591,7 +589,7 @@ def analyze_benchmark(benchmark, files, output, handlers, methods):
   with open(filename, 'w') as f:
     json.dump(results, f, indent=2)
 
-def evaluation(particles, n, args):  
+def evaluation(particles, n, args, timeout=300):  
   handlers = ['smc']
   if args.subparser_name == 'artifact-eval':
     n = 10
@@ -600,6 +598,7 @@ def evaluation(particles, n, args):
   kwargs = {
     'particles': particles,
     'seed': args.seed,
+    'timeout': timeout,
   }
   files = [
     'benchmarks/examplegood/programs/plan1.si',
@@ -616,6 +615,7 @@ def evaluation(particles, n, args):
   run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', True, {
     'particles': [16],
     'seed': args.seed,
+    'timeout': timeout,
   })
 
   files = [
@@ -624,6 +624,7 @@ def evaluation(particles, n, args):
   run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', True, {
     'particles': [8],
     'seed': args.seed,
+    'timeout': timeout,
   })
 
   print("Running the analysis for Section 5 Table 1")
@@ -639,78 +640,74 @@ def evaluation(particles, n, args):
     print('Benchmark: {}'.format(benchmark))
     run_benchmark(benchmark, args.output, n, handlers, ['ssi'], [], 'mse', False, kwargs)
 
-  if args.subparser_name == 'artifact-eval':
+  if args.subparser_name == 'full-replication':
     # skip appendix due to time constraints
-    n = 0
+    print(f"Running rest of the benchmarks with n={n} for Appendix F")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      if benchmark == 'slds':
+        files = [
+          'benchmarks/slds/programs/plan67.si',
+          'benchmarks/slds/programs/plan81.si', 
+          'benchmarks/slds/programs/plan98.si', 
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan115.si',
+          'benchmarks/slds/programs/plan127.si',
+        ]
+        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
+        files = [
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan113.si', 
+          'benchmarks/slds/programs/plan114.si', 
+          'benchmarks/slds/programs/plan115.si', 
+          'benchmarks/slds/programs/plan116.si', 
+          'benchmarks/slds/programs/plan120.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
+        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
+      else:
+        if benchmark in ['outlier', 'noise']:
+          methods = ['ds', 'bp']
+        else:
+          methods = DEFAULT_METHODS
 
-  print(f"Running rest of the benchmarks with n={n} for Appendix F")
-  for benchmark in DEFAULT_BENCHMARKS:
-    print('Benchmark: {}'.format(benchmark))
-    if benchmark == 'slds':
-      files = [
-        'benchmarks/slds/programs/plan67.si',
-        'benchmarks/slds/programs/plan81.si', 
-        'benchmarks/slds/programs/plan98.si', 
-        'benchmarks/slds/programs/plan112.si', 
-        'benchmarks/slds/programs/plan115.si',
-        'benchmarks/slds/programs/plan127.si',
-      ]
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
-      files = [
-        'benchmarks/slds/programs/plan112.si', 
-        'benchmarks/slds/programs/plan113.si', 
-        'benchmarks/slds/programs/plan114.si', 
-        'benchmarks/slds/programs/plan115.si', 
-        'benchmarks/slds/programs/plan116.si', 
-        'benchmarks/slds/programs/plan120.si', 
-        'benchmarks/slds/programs/plan127.si',
-      ]
-      run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
-      run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
-    else:
-      if benchmark in ['outlier', 'noise']:
-        methods = ['ds', 'bp']
+        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
+
+    handlers = ['mh']
+    print(f"Running the benchmark with n={n} for Appendix H")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      if benchmark == 'slds':
+        files = [
+          'benchmarks/slds/programs/plan67.si',
+          'benchmarks/slds/programs/plan81.si', 
+          'benchmarks/slds/programs/plan98.si', 
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan115.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
+        run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
+        files = [
+          'benchmarks/slds/programs/plan112.si', 
+          'benchmarks/slds/programs/plan113.si', 
+          'benchmarks/slds/programs/plan114.si', 
+          'benchmarks/slds/programs/plan115.si', 
+          'benchmarks/slds/programs/plan116.si', 
+          'benchmarks/slds/programs/plan120.si', 
+          'benchmarks/slds/programs/plan127.si',
+        ]
+        run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
       else:
         methods = DEFAULT_METHODS
 
-      run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
+        run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
 
-  handlers = ['mh']
-  print(f"Running the benchmark with n={n} for Appendix H")
-  for benchmark in DEFAULT_BENCHMARKS:
-    print('Benchmark: {}'.format(benchmark))
-    if benchmark == 'slds':
-      files = [
-        'benchmarks/slds/programs/plan67.si',
-        'benchmarks/slds/programs/plan81.si', 
-        'benchmarks/slds/programs/plan98.si', 
-        'benchmarks/slds/programs/plan112.si', 
-        'benchmarks/slds/programs/plan115.si', 
-        'benchmarks/slds/programs/plan127.si',
-      ]
-      run_benchmark(benchmark, args.output, n, handlers, ['ssi'], files, 'mse', False, kwargs)
-      files = [
-        'benchmarks/slds/programs/plan112.si', 
-        'benchmarks/slds/programs/plan113.si', 
-        'benchmarks/slds/programs/plan114.si', 
-        'benchmarks/slds/programs/plan115.si', 
-        'benchmarks/slds/programs/plan116.si', 
-        'benchmarks/slds/programs/plan120.si', 
-        'benchmarks/slds/programs/plan127.si',
-      ]
-      run_benchmark(benchmark, args.output, n, handlers, ['ds'], files, 'mse', False, kwargs)
-      run_benchmark(benchmark, args.output, n, handlers, ['bp'], [], 'mse', False, kwargs)
-    else:
-      methods = DEFAULT_METHODS
-
-      run_benchmark(benchmark, args.output, n, handlers, methods, [], 'mse', False, kwargs)
-
-  if args.subparser_name == 'artifact-eval':
-    return
-  print("Running the analysis for Appendix H")
-  for benchmark in DEFAULT_BENCHMARKS:
-    print('Benchmark: {}'.format(benchmark))
-    analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
+    print("Running the analysis for Appendix H")
+    for benchmark in DEFAULT_BENCHMARKS:
+      print('Benchmark: {}'.format(benchmark))
+      analyze_benchmark(benchmark, [], args.output, handlers, DEFAULT_METHODS)
   
 if __name__ == '__main__':
   p = argparse.ArgumentParser()
@@ -751,21 +748,18 @@ if __name__ == '__main__':
   if args.subparser_name == 'kicktires':
     n = 1
     particles = [1, 2, 4, 8, 16]
-    TIMEOUT = 60
     
-    evaluation(particles, n, args)
+    evaluation(particles, n, args, timeout=15)
   elif args.subparser_name == 'artifact-eval':
     n = 5
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-    TIMEOUT = 300
 
-    evaluation(particles, n, args)
+    evaluation(particles, n, args, timeout=300)
   elif args.subparser_name == 'full-replication':
     n = 100
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-    TIMEOUT = 300
     
-    evaluation(particles, n, args)
+    evaluation(particles, n, args, timeout=300)
   else:
     benchmarks = [b.strip() for b in args.benchmark.split(',')] if args.benchmark is not None else DEFAULT_BENCHMARKS
     methods = [m.strip() for m in args.methods.split(',')] if args.methods is not None else DEFAULT_METHODS
@@ -816,7 +810,7 @@ if __name__ == '__main__':
           config = json.load(f)
 
         knowns = config['known_enc'] if 'known_enc' in config else None
-        satisfied_plan_ids = find_satisfiable_plans(benchmark, files, handlers, methods, config['plans'], knowns)
+        satisfied_plan_ids = find_satisfiable_plans(benchmark, files, handlers, methods, config['plans'], knowns, timeout=300)
         
         for plan_id, plan_data in config['plans'].items():
           plan_data['satisfiable'] = {} if 'satisfiable' not in plan_data else plan_data['satisfiable']

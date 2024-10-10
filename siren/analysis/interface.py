@@ -34,7 +34,7 @@ class AbsSymState(object):
     self.counter: int = 0
     self.max_rvs = max_rvs
     self.max_size = 200
-    self.max_depth = 15
+    self.max_depth = 5
     # wrapper for the value function implemented by handler
     self.value_f: Callable[[AbsSymState], Callable[[AbsRandomVar], AbsConst]] = value_f
     self.value: Callable[[AbsRandomVar], AbsConst] = value_f(self)
