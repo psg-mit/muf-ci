@@ -79,7 +79,7 @@ The following commands will generate Figures from the main paper:
 ```bash
 python visualize.py --output output_kicktires --example 
 python visualize.py --output output_kicktires --example --task timestep
-python visualize.py --output output_kicktires --task plot --benchmark outlier noise --method smc
+python visualize.py --output output_kicktires --task plot --benchmark outlier noise --method ssi
 ```
 
 In your host machine (outside of the Docker container), in the `siren` repo, run
@@ -89,11 +89,11 @@ chmod +x cp_files.sh
 ```
 to copy the generated plots to the host machine to inspect.
 The following generated files will be in the host machine:
-- `benchmarks_ae/examplegood/output_kicktires/smc_ssi_example_143.png`
-- `benchmarks_ae/examplegood/output_kicktires/smc_ssi_example_time_43.png`
-- `benchmarks_ae/examplebad/output_kicktires/smc_ssi_example_time_43.png`
-- `benchmarks_ae/outlier/output_kicktires/smc_ssi_particles.png`
-- `benchmarks_ae/noise/output_kicktires/smc_ssi_particles.png`
+- `benchmarks/examplegood/output_kicktires/smc_ssi_example_143.png`
+- `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png`
+- `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`
+- `benchmarks/outlier/output_kicktires/smc_ssi_particles.png`
+- `benchmarks/noise/output_kicktires/smc_ssi_particles.png`
 
 The smoke test is configured to only run `n=1` iterations using fewer particles, so the figures will look very distorted but that is expected. The smoke test should just check that the visualization script will generate plots.
 
@@ -138,7 +138,7 @@ The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_ex
 
 4. Visualize the results for Section 5 Figure 16:
 ```bash
-python visualize.py --task plot -b outlier noise -m ssi
+python visualize.py --task plot -b outlier noise -m ssi --handlers smc
 ```
 The plot will be located at `benchmarks/outlier/output/smc_ssi_particles.png` and `benchmarks/noise/output/smc_ssi_particles.png`.
 

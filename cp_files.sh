@@ -12,10 +12,10 @@ fi
 echo "Found container ID: $container_id"
 
 # Define the source path inside the container (adjust this if necessary)
-container_path="/root/siren/benchmarks"
+container_path="/root/siren/benchmarks/"
 
 # Define the destination path on the local host (same directory)
-local_path=$(pwd)/benchmarks_ae
+local_path=$(pwd)/
 
 echo "Copying files from container ($container_id) path: $container_path to local host path: $local_path"
 

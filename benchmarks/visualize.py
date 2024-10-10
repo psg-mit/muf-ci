@@ -45,8 +45,6 @@ DEFAULT_HANDLERS = [
 
 N_INTERVALS = 30
 
-TIMEOUT = 300
-
 BENCHMARK_LATEX_NAMES = {
   'radar': r'\bRadar{}',
   'envnoise': r"\bEnvnoise{}",
@@ -314,7 +312,7 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
     methods = ['ssi']
 
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
 
   original_data = data
@@ -655,7 +653,7 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
     methods = ['ssi']
 
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
 
   original_data = data
@@ -922,9 +920,9 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
 
       plt.close(fig)
 
-def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
+def compare_to_default(data, methods, plan_ids, all_plans, default_plans, kwargs):
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
 
   def get_error_runtime(data, method, plan_id):
@@ -1047,9 +1045,9 @@ def compare_to_default(data, methods, plan_ids, all_plans, default_plans):
     plan_ids = None
   print()
 
-def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans):
+def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans, kwargs):
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
 
   def get_error_runtime(data, method, plan_id):
@@ -1093,9 +1091,9 @@ def compare_to_default_example(data, methods, plan_ids, all_plans, default_plans
   print(ratios)
   
 
-def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex):
+def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex, kwargs):
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
   data = data.loc[data['handler'] == handler]
   data = data.drop(columns=['handler'])
@@ -1332,9 +1330,9 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
   non_default_times = all_times.loc[non_default].copy()
   return all_times, non_default_times, table
 
-def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex):
+def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_plans, default_plans, use_latex, kwargs):
   # filter out -1 time, which means timeout
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
   data = data.loc[data['handler'] == handler]
   data = data.drop(columns=['handler'])
@@ -1510,10 +1508,10 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
   non_default_times = all_acc.loc[non_default].copy()
   return all_acc, non_default_times, table
 
-def compare_to_default_accuracy_example(data, all_plans):
+def compare_to_default_accuracy_example(data, all_plans, kwargs):
   # filter out -1 time, which means timeout
   # filter out entries over time limit
-  data = data.loc[data['time'] < TIMEOUT]
+  data = data.loc[data['time'] < kwargs.get('timeout', 300)]
   data = data.loc[data['time'] != -1]
   
   def get_error_runtime(data, method, plan_id, median=False):
@@ -1612,6 +1610,8 @@ if __name__ == '__main__':
   handlers = [handler for handler in args.handlers if handler in DEFAULT_HANDLERS]
   particles = [int(particle) for particle in args.particles] if args.particles is not None else None
 
+  TIMEOUT = 300
+
   if args.task == 'analysis_table':
     # Load statistics
     all_statistics = {}
@@ -1678,10 +1678,10 @@ if __name__ == '__main__':
           data = pd.read_csv(os.path.join(output, 'results.csv'), delimiter=',')
 
           if args.example:
-            compare_to_default_accuracy_example(data, config['plans'])
+            compare_to_default_accuracy_example(data, config['plans'], {'timeout': TIMEOUT})
           else:
             if args.task == 'compare_time':
-              benchmark_times, non_default_times, benchmark_table = compare_to_default_accuracy(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex)
+              benchmark_times, non_default_times, benchmark_table = compare_to_default_accuracy(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex, {'timeout': TIMEOUT})
 
               benchmark_times['benchmark'] = benchmark
               non_default_times['benchmark'] = benchmark
@@ -1699,7 +1699,7 @@ if __name__ == '__main__':
                 all_non_default_times = pd.concat([all_non_default_times, non_default_times])
 
             if args.task == 'compare_accuracy':
-              benchmark_acc, non_default_acc, benchmark_table = compare_to_default_time(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex)
+              benchmark_acc, non_default_acc, benchmark_table = compare_to_default_time(benchmark, data, handler, methods, args.plan_ids, config['plans'], config['default'], args.latex, {'timeout': TIMEOUT})
 
               benchmark_acc['benchmark'] = benchmark
               non_default_acc['benchmark'] = benchmark
