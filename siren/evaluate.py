@@ -572,14 +572,11 @@ class MH(Handler):
       return 0.0
     
     l_alpha = np.log(len(old_sample_scores)) - np.log(len(sample_scores))
-    # print("l_alpha1:", l_alpha)
     l_alpha += score - old_score
-    # print("l_alpha2:", l_alpha)
     for v in sample_scores.values():
       l_alpha += v
     for v in old_sample_scores.values():
       l_alpha -= v
-    # print("l_alpha3:", l_alpha)
 
     return np.exp(min(0, l_alpha))
 
@@ -604,7 +601,6 @@ class MH(Handler):
 
     particle = Particle(expression, method(self.value(), seed=seed))
     particle = self.evaluate_particle(particle, functions, file_dir)
-    # print(self.sample_sites)
 
     for i in range(n_warmups + n_samples * n_thinning):
       old_sample_sites = {k: deepcopy(v) if isinstance(v.v, List) else v for k, v in self.sample_sites.items()}
@@ -628,34 +624,16 @@ class MH(Handler):
         if k not in self.sample_scores:
           del self.sample_sites[k]
 
-      # print("current:")
-      # print([(k, v) for k, v in sorted(old_sample_sites.items(), key=lambda x: x[0].rv)])
-      # print("sample_scores:", old_sample_scores)
-      # print("score:", old_particle.score)
-      # print("regen:", regen)
-      # print("new:")
-      # print([(k, v) for k, v in sorted(self.sample_sites.items(), key=lambda x: x[0].rv)])
-      # print("sample_scores:", self.sample_scores)
-      # print("score:", particle.score)
-
       alpha = self.mh(old_particle.score, old_sample_scores, particle.score, self.sample_scores)
-      # print("alpha:", alpha)
       u = np.random.random()
       if not (u <= alpha):
-        # print("u:", u)
         # Restore the old sample sites
         particle = old_particle
         self.sample_sites = old_sample_sites
         self.sample_scores = old_sample_scores
-      # else:
-      #   print("accepted")
-      # print()
 
       if i >= n_warmups and i % n_thinning == 0:
         particles.append(particle)
-
-    # print(len(range(n_warmups + n_samples * n_thinning)))
-    # print(len(particles))
 
     # reset all scores to do unweighted average
     for p in particles:

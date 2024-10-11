@@ -234,7 +234,6 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
 
       files = filter(lambda x: plans[get_plan_id(x)]["satisfiable"][handler][method], all_files)
       files = list(files)
-      # print(files)
 
       for file in tqdm.tqdm(files, desc=f"Files", position=0, leave=True, total=len(files)):
         plan_id = get_plan_id(file)
@@ -248,9 +247,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
           raise ValueError('Must specify particles or samples')
         
         for p in tqdm.tqdm(particles, desc=f"Particles/Samples", position=1, leave=False, total=len(particles)):
-          # print(f'Running with {p} particles')
           for i in tqdm.tqdm(range(n), desc=f"Iteration", position=2, leave=False, total=n):
-            # print(f'{plan_id} {method} - {p} particles - Run {i}')
 
             siren_kwargs = {
               'particles': p,
@@ -431,9 +428,6 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
         if plan_data['satisfiable'][handler][method]:
           satisfied_plans[plan_id] = plan_data['plan']
 
-      # print(f'Satisfied plans: {list(satisfied_plans.keys())}')
-      # print(satisfied_plans)
-
       n_true_satisfied = len(satisfied_plans.keys())
       n_inferred_satisfied = 0
 
@@ -442,8 +436,6 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
         method_results['plan'][plan_id] = {}
 
         method_results['plan'][plan_id]['true_satisfied'] = plan_id in satisfied_plans
-
-        # print(f'Analyzing {file}...')
 
         # get analysis output
         cmd = f'siren {file} -l {handler} -m {method} --analyze-only'
@@ -467,19 +459,6 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
         # # parse output
         lines = out.strip().split('\n')
 
-        # analysis_time = -1
-        # for i, line in enumerate(lines):
-        #   line = line.strip()
-        #   if line == '===== Analysis Time =====':
-        #     analysis_time = float(lines[i + 1])
-        #     break
-
-        # if analysis_time == -1:
-        #   raise RuntimeError('Analysis time not found')
-        
-        # method_results['plan'][plan_id]['analysis_time'] = analysis_time
-
-        # get outputs after ===== Inferred Inference Plan =====
         inferred_plan = {}
         start = False
         for line in lines:
@@ -784,12 +763,6 @@ if __name__ == '__main__':
         # Get list of particles
         if args.particles is None:
           particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-          # particles = sorted([int(x) for x in np.unique(np.logspace(
-          #                                         np.log10(args.prange[0]), 
-          #                                         np.log10(args.prange[1]), 
-          #                                         N_INTERVALS, 
-          #                                         dtype=int
-          #                                       ))])
           print('Particles:', particles)
         else:
           particles = args.particles

@@ -650,9 +650,6 @@ class AbsSymState(object):
               continue
             parents.append(p)
           if len(parents) > self.max_rvs:
-            # print(parents)
-            # print(self.max_rvs)
-            # print(e1, e2)
             for rv_par in parents:
               if rv_par in self.vars():
                 self.set_dynamic(rv_par)

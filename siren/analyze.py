@@ -319,23 +319,13 @@ class AbsHandler(object):
                 return _evaluate(p2.update(cont=e))
             case UnkE(_):
               # we don't know the length/content of the list, so do fixpoint computation
-              # print('=====')
-              # print('before')
-              # print(p2.state)
-              # print(p2.cont)
               state_old = copy(p2.state)
               p3 = _evaluate(p2.copy(cont=Apply(func, [lst_val, acc_val])))
               # narrow_join_expr (rename_join) renames and joins the two expressions and states from before the apply
               # and after the apply
-              # print('after')
-              # print(p3.state)
-              # print(p3.cont)
               acc_new = p2.state.narrow_join_expr(acc_val, p3.final_expr, p3.state)
               p2.state.counter = max(p2.state.counter, p3.state.counter)
               p2.state.clean(acc_new) # remove unreachable rvs before comparison
-              # print('joined')
-              # print(p2.state)
-              # print(acc_new)
               if acc_val == acc_new and state_old == p2.state:
                 # fixpoint, return result
                 return p3.update(cont=acc_new, state=state_old)
@@ -412,9 +402,6 @@ class AbsHandler(object):
           assert isinstance(p1.cont, Op) # should still be an Op
           d = p1.final_expr
           p2 = _evaluate(p1.update(cont=v))
-          # print(p2.state)
-          # print('====')
-          # print(d, p2.final_expr)
           self.observe(p2, d, p2.final_expr)
           return p2
         case Resample():

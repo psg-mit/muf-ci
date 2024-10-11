@@ -49,7 +49,6 @@ def main():
 
     with open(args.filename, "r") as f:
         program = parser.parse_program(f.read())
-        # print(program)
 
     # Get the handler for the selected inference method
     (handler, analysis_handler) = handlers[args.handler]

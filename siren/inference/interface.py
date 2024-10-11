@@ -343,7 +343,6 @@ class SymState(object):
       case Lt(left, right):
         return self.mean(left) < self.mean(right)
       case _:
-        # print(type(expr))
         raise ValueError(expr)
 
   # Needs to be overridden by the implementation
@@ -633,8 +632,6 @@ class ProbState(object):
 
     return "\n".join([f"{str(indices)}: {p}" for p, indices in particles_indices.items()])
     
-    # return "\n".join([f"{i}: {p}" for i, p in enumerate(self.particles)])
-  
   # Normalize the probabilities of the particles based on their scores
   def normalized_probabilities(self) -> List[float]:
     scores = np.array([p.score for p in self.particles])

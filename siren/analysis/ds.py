@@ -140,7 +140,6 @@ class AbsDSState(AbsSymState):
       self.set_distr(rv, TopD())
       self.set_node(rv, AbsDSUnk())
 
-    # print('join', rv, self.node(rv), other.node(rv))
     super().entry_join(rv, other)
     if len(self.children(rv)) > self.max_depth:
       parents1 = set()

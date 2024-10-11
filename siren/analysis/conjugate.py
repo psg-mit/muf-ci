@@ -595,7 +595,6 @@ def normal_inverse_gamma_normal_posterior(state: AbsSymState, prior: AbsNormal, 
             
     
 def normal_inverse_gamma_normal_conjugate(state: AbsSymState, rv_par: AbsRandomVar, rv_child: AbsRandomVar) -> Optional[Tuple[AbsStudentT, AbsNormal]]:
-  # print('normal_inverse_gamma_normal_conjugate', rv_par, rv_child)
   prior, likelihood = state.distr(rv_par), state.distr(rv_child)
   match prior, likelihood:
     case AbsNormal(mu0, var1), AbsNormal(mu, var2):

@@ -383,8 +383,6 @@ class AbsSSIState(AbsSymState):
       # Joins can cause cycles so we need to detect them
       # Before we do topological sort
       if _contains_cycle(rv_cur):
-        # print(rv_cur)
-        # print(self.state)
         self.set_dynamic(rv_cur)
         self.set_distr(rv_cur, TopD())
         return

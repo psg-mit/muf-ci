@@ -182,8 +182,6 @@ def table(statistics, use_latex, handlers):
       method_content = [method_str]
       time_content_row = [method_str]
       for benchmark in DEFAULT_BENCHMARKS:
-        # print(benchmark)
-        # print(statistics[benchmark])
         n_true_satisfied = statistics[benchmark][handler][method]['n_true_satisfied']
         n_inferred_satisfied = statistics[benchmark][handler][method]['n_inferred_satisfied']
 
@@ -205,12 +203,9 @@ def table(statistics, use_latex, handlers):
 
 
         time_content_row.append(f"{mean_analysis_time:.2f}")
-        # time_content_row.append(f"{mean_analysis_time:.2f} ± {std_analysis_time:.2f} (s)")
 
       content.append(method_content)
       time_content.append(time_content_row)
-      # method_content_str = f' {delimiter} '.join(method_content)
-      # content.append(f"{method_str} {delimiter} {method_content_str}{end}")
 
     content.append(SEPARATING_LINE)
     time_content.append(SEPARATING_LINE)
@@ -248,13 +243,6 @@ def table(statistics, use_latex, handlers):
       else:
         print(tabulate(table_content, headers=['Algorithm'] + benchmark_names, tablefmt='github'))
       print()
-    # header_str = f' {delimiter} '.join(benchmark_names)
-    # print(f"Algorithm {delimiter} {header_str}{end}")
-    # if use_latex:
-    #   print('\\midrule')
-
-    # for line in content:
-    #   print(line)
     
     print(f"Total Inferred Satisfied: {total_inferred}")
     print(f"Total True Satisfied: {total_true}")
@@ -282,7 +270,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
   if kwargs.get('pdf', True):
     plt_settings = {
       'font.size': 17, 
-      # 'font.family': 'Linux Libertine', 
       "text.usetex": True,                # use LaTeX to write all text
       "text.latex.preamble": "\n".join([         # plots will use this preamble
         '\\usepackage{libertine}'
@@ -295,7 +282,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
     
   for key, val in plt_settings.items():
     plt.rcParams[key] = val
-  # plt.rcParams.update(plt_settings)
 
   # first 4 columns are metadata
   variables = data.columns[5:]
@@ -330,7 +316,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
                     n_y, n_x,
                     figsize=figsize,  
                     sharex=True, 
-                    # sharey=True
       )
 
       for ax in axes.flatten():
@@ -341,9 +326,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
       else:
         plans = original_plan_ids
         
-      # if len(plans) <= 1:
-      #   continue
-
       use_label = True
       if is_example:
         variables = ['x', 'alt']
@@ -490,20 +472,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
                 textcoords='offset points', ha='center', va='bottom',
                 path_effects=[pe.withStroke(linewidth=4, foreground="white")],
                 arrowprops=dict(arrowstyle='->, head_width=0.4', color="#2e2e2e", lw=1.5), fontsize=18)
-              # print(arrow_xy)
-            # if is_example and plan_id in [3] and var == 'x':
-            #   # draw arrow to a particle count
-            #   arrow_particle = 32
-            #   arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]) + 10
-            #   ax.annotate(f'{arrow_particle}', xy=arrow_xy, xytext=(0,50), 
-            #     textcoords='offset points', ha='center', va='bottom',
-            #     arrowprops=dict(arrowstyle='->', color=mec))
-              # length = 49
-              # arrow_xy = (runtimes.loc[arrow_particle], upper.loc[arrow_particle]+length)
-              # ax.arrow(arrow_xy[0], arrow_xy[1], 0, -length, ec=mec, fc=mec, head_width=0.3, head_length=0.3, overhang=0.01)
-              # ax.annotate('', xy=arrow_xy, xytext=(0,10), 
-              #   textcoords='offset points', ha='center', va='bottom',
-              #   arrowprops=dict(arrowstyle='->', color=mec))
           plan_i += 1
           
         # if y range doesn't cross any power of 10, use log scale
@@ -514,19 +482,12 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
         min_x = max(min_x * 0.7, 1e-10)
         max_x = max(max_x * 1.3, 1e-10)
         ax.set_xlim(min_x, max_x)
-
-        # print(method)
-        # print(var)
-        # print(min_y, max_y)
-
-        # np.ceil(np.log10(max(max_y, 1e-10))) - np.ceil(np.log10(max(min
         
         if abs(np.log10(max(max_y, 1e-10)) - np.log10(max(min_y, 1e-10))) < 1:
           use_log = False
         
         # if there are no major ticks, set minor ticks
         
-        # print(use_log)
         ax.yaxis.set_minor_locator(MinorSymLogLocator(thresh))
 
         if benchmark == 'slam' and var == 'x' and not error_bar:
@@ -540,12 +501,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
           ax.set_yticklabels([0, 10])
           use_log = False
         
-        # if benchmark == 'slam' and method == 'ssi' and handler == 'smc' and error_bar:
-        #   ax.set_xlim(18.641205409470178, 534.4669454885518)
-
-        # if benchmark == 'slam' and method == 'ds' and handler == 'smc' and error_bar:
-        #   ax.set_xlim(20.003947801259134, 520.9289414624243)
-
         if not use_log and not error_bar:
           ax.yaxis.set_minor_formatter(ScalarFormatter())
           ax.yaxis.set_minor_locator(plt.MaxNLocator(nbins=5))
@@ -553,7 +508,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
           ax.yaxis.set_major_locator(plt.NullLocator())
 
         use_label = False
-        # var_name = var if var != 'alt' else 'a'
         var_name = var
         ax.set_title(f'{var_name}')
         ax.grid(**GRIDPARAMS)
@@ -591,10 +545,6 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
         y = 1.08
         bbox = (0.5, -0.1)
 
-      # if is_example:
-      #   bbox = (0.25, -0.1)
-
-      # fig.suptitle(f'Variable Accuracy to Execution Time', y=y)
       lgd = fig.legend(loc='upper center', ncols=legend_width, bbox_to_anchor=bbox)
 
       if n_y == 1:
@@ -672,7 +622,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
                     n_y, n_x,
                     figsize=figsize,  
                     sharex=True, 
-                    # sharey=True
       )
 
       for ax in axes.flatten():
@@ -723,8 +672,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
       renamed_color_dict = {}
 
       for v in variables:
-        # if not v == 'x':
-        #   continue
         var = v + '_raw'
         if particle is not None:
           plot_data = data.loc[(data['particles'] == particle) & (data['method'] == method) & (data['plan_id'].isin(plans))].copy()
@@ -752,11 +699,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
         plot_data[v] = plot_data.apply(lambda row: abs(row[v] - true_x.loc[true_x['timestep'] == int(row['timestep'])][v].values[0]) ** 2, axis=1)
         
         # plot estimation
-        # true_x = [vals for var, vals in true_vars[handler] if var == v][0]
-        # true_x = pd.DataFrame(true_x, columns=[v]).reset_index(names=['timestep', v])
-        # true_x['plan_id'] = 0
-        # true_x[v] = true_x[v].astype(float)
-        # plot_data = pd.concat([plot_data, true_x])
 
         plot_data[v] = plot_data[v].astype(float)
 
@@ -770,21 +712,15 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
 
       all_plot_data['timestep'] = all_plot_data['timestep'].astype(int)
 
-      # print(all_plot_data)
-
       all_plot_data = pd.concat([all_plot_data])
 
       timesteps = 100
 
       used_plot_data = all_plot_data[all_plot_data['timestep'].isin(list(range(timesteps))) & (all_plot_data['variable'].isin(['x', 'alt']))]
 
-      # for var in variables:
-
       order = [
         'Symbolic x Plan (p = 8)',
         'Symbolic r Plan (p = 16)',
-        # 'Sample All Plan (p = 16)',
-        # 'No Annotations (p = 16)',
       ]
 
       print(renamed_color_dict)
@@ -812,13 +748,11 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
         height=4,
         
       )
-      # time_plot.set(title=f'{var}', xlabel='Timestep', ylabel='Error')
       
       time_plot.legend.remove()
 
         # plot true_x
       for i, (v, ax) in enumerate(zip(variables, time_plot.axes.flatten())):
-        # ax = time_plot.axes.flatten()[0]
         if i == 0 and benchmark == 'examplegood':
           ax.legend(ncols=2, loc='upper center', bbox_to_anchor=(1., -0.7))
         # save the legend into a separate file
@@ -831,16 +765,9 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
           if kwargs.get('pdf', True):
             figl.savefig(os.path.join(output, f'legend_{handler}_{method}.pdf'), bbox_inches='tight')
           
-          # if benchmark == 'examplegood':
           ax.get_legend().remove()
 
-        # if benchmark == 'examplegood':
         ax.set_title(f'{v}')
-        # else:
-        #   ax.set_title(f'')
-        # if benchmark == 'examplegood':
-        #   ax.set_xlabel('')
-        # else:
         ax.set_xlabel('Timestep')
         if i == 0:
           ax.set_ylabel('Error')
@@ -856,15 +783,9 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
             box.x1 = box.x1 - 0.01
             ax.set_position(box)
           ax.yaxis.set_major_formatter(FormatStrFormatter('  %.0f.'))
-          # ax.yaxis.set_major_locator(MultipleLocator(4))
-          # ax.yaxis.set_major_formatter(ScalarFormatter())
-          
-          # ax.yaxis.set_minor_locator(MultipleLocator(2))
           ax.set_ylim(0, 10)
         else:
           ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-          # ax.yaxis.set_minor_locator(MultipleLocator(100))
-          # ax.yaxis.set_minor_formatter(FormatStrFormatter('%.1f'))
           max_val = max(max(used_plot_data[used_plot_data['variable'] == v]['value']), 1)
           ax.set_ylim(0, max_val)
 
@@ -872,8 +793,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
           ax.set_ylim(0, 1)
 
 
-        # true_x = [vals for v, vals in true_vars[handler] if var == v][0]
-        # true_x = pd.DataFrame(true_x, columns=[var]).reset_index(names=['timestep', var])
         ax.tick_params(
           axis='x',           # changes apply to the x-axis
           which='both',       # both major and minor ticks are affected
@@ -888,21 +807,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
           bottom=False,
           top=False,
         )
-        # ax.plot(true_x['timestep'], true_x[var], color=color_dict['Ground Truth'], label='Ground Truth', linestyle='solid', zorder=1)
-
-        # for i, (ax, yrange, xrange) in enumerate(zip(time_plot.axes.flatten(), [(-15, 15), (0, 50), (0, 15)], [(0, 100), (0, 100), (0, 100)])):
-        #   ax.set_ylim(*yrange)
-        #   ax.set_xlim(*xrange)
-          
-        # if len(plans) <= 1:
-        #   continue
-
-        # ax.tick_params(
-        #   axis='x',           # changes apply to the x-axis
-        #   which='major',       # both major and minor ticks are affected
-        #   bottom=True,
-        #   top=False,
-        #   labelbottom=True)
 
       print('Saving time plots')
 
@@ -1190,7 +1094,6 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
 
       for k, var in enumerate(variables):
         # compute particles where error is close to default error for var
-        # print(handler, benchmark, method, plan_id, var)
         is_close = errors[var].apply(lambda x: close_to_target_error(target[var].values[0], x))
 
         # get smallest runtime where error is close to default error
@@ -1442,12 +1345,7 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
           ]
 
     acc = acc.dropna(subset=['ratio'])
-    # acc = acc.groupby(['variable', 'plan']).apply(lambda x: gmean(x['ratio'])).reset_index()
     acc = acc.loc[acc.groupby(['variable', 'default_time'])['ratio'].idxmax()]
-    # acc = acc.replace(np.inf, np.nan)
-
-    # print()
-    # print(acc)
 
     acc['method'] = method
     if all_acc.empty:
@@ -1455,9 +1353,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
     else:
       all_acc = pd.concat([all_acc, acc])
     
-    # print()
-    # print(acc)
-
   all_acc = all_acc.reset_index(drop=True)
 
   table_values = {
@@ -1470,7 +1365,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
       else:
         row = all_acc.loc[(all_acc['variable'] == var) & (all_acc['method'] == method)]
         row = row.groupby(['variable', 'method']).apply(lambda x: gmean(x['ratio'])).reset_index(names='ratio')
-        # print(row)
         if len(row) == 0:
           table_values[var].append(["--"])
         else:
@@ -1504,7 +1398,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
     table.append(row)
 
   non_default = all_acc.apply(lambda x: x['plan'] != int(default_plans[x['method']]), axis=1)
-  # print(non_default)
   non_default_times = all_acc.loc[non_default].copy()
   return all_acc, non_default_times, table
 
@@ -1563,9 +1456,6 @@ def compare_to_default_accuracy_example(data, all_plans, kwargs):
   for method in methods:
     if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][method]]
-
-    # if len(list(plan_ids)) <= 1:
-    #   continue
 
     plan_ids = map(int, plan_ids)
 
@@ -1733,8 +1623,6 @@ if __name__ == '__main__':
             print(tabulate(all_tables))
 
         if args.task == 'compare_time':
-          # print(all_times)
-          # print(all_non_default_times)
           # compute geometric mean of speedups
           gm = gmean(list(all_times['speedup'].values) + [1] * 9)
           min_speedup = all_times['speedup'].min()
@@ -1747,18 +1635,7 @@ if __name__ == '__main__':
           print(f"Max Speedup: {round(max_speedup, 2)}")
           print("==================")
 
-          # print('Non Default')
-          # gm = gmean(all_non_default_times['speedup'].values)
-          # min_speedup = all_non_default_times['speedup'].min()
-          # max_speedup = all_non_default_times['speedup'].max()
-
-          # print(f"Geometric Mean Speedup: {round(gm, 2)}")
-          # print(f"Min Speedup: {round(min_speedup, 2)}")
-          # print(f"Max Speedup: {round(max_speedup, 2)}")
-
         if args.task == 'compare_accuracy':
-          # print(all_acc)
-          # print(all_non_default_acc)
           # compute geometric mean of ratios
           gm = gmean(list(all_acc['ratio'].values) + [1] * 9)
           min_ratio = all_acc['ratio'].min()
@@ -1770,15 +1647,6 @@ if __name__ == '__main__':
           print(f"Min Ratio: {round(min_ratio, 2)}")
           print(f"Max Ratio: {round(max_ratio, 2)}")
           print("==================")
-
-          # print('Non Default')
-          # gm = gmean(all_non_default_acc['ratio'].values)
-          # min_ratio = all_non_default_acc['ratio'].min()
-          # max_ratio = all_non_default_acc['ratio'].max()
-
-          # print(f"Geometric Mean Accuracy Ratio: {round(gm, 2)}")
-          # print(f"Min Ratio: {round(min_ratio, 2)}")
-          # print(f"Max Ratio: {round(max_ratio, 2)}")
 
   else:
     if args.example and args.task == 'plot':
