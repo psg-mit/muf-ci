@@ -12,7 +12,7 @@ The Siren interpreter, including the inference plan satisfiability analysis, is 
 - [Reusability Guide](#reusability-guide)
 
 ## Requirements
-- Install Docker Desktop (https://www.docker.com/get-started/). The artifact was tested with Docker Desktop v4.30.0. 
+- Install [Docker Desktop](https://www.docker.com/get-started/). The artifact was tested with Docker Desktop v4.30.0. 
 - The software requires Python >= 3.10. This should be ensured by the Dockerfile.
 - The artifact instructions was tested on M1 MacBook.
 
