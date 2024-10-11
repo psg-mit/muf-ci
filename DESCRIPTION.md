@@ -19,8 +19,7 @@ Here is a summary of subdirectories and important source files.
 | [`benchmarks/`](benchmarks/)       | Contains benchmarks, benchmarking harness, and visualization code.  |
 
 ## Extending Siren with Other Hybrid Inference Algorithm
-
-Siren can be extended with other hybrid inference algorithms that can implement the hybrid inference interface. 
+Siren can be extended with other hybrid inference algorithms that can implement the hybrid inference interface.  We provide this documentation as a reference for developers and future researchers who wish to implement their own inference algorithms. This is not intended for the casual user.
 
 ### Implement the hybrid inference interface
 First, the `SymState` class in [`siren/inference/interface.py`](siren/inference/interface.py) must be subclassed in a file within the [`siren/inference/`](siren/inference/) subdirectory. The following functions must be implemented by the subclass:
@@ -101,7 +100,7 @@ match args.method:
 
 ## Extending Siren with Other Approximate Inference Algorithm
 
-Siren can also be extended with other Monte Carlo methods to be combined with the hybrid inference algorithms.
+Siren can also be extended with other Monte Carlo methods to be combined with the hybrid inference algorithms. We provide this documentation as a reference for developers and future researchers who wish to implement their own inference algorithms. This is not intended for the casual user.
 
 ### Implement the probabilistic handler operations
 First, the `Handler` class in [`siren/evaluate.py`](siren/evaluate.py) must be subclassed in that file. The following functions must be implemented by the subclass:

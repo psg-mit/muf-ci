@@ -17,20 +17,24 @@ The Siren interpreter, including the inference plan satisfiability analysis, is 
 - The artifact instructions was tested on M1 MacBook.
 
 ## Install
+Installation can be done either by running a Docker container (Recommended) or by installing from source. The following subsections describe the installation steps for each option.
 
-### Obtain Docker Image
-First, obtain the Docker image, by doing one of the following:
-  - Load Pre-Build Docker image, or
-  - Build Docker Image
-
-#### Load Pre-Built Docker Image
+### Docker Container with Pre-built Docker Image
 1. Download `siren.tar.gz` from Zenodo
 2. Load the image
 ```bash
 docker load -i siren.tar.gz
 ```
+3. Run the Docker container
+```bash
+docker run -it siren
+```
 
-#### Build Docker Image
+You should now be `root` in the Docker container, with current working directory at `~/siren`.
+
+Commands should be run inside the Docker container, unless stated otherwise.
+
+### Docker Container by Building Docker Image
 1. Obtain source code, by doing one of the following:
     1. Download from Zenodo, or
     2. Clone the `popl25-artifact` branch from GitHub
@@ -48,14 +52,42 @@ cd siren
 docker build -t siren .
 ```
 
-### Run Docker Container
-After obtaining the Docker image, either by loading a pre-built image or building it yourself, now run the container:
+4. Run the Docker container
 ```bash
 docker run -it siren
 ```
+
 You should now be `root` in the Docker container, with current working directory at `~/siren`.
 
-The following commands should be run inside the Docker container, unless stated otherwise.
+Commands should be run inside the Docker container, unless stated otherwise.
+
+### From Source (Not Recommended)
+You can install Siren from source instead of using the Docker image. This requires Python >= 3.10. 
+
+1. Obtain source code, by doing one of the following:
+    1. Download from Zenodo, or
+    2. Clone the `popl25-artifact` branch from GitHub
+    ```bash
+    git clone --single-branch --branch popl25-artifact https://github.com/psg-mit/siren
+    ```
+
+2. Enter the repository
+```bash
+cd siren
+```
+
+3. Setup virtual environment:
+```bash
+pip -m venv venv
+source venv/bin/activate
+```
+
+4. Install dependencies
+```bash
+pip install .
+```
+
+If installing from source, you can ignore instructions for copying files from the Docker container to the host machine. All generated files will appear in the described directories directly.
 
 ## Smoke Test (Kick-the-Tires)
 Run the test suite for a quick check everything works:
@@ -108,7 +140,7 @@ python visualize.py --output output_kicktires --task compare_accuracy --benchmar
 ## Artifact Evaluation
 The experiments from the paper were conducted on a 60-vCPU Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
 
-Due to the long amount of time needed to compute the full set of benchmarks from the paper, which uses `n=100` iterations per particle setting for each benchmark and method, we only replicate the trends of the main paper figures for the artifact evaluation. 
+Due to the long amount of time needed to compute the full set of benchmarks from the paper, which uses `n=100` iterations per particle setting for each benchmark and method, we have configured the scripts to use fewer iterations for artifact evaluation. As such, we only expect to replicate the trends of the main paper figures, and the actual data points are expected to appear more erratic.
 
 ### List of Claims
 We list here each of the figures/tables that the artifact reproduces. Due to time constraints and differences in machines, we only expect to reproduce the trend for the evaluation. Step 1 runs the programs for all the claims. 
@@ -116,6 +148,7 @@ We list here each of the figures/tables that the artifact reproduces. Due to tim
 - Figure 5 from Section 2 corresponds to Step 1 and Step 3.
 - Figure 16 from Section 5 corresponds to Step 1 and Step 4.
 - Table 1 from Section 5 corresponds to Step 1 and Step 5.
+- Analysis runtime table corresponds to Step 1 and Step 5.
 
 ### Step-by-step Instructions
 1. Use the harness script to run example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~4-5 hours. 
@@ -128,13 +161,13 @@ python harness.py artifact-eval
 ```bash
 python visualize.py --example
 ```
-The plot will be located at `benchmarks/examplegood/output/ssi_example_143.png`.
+The plot will be located at `benchmarks/examplegood/output/ssi_example_143.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
 
 3. Visualize the results for Section 2 Figure 5:
 ```bash
 python visualize.py --example --task timestep
 ```
-The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`.
+The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
 
 4. Visualize the results for Section 5 Figure 16:
 ```bash
@@ -142,10 +175,11 @@ python visualize.py --task plot -b outlier noise -m ssi --handlers smc
 ```
 The plot will be located at `benchmarks/outlier/output/smc_ssi_particles.png` and `benchmarks/noise/output/smc_ssi_particles.png`.
 
-5. To produce Section 5 Table 1:
+5. To produce Section 5 Table 1 and the runtimes of the analysis:
 ```bash
 python visualize.py --task analysis_table --handlers smc
 ```
+The runtimes may have variations due to system differences.
 
 ### Full Replication
 To perform the full replication of the figures in the paper:
@@ -195,27 +229,96 @@ The program iterates over a range of values from 1 to 100 (inclusive) as the obs
 
 To run the inference plan satisfiability analysis, and execute the program if the analysis succeeds:
 ```bash
-siren path/to/program.si -m {method} -p {particles} --analyze
+siren path/to/program.si -m {method} -p {particles} -l {handler} --analyze
 ```
 
-For example, to run the analysis and execute the program using the semi-symbolic inference algorithm with 100 particles:
+The currently available hybrid inference methods are `ssi` (semi-symbolic inference), `ds` (delayed sampling), and `bp` (hybrid belief propagation). The currently available approximate inference handlers are `smc` (Sequential Monte Carlo/Particle Filtering) and `mh` (Metropolis-Hastings).
+
+For example, to run the analysis and execute the program using the semi-symbolic inference algorithm with SMC with 100 particles:
 ```bash
-siren examples/kalman.si -m ssi -p 100 --analyze
+siren examples/kalman.si -m ssi -p 100 -l smc --analyze
 ```
+
 The analysis will throw an `AnalysisViolatedAnnotationError` and abort without running the program if the annotated inference plan is not satisfiable.
 
 To execute without the analysis:
 ```bash
-siren path/to/program.si -m {method}
+siren path/to/program.si -m {method} -p {particles} -l {handler}
 ```
 
 To run the analysis only:
 ```bash
-siren path/to/program.si -m {method} --analyze-only
+siren path/to/program.si -m {method} -l {handler} --analyze-only
 ```
 
 ### Syntax
-The Siren syntax can be found in `siren/parser.py`.
+The Siren syntax is as described in the grammar below.
+```
+program: func* expression
+                   
+func: "val" NAME "=" "fun" patternlist "->" expression "in"
+                   
+expression: 
+  | "true"
+  | "false"
+  | "(" ")"
+  | NUMBER
+  | INTEGER
+  | STRING
+  | NAME
+  | "(" expression ("," expression)* ")
+  | "let" patternlist "=" expression "in" expression
+  | ops
+  | identifier args
+  | "if" expression "then" expression "else" expression
+  | "fold" "(" identifier "," expression "," expression ")"
+  | "let" rvpattern "<-" expression "in" expression
+  | "observe" "(" expression "," expression ")
+  | "resample" "(" ")"
+  | list
+                   
+args:
+  | "(" ")"
+  | "(" expression ("," expression)* ")"
+                   
+list: 
+  | "[" "]"
+  | "nil"
+  | "[" expression ("," expression)* "]"
+
+rvpattern:
+  | "sample" identifier
+  | "symbolic" identifier
+  | identifier
+                   
+ops:
+  | expression "+" expression
+  | expression "-" expression
+  | expression "*" expression
+  | expression "/" expression
+  | expression "::" expression
+  | expression "=" expression
+  | expression "<" expression
+
+patternlist:
+  | "(" ")"
+  | "(" patternlist ")"
+  | pattern
+  | pattern ("," pattern)+
+                   
+pattern:
+  | NAME
+  | "_"
+  | "(" ")"
+  | "(" pattern ")"
+  | "(" pattern ("," pattern)+ ")"
+                   
+identifier: 
+  | NAME
+  | NAME "." NAME
+```
+
+Comments are wrapped by `(* *)`.
 
 ### Source Code Descriptions and Extension
-To view a description of the source files in this repository and instructions on how to extend Siren, please see [DESCRIPTION.md](DESCRIPTION.md).
+We document in [DESCRIPTION.md](DESCRIPTION.md) a description of the source files in this repository and the steps to extend Siren to demonstrate how the hybrid inference interface enables modularity as described in the paper. We provide this documentation as a reference for developers and future researchers who wish to implement their own inference algorithms. To that end, we do not expect artifact reviewers or casual users to do so.
