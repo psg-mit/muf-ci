@@ -215,10 +215,6 @@ def table(statistics, use_latex, handlers):
       n_plans = statistics[benchmark]['n_plans']
       total_content.append(f"{n_plans}")
 
-    # if use_latex:
-    #   content.append(f"\\midrule")
-    # total_content_str = f' {delimiter} '.join(total_content)
-    # content.append(f"Total Possible Plans {delimiter} {total_content_str}{end}")
     content.append(total_content)
 
     # output stored strings
@@ -738,8 +734,6 @@ def plot_time(benchmark, data, output, handlers, methods, plan_ids, particle, tr
         palette=renamed_color_dict,
         markers=True,
         markersize=8,
-        # linestyle='--',
-        # row='variable',
         col='variable',
         hue_order=order,
         style_order=order,
@@ -1071,9 +1065,6 @@ def compare_to_default_accuracy(benchmark, data, handler, methods, plan_ids, all
     if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][handler][method]]
 
-    # if len(list(plan_ids)) <= 1:
-      # continue
-
     default_plan = int(default_plans[method])
     plan_ids = map(int, plan_ids)
 
@@ -1294,9 +1285,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
     if original_plan_ids is None:
       plan_ids = [plan_id for plan_id, data in all_plans.items() if data['satisfiable'][handler][method]]
 
-    # if len(list(plan_ids)) <= 1:
-      # continue
-
     default_plan = int(default_plans[method])
     plan_ids = map(int, plan_ids)
 
@@ -1320,7 +1308,6 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
 
           # get accuracy where runtime is less but close to default runtime
           is_close = errors['median_time'].apply(lambda x: x <= default_median_runtime)
-          # is_close = errors['median_time'].apply(lambda x: close_to_target_runtime(default_median_runtime, x))
           if errors.loc[is_close].shape[0] == 0:
             particles = np.nan
             median_runtime = np.nan

@@ -103,7 +103,6 @@ def main():
             )
             return
         t1 = time.time()
-        # try:
         res, probstate = handler().infer(
             program,
             inference_method,

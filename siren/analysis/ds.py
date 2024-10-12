@@ -624,7 +624,6 @@ class AbsDSState(AbsSymState):
         if len(rv_children) > 1:
           for rv_child in rv_children:
             self.set_dynamic(rv_child)
-          # raise ValueError(f'Cannot graft {rv} because it has multiple marginalized children')
         else:
           for rv_child in rv_children:
             self.prune(rv_child)
@@ -641,7 +640,6 @@ class AbsDSState(AbsSymState):
       case AbsDSMarginalized(_):
         rv_children = self.marginal_child(rv)
         if len(rv_children) > 1:
-          # raise ValueError(f'Cannot prune {rv} because it has multiple marginalized children')
           for rv_child in rv_children:
             self.set_dynamic(rv_child)
         else:

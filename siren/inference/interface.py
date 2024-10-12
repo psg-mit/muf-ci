@@ -149,7 +149,6 @@ class SymState(object):
         raise ValueError(self.get_entry(rv, 'distribution'))
 
   def str_expr (self, expr: SymExpr) -> str:
-    # expr = self.eval(expr)
     match expr:
       case Const(value):
         return str(value)
@@ -638,7 +637,6 @@ class ProbState(object):
     if np.max(scores) == -np.inf:
       warnings.warn("All particles have 0 weight")
       scores = np.zeros(len(scores))
-      # raise RuntimeError("All particles have 0 weight")
     probabilities = np.exp(scores - np.max(scores))
     return list(probabilities / probabilities.sum())
   

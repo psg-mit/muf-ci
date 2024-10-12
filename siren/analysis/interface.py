@@ -634,16 +634,6 @@ class AbsSymState(object):
                 self.set_dynamic(rv_par)
           return TopE()
         case _, _:
-          # Checking if hardcoded join rules work
-          # match e1, e2:
-          #   # fixes tree w/ ssi and smc with bp
-          #   case AbsMul(e11, e12), AbsAdd(AbsMul(e21, e22), AbsConst(v2)):
-          #     return AbsAdd(AbsMul(_join_expr(e11, e21, depth+1), _join_expr(e12, e22, depth+1)), AbsConst(UnkC()))
-          #   # fixes wheels with SSI
-          #   case AbsRandomVar(rv1), AbsAdd(AbsConst(v1), AbsAdd(AbsMul(AbsConst(v2), AbsDiv(AbsRandomVar(rv2), AbsConst(v3))), AbsRandomVar(rv3))):
-          #     if rv1 == rv2 and rv1 == rv3:
-          #       return AbsAdd(AbsConst(UnkC()), AbsMul(AbsConst(UnkC()), (AbsRandomVar(rv1))))
-
           parents = []
           for p in e1.rvs() + e2.rvs():
             if p in parents:
@@ -893,7 +883,6 @@ class AbsSymState(object):
     raise NotImplementedError()
     
 # Abstract prob states 
-# TODO: Basically the same as concrete version, so can refractor somehow
 class AbsContext(object):
   def __init__(self, init={}) -> None:
     super().__init__()

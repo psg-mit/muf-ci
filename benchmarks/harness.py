@@ -295,7 +295,6 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               break
 
 def find_satisfiable_plans(benchmark, files, handlers, methods, plans, knowns, timeout):
-  # print(plans)
   if len(files) == 0:
     # If no files specified, get all files in programs directory
     files = []
@@ -439,7 +438,6 @@ def analyze(benchmark, files, handlers, methods, variables, plans, results):
 
         # get analysis output
         cmd = f'siren {file} -l {handler} -m {method} --analyze-only'
-        # print('>', cmd)
         t1 = time.time()
         try:
           out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT).decode("utf-8")

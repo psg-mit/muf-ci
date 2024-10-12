@@ -412,8 +412,6 @@ def gamma_poisson_conjugate(state: SymState, rv_par: RandomVar, rv_child: Random
       return None
     
 ### Gamma Normal Conjugate ###
-# TODO: case of var being scaled invgamma
-
 def gamma_normal_conjugate_check(state: SymState, prior: Gamma, likelihood: Normal,
                                     rv_par: RandomVar, rv_child: RandomVar) -> bool:
   

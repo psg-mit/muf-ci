@@ -406,7 +406,6 @@ class AbsSSIState(AbsSymState):
             self.set_dynamic(rv_cur)
             self.set_distr(rv_cur, TopD())
             self.set_distr(rv_par, TopD())
-            # raise ValueError(f'Cannot swap {rv_par} and {rv_cur}')
             continue
           
           if not _swap(rv_par, rv_cur):
