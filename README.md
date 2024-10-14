@@ -44,7 +44,7 @@ Commands should be run inside the Docker container, unless stated otherwise.
 
 2. Enter the repository
 ```bash
-cd siren
+cd siren-popl25-artifact-v1.0.0  # or `cd siren` if cloned
 ```
 
 3. Build Docker image. This should take 5-10 minutes.
@@ -73,7 +73,7 @@ You can install Siren from source instead of using the Docker image. This requir
 
 2. Enter the repository
 ```bash
-cd siren
+cd siren-popl25-artifact-v1.0.0  # or `cd siren` if cloned
 ```
 
 3. Setup virtual environment:
@@ -128,14 +128,6 @@ The following generated files will be in the host machine:
 - `benchmarks/noise/output_kicktires/smc_ssi_particles.png`
 
 The smoke test is configured to only run `n=1` iterations using fewer particles, so the figures will look very distorted but that is expected. The smoke test should just check that the visualization script will generate plots.
-
-To check the runtime and accuracy statistics aggregation works correctly:
-```bash
- # Compares runtime of inference plans to reach the same accuracy
-python visualize.py --output output_kicktires --task compare_time --benchmark outlier noise --handlers smc --method ssi
-# Compare accuracy of inference plans given fixed runtime
-python visualize.py --output output_kicktires --task compare_accuracy --benchmark outlier noise --handlers smc --method ssi
-```
 
 ## Artifact Evaluation
 The experiments from the paper were conducted on a 60-vCPU Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 

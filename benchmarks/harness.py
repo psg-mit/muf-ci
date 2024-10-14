@@ -263,7 +263,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
               t = -1
               program_output = {var[0]: -1 for var in true_vars[handler]}
               if raw:
-                program_output = {var[0] + '_raw': -1 for var in true_vars[handler]}
+                program_output |= {var[0] + '_raw': -1 for var in true_vars[handler]}
             else:
               t, program_output = run_outputs
 
@@ -726,7 +726,7 @@ if __name__ == '__main__':
     n = 1
     particles = [1, 2, 4, 8, 16]
     
-    evaluation(particles, n, args, timeout=15)
+    evaluation(particles, n, args, timeout=60)
   elif args.subparser_name == 'artifact-eval':
     n = 5
     particles = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]

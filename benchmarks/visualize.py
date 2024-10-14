@@ -1351,7 +1351,13 @@ def compare_to_default_time(benchmark, data, handler, methods, plan_ids, all_pla
         table_values[var].append("--")
       else:
         row = all_acc.loc[(all_acc['variable'] == var) & (all_acc['method'] == method)]
-        row = row.groupby(['variable', 'method']).apply(lambda x: gmean(x['ratio'])).reset_index(names='ratio')
+        row = row.groupby(['variable', 'method']).apply(lambda x: gmean(x['ratio']))
+        if isinstance(row, pd.Series):
+          row = row.reset_index(name='ratio')
+        elif isinstance(row, pd.DataFrame):
+          row = row.reset_index(names='ratio')
+        else:
+          row = pd.DataFrame(columns=['ratio'])
         if len(row) == 0:
           table_values[var].append(["--"])
         else:
