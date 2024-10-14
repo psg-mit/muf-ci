@@ -241,7 +241,7 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
           print(f'Invalid file: {file}')
           continue
 
-        particles = kwargs.get('particles', kwargs.get('samples', None))
+        particles = kwargs.get('particles', None)
         seed = kwargs.get('seed', None)
         if particles is None:
           raise ValueError('Must specify particles or samples')
@@ -251,7 +251,6 @@ def run_particles(benchmark, files, n, handlers, methods, plans, true_vars, resu
 
             siren_kwargs = {
               'particles': p,
-              'samples': p,
               'warmup': kwargs.get('warmup', 0),
               'seed': seed,
             }
@@ -345,7 +344,7 @@ def find_satisfiable_plans(benchmark, files, handlers, methods, plans, knowns, t
             continue
 
         # get analysis output
-        cmd = f'siren {file} -p 10 --samples 10 -l {handler} -m {method}'
+        cmd = f'siren {file} -p 10 -l {handler} -m {method}'
         print('>', cmd)
         try:
           out = subprocess.check_output(cmd, cwd=CWD, shell=True, stderr=subprocess.STDOUT, timeout=timeout).decode("utf-8")
@@ -700,7 +699,6 @@ if __name__ == '__main__':
 
   rp = sp.add_parser('run')
   rp.add_argument('--particles', '-p', type=int, required=False, nargs='+')
-  rp.add_argument('--samples', type=int, required=False, nargs='+')
   rp.add_argument('--warmup', type=int, default=0)
   rp.add_argument('--n', '-n', type=int, required=False, default=100)
   rp.add_argument('--error-func', '-ef', type=str, required=False, default='mse')
@@ -768,7 +766,6 @@ if __name__ == '__main__':
         kwargs = {
           'particles': particles,
           'warmup': args.warmup,
-          'samples': args.samples,
           'seed': args.seed,
         }
 

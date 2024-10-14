@@ -29,7 +29,6 @@ def main():
     p.add_argument("filename", type=str)
     p.add_argument("--verbose", "-v", action="store_true")
     p.add_argument("--particles", "-p", type=int, default=100, help="Number of particles to use during SMC inference")
-    p.add_argument("--samples", type=int, default=100, help="Number of samples to use during MH inference")
     p.add_argument("--warmup", "-w", type=int, default=0, help="Number of warmup samples to use during MH inference")
     p.add_argument("--thinning", "-t", type=int, default=1, help="Thining factor to use during MH inference")
     p.add_argument("--analyze", "-a", action="store_true", help="Apply the inference plan satisfiability analysis during compilation")
@@ -109,7 +108,7 @@ def main():
             file_dir,
             args.seed,
             n_particles=args.particles,
-            n_samples=args.samples,
+            n_samples=args.particles,
             n_warmups=args.warmup,
             n_thinning=args.thinning,
         )
