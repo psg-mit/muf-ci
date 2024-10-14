@@ -13,6 +13,7 @@ The Siren interpreter, including the inference plan satisfiability analysis, is 
 
 ## Requirements
 - Install [Docker Desktop](https://www.docker.com/get-started/). The artifact was tested with Docker Desktop v4.30.0. 
+  - Note: The artifact is also compatible with [Podman](https://podman.io/), just substitute `podman` in every command that uses `docker`.
 - The software requires Python >= 3.10. This should be ensured by the Dockerfile.
 - The artifact instructions was tested on M1 MacBook.
 
@@ -117,7 +118,7 @@ python visualize.py --output output_kicktires --task plot --benchmark outlier no
 In your host machine (outside of the Docker container), in the `siren` repo, run
 ```bash
 chmod +x cp_files.sh
-./cp_files.sh
+./cp_files.sh docker arm # or amd64
 ```
 to copy the generated plots to the host machine to inspect.
 The following generated files will be in the host machine:
@@ -153,18 +154,36 @@ python harness.py artifact-eval
 ```bash
 python visualize.py --example
 ```
+In your host machine (outside of the Docker container), in the `siren` repo, run
+```bash
+./cp_files.sh docker arm # or amd64
+```
+to copy the files locally.
+
 The plot will be located at `benchmarks/examplegood/output/ssi_example_143.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
 
 3. Visualize the results for Section 2 Figure 5:
 ```bash
 python visualize.py --example --task timestep
 ```
+In your host machine (outside of the Docker container), in the `siren` repo, run
+```bash
+./cp_files.sh docker arm # or amd64
+```
+to copy the files locally.
+
 The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
 
 4. Visualize the results for Section 5 Figure 16:
 ```bash
 python visualize.py --task plot -b outlier noise -m ssi --handlers smc
 ```
+In your host machine (outside of the Docker container), in the `siren` repo, run
+```bash
+./cp_files.sh docker arm # or amd64
+```
+to copy the files locally.
+
 The plot will be located at `benchmarks/outlier/output/smc_ssi_particles.png` and `benchmarks/noise/output/smc_ssi_particles.png`.
 
 5. To produce Section 5 Table 1 and the runtimes of the analysis:

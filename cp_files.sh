@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Find the container ID of the running container using the "siren" image
-container_id=$(docker ps --filter "ancestor=siren" --format "{{.ID}}")
+DOCKER=$1
+PLATFORM=$2
 
-# Check if the container ID was found
+# Find the container ID of the running container using the "siren" image
+container_id=$($DOCKER ps --filter "ancestor=siren:$PLATFORM" --format "{{.ID}}")
+
+# # Check if the container ID was found
 if [ -z "$container_id" ]; then
   echo "No running container found with the image 'siren'."
   exit 1
@@ -20,7 +23,7 @@ local_path=$(pwd)/
 echo "Copying files from container ($container_id) path: $container_path to local host path: $local_path"
 
 # Use docker cp to copy files from the container to the local machine
-docker cp "$container_id:$container_path" "$local_path"
+$DOCKER cp "$container_id:$container_path" "$local_path"
 
 # Check if the copy was successful
 if [ $? -eq 0 ]; then
