@@ -27,7 +27,7 @@ docker load -i siren-arm.tar.gz # or siren-amd64.tar.gz
 ```
 3. Run the Docker container
 ```bash
-docker run -it siren
+docker run -it siren:arm # or siren:amd64
 ```
 
 You should now be `root` in the Docker container, with current working directory at `~/siren`.
