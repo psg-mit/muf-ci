@@ -20,10 +20,10 @@ The Siren interpreter, including the inference plan satisfiability analysis, is 
 Installation can be done either by running a Docker container (Recommended) or by installing from source. The following subsections describe the installation steps for each option.
 
 ### Docker Container with Pre-built Docker Image
-1. Download `siren.tar.gz` from Zenodo
+1. Download `siren-amd64.tar.gz` or `siren-arm.tar.gz` from Zenodo depending on your platform.
 2. Load the image
 ```bash
-docker load -i siren.tar.gz
+docker load -i siren-arm.tar.gz # or siren-amd64.tar.gz
 ```
 3. Run the Docker container
 ```bash
