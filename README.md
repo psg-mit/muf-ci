@@ -143,7 +143,7 @@ We list here each of the figures/tables that the artifact reproduces. Due to tim
 
 0. Make sure you are still in the `benchmarks/` subdirectory in the Docker image or in the `benchmarks/` subdirectory in the local repository if you did a local install from source.
 
-1. Use the harness script to run example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~4-5 hours. 
+1. Use the harness script to run example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~5-10 hours, subject to your machine specs.
 ```bash
 python harness.py artifact-eval
 ```
@@ -170,7 +170,7 @@ In your host machine (outside of the Docker container), in the `siren` repo, run
 ```
 to copy the files locally.
 
-The plots will be located at `benchmarks/examplegood/output_kicktires/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output_kicktires/smc_ssi_example_time_43.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
+The plots will be located at `benchmarks/examplegood/output/smc_ssi_example_time_43.png` and `benchmarks/examplebad/output/smc_ssi_example_time_43.png`. The data points are expected to be more erratic than in the paper due to running for less iterations. 
 
 4. Visualize the results for Section 5 Figure 16:
 ```bash
