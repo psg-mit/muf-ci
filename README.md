@@ -18,7 +18,20 @@ The Siren interpreter, including the inference plan satisfiability analysis, is 
 - The artifact instructions was tested on M1 MacBook.
 
 ## Install
-Installation can be done either by running a Docker container (Recommended) or by installing from source. The following subsections describe the installation steps for each option.
+
+First, obtain the artifact source code, by doing one of the following:
+1. Download `siren-popl25-artifact-v1.0.0.tar.gz` from Zenodo and extract the repository with `tar -xvzf siren-popl25-artifact-v1.0.0.tar.gz`, or
+2. Clone the `popl25-artifact` branch from GitHub
+```bash
+git clone --single-branch --branch popl25-artifact https://github.com/psg-mit/siren
+```
+
+Then, enter the repository
+```bash
+cd siren-popl25-artifact-v1.0.0  # or `cd siren` if cloned
+```
+
+Next, installation can be done either by running a Docker container (Recommended) or by installing from source. The following subsections describe the installation steps for each option.
 
 ### Docker Container with Pre-built Docker Image
 1. Download `siren-amd64.tar.gz` or `siren-arm.tar.gz` from Zenodo depending on your platform.
@@ -36,24 +49,12 @@ You should now be `root` in the Docker container, with current working directory
 Commands should be run inside the Docker container, unless stated otherwise.
 
 ### Docker Container by Building Docker Image
-1. Obtain source code, by doing one of the following:
-    1. Download from Zenodo, or
-    2. Clone the `popl25-artifact` branch from GitHub
-    ```bash
-    git clone --single-branch --branch popl25-artifact https://github.com/psg-mit/siren
-    ```
-
-2. Enter the repository
-```bash
-cd siren-popl25-artifact-v1.0.0  # or `cd siren` if cloned
-```
-
-3. Build Docker image. This should take 5-10 minutes.
+1. Build Docker image. This should take 5-10 minutes.
 ```bash
 docker build -t siren .
 ```
 
-4. Run the Docker container
+2. Run the Docker container
 ```bash
 docker run -it siren
 ```
@@ -65,25 +66,13 @@ Commands should be run inside the Docker container, unless stated otherwise.
 ### From Source (Not Recommended)
 You can install Siren from source instead of using the Docker image. This requires Python >= 3.10. 
 
-1. Obtain source code, by doing one of the following:
-    1. Download from Zenodo, or
-    2. Clone the `popl25-artifact` branch from GitHub
-    ```bash
-    git clone --single-branch --branch popl25-artifact https://github.com/psg-mit/siren
-    ```
-
-2. Enter the repository
-```bash
-cd siren-popl25-artifact-v1.0.0  # or `cd siren` if cloned
-```
-
-3. Setup virtual environment:
+1. Setup virtual environment:
 ```bash
 pip -m venv venv
 source venv/bin/activate
 ```
 
-4. Install dependencies
+2. Install dependencies
 ```bash
 pip install .
 ```
@@ -115,7 +104,7 @@ python visualize.py --output output_kicktires --example --task timestep
 python visualize.py --output output_kicktires --task plot --benchmark outlier noise --method ssi
 ```
 
-In your host machine (outside of the Docker container), in the `siren` repo, run
+***In your host machine (outside of the Docker container)***, in the `siren` repo, run
 ```bash
 chmod +x cp_files.sh
 ./cp_files.sh docker arm # or amd64
@@ -151,9 +140,11 @@ We list here each of the figures/tables that the artifact reproduces. Due to tim
 - Speedup and accuracy comparison in Section 5.3.1 corresponds to Step 1 and Step 6.
 
 ### Step-by-step Instructions
+
+0. Make sure you are still in the `benchmarks/` subdirectory in the Docker image or in the `benchmarks/` subdirectory in the local repository if you did a local install from source.
+
 1. Use the harness script to run example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~4-5 hours. 
 ```bash
-cd benchmarks/
 python harness.py artifact-eval
 ```
 
@@ -209,9 +200,8 @@ The ratios will vary from the paper due to the system differences and running fo
 The overall speedup and accuracy comparison across all benchmarks and methods would require running the other benchmarks and methods, which would take days of compute. Thus, we only expect to replicate the trend that, aggregated across Noise and Outlier, inference plans enable speedup to reach the target accuracy and improve accuracy with less or equal execution time, as indicated by a >1 geometric mean speedup and >1 geometric mean accuracy ratio in the "Across All" section of the outputs of the commands.
 
 ### Full Replication
-To perform the full replication of the figures in the paper:
+To perform the full replication of the figures in the paper, within `benchmarks/`:
 ```bash
-cd benchmarks/
 python harness.py full-replication
 python visualize.py --example
 python visualize.py --task analysis_table

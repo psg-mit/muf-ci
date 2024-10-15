@@ -273,7 +273,7 @@ def plot_particles(benchmark, data, output, handlers, methods, plan_ids, default
     }
   else:
     plt_settings = {
-      'font.size': 17, 
+      'font.size': 14, 
     }
     
   for key, val in plt_settings.items():
