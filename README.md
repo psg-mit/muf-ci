@@ -130,6 +130,12 @@ The following generated files will be in the host machine:
 
 The smoke test is configured to only run `n=1` iterations using fewer particles, so the figures will look very distorted but that is expected. The smoke test should just check that the visualization script will generate plots.
 
+To test the speedup and accuracy comparison aggregation script:
+```bash
+python visualize.py --task compare_time --output output_kicktires --handlers smc --methods ssi
+python visualize.py --task compare_accuracy --output output_kicktires --handlers smc --methods ssi
+```
+
 ## Artifact Evaluation
 The experiments from the paper were conducted on a 60-vCPU Intel Xeon Cascade Lake (up to 3.9 GHz) node with 240 GB RAM. The full set of experiments in the paper takes about 30 days of computation. The experiments can run on a general-purpose computer as well, requiring only enough computation time. 
 
@@ -142,6 +148,7 @@ We list here each of the figures/tables that the artifact reproduces. Due to tim
 - Figure 16 from Section 5 corresponds to Step 1 and Step 4.
 - Table 1 from Section 5 corresponds to Step 1 and Step 5.
 - Analysis runtime table corresponds to Step 1 and Step 5.
+- Speedup and accuracy comparison in Section 5.3.1 corresponds to Step 1 and Step 6.
 
 ### Step-by-step Instructions
 1. Use the harness script to run example for Figure 4 and Figure 5 for `n=10` and the programs for Figure 16 for `n=5`. This will take ~4-5 hours. 
@@ -191,6 +198,15 @@ The plot will be located at `benchmarks/outlier/output/smc_ssi_particles.png` an
 python visualize.py --task analysis_table --handlers smc
 ```
 The runtimes may have variations due to system differences.
+
+6. To compute the speedup and accuracy comparison for Noise and Outlier with SSI described in Section 5.3.1:
+```bash
+python visualize.py --task compare_time --handlers smc --methods ssi
+python visualize.py --task compare_accuracy --handlers smc --methods ssi
+```
+The ratios will vary from the paper due to the system differences and running for fewer iterations, but the trends should be reproduced DS and BP columns will be left blank.
+
+The overall speedup and accuracy comparison across all benchmarks and methods would require running the other benchmarks and methods, which would take days of compute. Thus, we only expect to replicate the trend that, aggregated across Noise and Outlier, inference plans enable speedup to reach the target accuracy and improve accuracy with less or equal execution time, as indicated by a >1 geometric mean speedup and >1 geometric mean accuracy ratio in the "Across All" section of the outputs of the commands.
 
 ### Full Replication
 To perform the full replication of the figures in the paper:
